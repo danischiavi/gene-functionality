@@ -31,7 +31,7 @@ calc() { awk "BEGIN{print $*}"; }
 
 ######## Create folder for additional files generated
 
-[ -d additional-output/ ] && rm -rf additional-output/* || mkdir additional-output
+[ -d additional-output/ ] && rm -rf additional-output/* || mkdir -p additional-output
 echo
 
 ######## Delete previous log files
@@ -78,7 +78,7 @@ fi
 ######## Local database for blastn
 
 blast_total=$( ls $additional_folder/human_genome* | wc -l )
-if [[ $blast_total -eq 6 ]]
+if [[ $blast_total -ge 6 ]]
 then
     human_genome=$additional_folder/human_genome
 else
@@ -122,9 +122,9 @@ fi
 
 ######## gnomAD VCF file
 
-if [ -f $additional_folder/gnomad.genomes.r3.0.sites.vcf.bgz ] 
+if [ -f $additional_folder/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz ] 
 then
-    gnomad_database=$additional_folder/gnomad.genomes.r3.0.sites.vcf.bgz
+    gnomad_database=$additional_folder/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz
 else
     until [ -f $gnomad_database ] ; do read -p "Please enter custom name of gnomAD SNP database (vcf.bz): " i ; gnomad_database=$addition
 al_folder/$i ; echo ; done
@@ -140,35 +140,8 @@ else
 $additional_folder/$mammal ; echo ; done
 fi
 
-######## ENCODE Tissue Total & Small RNASeq BAM files for samtools
 
-tissue=$( ls $additional_folder/ENCODE-tissue/*.bam | wc -l )
-tissue_bam=$( ls $additional_folder/ENCODE-tissue/*.bam.bai | wc -l )
-tissue_max=$( cat $additional_folder/ENCODE-tissue/total-read-count.txt | wc -l )
-
-if [[ $tissue -eq $tissue_bam ]] && [ -f $additional_folder/ENCODE-tissue/total-read-count.txt ] && [[ $tissue -eq $tissue_max ]]
-then
-    :
-else
-    echo "Please confirm you have Tissue RNASeq BAM files downloaded from ENCODE."
-    echo
-    exit 1 
-fi
-
-######## ENCODE Primary Cell Total & Small RNA-seq BAM files for samtools
-
-primary_cell=$( ls $additional_folder/ENCODE-primary-cell/*.bam | wc -l )
-primary_bam=$( ls $additional_folder/ENCODE-primary-cell/*.bam.bai | wc -l )
-primary_max=$( ls $additional_folder/ENCODE-primary-cell/total-read-count.txt | wc -l )
-
-if [[ $primary_cell -eq $primary_bam ]] && [ -f $additional_folder/ENCODE-primary-cell/total-read-count.txt ] && [[ $primary_cell -eq $primary_max ]]
-then
-    :
-else
-    echo "Please confirm you have Primary Cell RNASeq BAM files downloaded from ENCODE."
-    echo
-    exit 1
-fi
+##PPG: ENCODE CHECKS WERE HERE...
 
 ###########################################################################################################################
 
@@ -404,14 +377,15 @@ grep -v 'Chromosome' $initial_data | cut -d ',' -f 1 > id
 paste -d '\t' coordinates id > input.bed
 
 ######## Convert coordinates to hg19 genome version
+echo "$liftOver_exe input.bed $chain_file output.bed unlifted.bed &> /dev/null" >> errors.log
 $liftOver_exe input.bed $chain_file output.bed unlifted.bed &> /dev/null
 
 ######## If available, unzip previously downloaded VCF files
-if [ -f FASTA.zip ]
+if [ -f VCF.zip ]
 then
-    unzip FASTA.zip &> /dev/null
+    unzip VCF.zip &> /dev/null
 else
-    mkdir FASTA
+    mkdir -p VCF
     
     ######## Downloaded VCF files according to hg19 chromosome coordinates
     while [ $var -le $max ]
@@ -423,7 +397,7 @@ else
         if [ -z $line ] || [[ $line == *"Un_"* ]]
         then
             line=$( grep -w "RNA$var" $initial_data | cut -d ',' -f 3,4,5 | tr ',' ' ' | tr -d "chr" | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' )
-                
+            
         ######## Reformatting scaffolds of annotated chromosomes
         elif [[ $line == *"_"* ]]
         then
@@ -434,21 +408,34 @@ else
             :
         fi
         
-        name='RNA'$var
+        name='RNA'$var'-1k'
         chr=$( echo $line | cut -d ':' -f 1 )
-
+	
         ######## The X chromosome is downloaded from a different folder to the autosomal chromosomes.
         if [ $chr == 'X' ]
         then
-            until $tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
-            
-        ######## Tabix is very sensitive to crashing, so repeat the command until a valid VCF file has been downloaded.
+            #until
+	    echo "$tabix_exe -f -h $additional_folder/1000genomes/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;"  >> tabix.log		                                   
+	    #$tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
+	    $tabix_exe -f -h $additional_folder/1000genomes/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;
+	    #do
+	    echo Processing $name.vcf >> tabix.log ; echo >> tabix.log ;
+	    #./data/1000genomes/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
+	    #./data/1000genomes/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+	    #done
+            ######## Tabix is very sensitive to crashing, so repeat the command until a valid VCF file has been downloaded.
         else
-            until $tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
-        fi
+            #until
+	    echo "$tabix_exe -f -h $additional_folder/1000genomes/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;"  >> tabix.log
+	    #$tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
+	    $tabix_exe -f -h $additional_folder/1000genomes/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;
+	    #do
+	    echo Processing $name.vcf >> tabix.log ; echo >> tabix.log ;
+	    #done
+        fi                                                                            
 
         ######## Move VCF so it doesn't need to be redownloaded.
-        mv $name.vcf \FASTA
+        mv $name.vcf VCF/
         var=$((var+1))
         rm -rf text.file
         count=$(( $count + 1 ))
@@ -469,6 +456,7 @@ rm -rf unlifted.bed
 ######## Loop through VCF files to calculate features
 echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > 1000g-freqsummary.csv
 
+#Make this a function... VCF2summary 
 for line in $( grep -v "Start" $initial_data )
 do
     ######## Extract relevant information
@@ -476,16 +464,19 @@ do
     start=$( echo $line | cut -d ',' -f 4 )  # Start position
     end=$( echo $line | cut -d ',' -f 5 )    # End position
     len=$( calc $end-$start )   # Sequence length
-
+    f="$ID-1k.vcf"
+    echo "[$ID][$start][$end][$len][$f]"  >> tabix.log
+    
     ######## Determine SNP frequencies for each ncRNA sequence
-    $vcftools_exe --vcf FASTA/$f --freq --out freq-afr &> /dev/null
-
+    echo "$vcftools_exe --vcf VCF/$f --freq --out freq-afr &> /dev/null" >> tabix.log
+    $vcftools_exe --vcf VCF/$f --freq --out freq-afr &> /dev/null
+    
     ######## Extract each SNP at frequency observed at that position into a parsable format
     grep -v "CHROM" freq-afr.frq | cut -f 5,6 | perl -lane '{print "$F[0]:$F[1]"}' > snps.file
     total=0   # No. of SNPs observed
     count=$(grep -v "CHROM" freq-afr.frq | wc -l)   # Maximum data available
     min=0.99  # Min MAF observed
-
+    sum=0
     for line in $(cat snps.file)
     do
         echo $line > test
@@ -497,6 +488,7 @@ do
             snpa=$(echo $line | cut -d ':' -f 1,3 | tr ":" " " | perl -lane '{print "$F[0]"}')
             snpb=$(echo $line | cut -d ':' -f 1,3 | tr ":" " " | perl -lane '{print "$F[1]"}')
             maf=$(echo $line | cut -d ":" -f 4)
+	    sum=$sum+$maf
             ######## If the maximum is recorded as zero, set the new values automatically as the max
             if (( $(echo "$max == 0" | bc -l) ))
             then
@@ -515,16 +507,19 @@ do
     count=$( grep -v "CHROM" freq-afr.frq | wc -l )  # SNP Count
     if [[ "$count" == "0" ]] || [ -z "$count" ]   # If no SNPs were recorded, set everything to NA
     then
-        $count=NA
-        $density=NA
-        $average=NA
+        count='NA'
+        density='NA'
+        average='NA'
     else
-        density=$( calc $density/$len )   # SNP Density
+        density=$( calc $count/$len )   # SNP Density
+	average=$( calc $sum/$count )
     fi
 
     echo $count,$density,$average >> 1000g-freqsummary.csv
 
 done
+
+#exit 0; 
 
 ######## Delete and move excess files
 rm -rf line
@@ -533,9 +528,6 @@ rm -rf ALL.*.vcf.gz.tbi
 rm -rf coordinates
 rm -rf freq-afr.*
 
-######## Zip VCF files for further analyses
-zip -r FASTA FASTA &> /dev/null
-rm -rf FASTA/
 
 ############################################################################################################################
 
@@ -561,13 +553,19 @@ echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > gnomad.csv
 for line in $( cat coordinates )
 do
 
-    name='RNA'$var
+    name='RNA'$var'-gnomad'
     start=$( echo $line | cut -d ":" -f 2 | cut -d "-" -f 1 )
     end=$( echo $line | cut -d ":" -f 2 | cut -d "-" -f 2 )
     len=$( calc $end-$start )
-
-    until $tabix_exe -f -h $gnomad_database $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
-
+    
+    #until
+    echo Extracting $name.vcf >> tabix.log ;
+    echo "$tabix_exe -f -h $gnomad_database $line > $name.vcf 2>>tabix.log ;" >>tabix.log
+    $tabix_exe -f -h $gnomad_database $line > $name.vcf 2>>tabix.log ;
+    #do
+    echo >> tabix.log ;
+#    done
+    
     count=$( grep -v "#" $name.vcf | wc -l )
     density=$( calc $count/$len )
     maf=0
@@ -582,10 +580,15 @@ do
 
     [[ "$count" -eq 0 ]] && echo NA,NA,NA >> $date-gnomad.csv || echo $count,$density,$avg_maf >> gnomad.csv
 
-    rm -rf $name.vcf
+    #rm -rf $name.vcf
     var=$((var+1))
 
+    mv $name.vcf VCF/
 done
+
+######## Zip VCF files for further analyses
+zip -r VCF VCF &> /dev/null
+rm -rf VCF/
 
 ############################################################################################################################
 
@@ -672,6 +675,7 @@ do
     fi
 done
 
+
 rm -rf mafOut-*.txt
 rm -rf mafOut-*-seq
 rm -rf alignment
@@ -681,10 +685,10 @@ rm -rf alignment
 ############################################################################################################################
 
 ######## Create folder for generated r-scape output
-rm -rf rscapedata && mkdir rscapedata
+rm -rf rscapedata && mkdir -p rscapedata
 
 ######## If multiz100way files already downloaded, use them instead of re-downloading 
-if [ -f maf.zip ] ; then unzip maf.zip &> /dev/null ; else mkdir maf ; fi
+if [ -f maf.zip ] ; then unzip maf.zip &> /dev/null && rm maf.zip ; else mkdir -p maf ; fi
 
 ######## Reformats chromosome coordinates for mafFetch
 rm -rf coordinates
@@ -692,7 +696,7 @@ grep -v 'Chromosome' $initial_data | cut -d ',' -f 3,4,5 | tr ',' ' ' | perl -la
 
 ######## Obtain multiple alignment files and calculate covariance
 var=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
-rm -rf *.stk
+#rm -rf *.stk
 
 echo RNAcode_score,RNAalifold_score > rnacode.csv
 echo MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > conservation.csv
@@ -700,44 +704,50 @@ echo mammals_mean_gerp,mammals_max_gerp > gerp.csv
 
 for line in  $(cat coordinates)
 do
-        ######## Format data for phastCons and phyloP
+    echo '#####################RNA'$var'#####################' >> errors.log 
+    ######## Format data for phastCons and phyloP
         echo $line > overBed      # Input for mafFetch (Multiple Alignments)
-        echo $line > input.bed    # Input for bedtools (GERP)
-        chr=$( echo $line | cut -d ' ' -f 1 )   # Formatting for bigWigSummary
-        chromo=$( echo $line | cut -f 1 )       # Formatting for bedtools
-        start=$( echo $line | cut -d ' ' -f 2 ) # Formatting for bigWigSummary
-        end=$( echo $line | cut -d ' ' -f 3 )   # Formatting for bigWigSummary
-        
+        echo $line | tr -d 'chr' | tr " " "\t" > input.bed    # Input for bedtools (GERP)
+        chr=$(    echo $line |               cut -d ' ' -f 1 ) # Formatting for bigWigSummary
+        chromo=$( echo $line | tr -d 'chr' | cut -d ' ' -f 1 ) # Formatting for bedtools
+        start=$(  echo $line |               cut -d ' ' -f 2 ) # Formatting for bigWigSummary
+        end=$(    echo $line |               cut -d ' ' -f 3 ) # Formatting for bigWigSummary
+
+	echo "[chr:$chr] [chromo:$chromo] [start:$start] [end:$end]" >> errors.log 
         ######## Obtain phastCons (pc) and phyloP (pp) values for each set of chromosome coordinates
+	echo "mean_pp = $bigWigSummary_exe -type=mean $phylo_bw $chr $start $end 1 2>&1" >> errors.log
         mean_pp=$( $bigWigSummary_exe -type=mean $phylo_bw $chr $start $end 1 2>&1 )
         max_pp=$( $bigWigSummary_exe -type=max $phylo_bw $chr $start $end 1 2>&1 )
         mean_pc=$( $bigWigSummary_exe -type=mean $phast_bw $chr $start $end 1 2>&1 )
         max_pc=$( $bigWigSummary_exe -type=max $phast_bw $chr $start $end 1 2>&1 )
-
+	echo "max_pc = $bigWigSummary_exe -type=max $phast_bw $chr $start $end 1 2>&1" >> errors.log
+	
         ######## Convert any missing data to NAs (mean = mn, max = mx, phyloP = p, phastCons = c)
         test_mnp=$( echo $mean_pp | wc -w )
         if [[ "$test_mnp" -eq "1" ]] ; then : ; else mean_pp=NA ; fi
- 
+	
         test_mxp=$( echo $max_pp | wc -w )
         if [[ "$test_mxp" -eq "1" ]] ; then : ; else max_pp=NA ; fi
-
+	
         test_mnc=$( echo $mean_pc | wc -w )
         if [[ "$test_mnc" -eq "1" ]] ; then : ; else mean_pc=NA ; fi
-
+	
         test_mxc=$( echo $max_pc | wc -w )
         if [[ "$test_mxc" -eq "1" ]] ; then : ; else max_pc=NA ; fi
-
+	
         echo $mean_pp,$max_pp,$mean_pc,$max_pc >> conservation.csv
         
         ######## Obtain GERP Scores for each set of chromosome coordinates
-        mammal_output=$( $bedtools_exe map -a input.bed -b $mammals_bed/gerp$chr.bed.gz -c 4,4 -o mean,max -sorted 2>>/dev/null)
+	#need to strip "chr" from input.bed & from "gerp$chr.bed.gz"
+	echo "$bedtools_exe map -a input.bed -b $mammals_bed/gerp$chromo.bed.gz -c 4,4 -o mean,max -sorted 2>>/dev/null" >> errors.log
+	mammal_output=$( $bedtools_exe map -a input.bed -b $mammals_bed/gerp$chromo.bed.gz -c 4,4 -o mean,max -sorted 2>> errors.log)
         mean_mammal=$( echo $mammal_output | cut -f 4 )   # Mean GERP Score
         max_mammal=$( echo $mammal_output | cut -f 5 )    # Max GERP Score
-
+	
         ######## Convert any missing data to NAs
         if [[ ! "$mean_mammal" == "." ]] ; then : ; else mean_mammal=NA ; fi
         if [[ ! "$max_mammal" == "." ]] ; then : ; else max_mammal=NA ; fi
-
+	
         echo $mean_mammal,$max_mammal >> gerp.csv
  
         ######## Obtain MSA files from multiz100way, unless they've already been downloaded
@@ -746,36 +756,47 @@ do
         then
             cp maf/$rna_id.maf mafOut
         else            
-            until $mafFetch_exe hg38 multiz100way overBed mafOut 2>>errors.log ; do sleep 4 ; done
-            cp mafOut $rna_id.maf && mv $rna_id.maf maf/
+            #until
+	    echo "$mafFetch_exe hg38 multiz100way overBed mafOut 2>>errors.log ;" >> errors.log
+	    $mafFetch_exe hg38 multiz100way overBed mafOut 2>>errors.log ;
+	    #do sleep 4 ; done
+            cp mafOut maf/$rna_id.maf 
         fi
-
+	
         file_len=$( cat mafOut | wc -l )
         
         ######## If MSA contains data, convert is to STK format
         if [ "$file_len" != "1" ]
         then
-            maf_to_stockholm $rna_id
-
+            maf_to_stockholm $rna_id 
+	    
             ######## Run RNAcode using original mafOut file
-            $RNAcode_exe mafOut -o rnacode_output 2>>errors.log &> /dev/null
+	    echo "$RNAcode_exe mafOut -o rnacode_output 2>>errors.log &> /dev/null" >>errors.log
+	    $RNAcode_exe mafOut -o rnacode_output 2>>errors.log &> /dev/null
             
             ######## Takes the largest score, but records zero if no significant hits found.
             rnacode=$( grep -v "No significant coding regions found.\|#\|=" rnacode_output | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
             [ -z $rnacode ] && rnacode=NA
-
+	    
             ######## Generate secondary structure consensus sequence and associated MFE value
-            timeout 60m $RNAalifold_exe -q -f S --noPS --aln-stk=$rna_id RNA.stk >/dev/null 2>>errors.log
-            rna_score=$( $RNAalifold_exe -q -f S --noPS RNA.stk 2>>errors.log | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
+	    echo "$RNAalifold_exe -q -f S --noPS --aln-stk=$rna_id RNA.stk >$rna_id.rnaalifold 2>>errors.log" >>errors.log
+            #timeout 60m
+	    $RNAalifold_exe -q -f S --noPS --aln-stk=$rna_id RNA.stk > $rna_id'.rnaalifold' 2>>errors.log
+            rna_score=$( cat $rna_id'.rnaalifold' | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
 
+	    #Remove gap-only columns:
+	    echo "esl-alimask -g --gapthresh 1 $rna_id.stk > maf/$rna_id.stk" >>errors.log
+	    esl-alimask -g --gapthresh 1 $rna_id.stk > maf/$rna_id.stk
+	    
             [ -z "$rna_score" ] && rna_score=NA
             echo $rnacode,$rna_score | tr -d ' ' >> rnacode.csv
-
+	    
             exit_status=$?
-
+	    
             ######## Run R-scape only if previous analyses didn't time out
             if [ "$exit_status" -ne "124" ]
             then
+		echo "$rscape_exe -E 100 -s $rna_id.stk >/dev/null 2>>errors.log" >>errors.log
                 $rscape_exe -E 100 -s $rna_id.stk >/dev/null 2>>errors.log
             else
                 touch $rna_id.cov
@@ -785,17 +806,25 @@ do
             touch $rna_id.cov
             echo NA,NA >> rnacode.csv
         fi
-        
+	
+	mkdir -p aliout
         var=$(($var+1))
         rm -rf *.sorted.cov
         mv *.cov rscapedata &> /dev/null
         rm -rf overBed
         rm -rf blank.txt
-        rm -rf *.pdf
-        rm -rf *ss.ps
-        rm -rf *.svg
-        rm -rf *.surv
-        rm -rf *.sto
+        #rm -rf *.pdf
+        #rm -rf *ss.ps
+        #rm -rf *.svg
+        #rm -rf *.surv
+        #rm -rf *.sto
+	mv RNA*.ps  aliout/
+	mv RNA*.stk aliout/
+	mv RNA*svg  aliout/
+	mv RNA*sto  aliout/
+	mv RNA*pdf  aliout/
+	mv RNA*surv  aliout/
+	mv *rnaalifold aliout/
         rm -rf *.power
         rm -rf rnacode_output
 
@@ -821,8 +850,8 @@ do
         if [ -f rscapedata/RNA$count_file.cov ] && [ -s rscapedata/RNA$count_file.cov ]  # Check file exists and is not empty
         then
             f=./rscapedata/RNA$count_file.cov
-            max=$(grep -r 'GTp' $f | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)  # Max covariance observed
-            min=$( grep -v "#" $file | cut -f 4 | sort -n | head -1 | tr -d '-' )  # Min covariance observed
+            max=$(  grep -r 'GTp' $f       | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)  # Max covariance observed
+            min=$(  grep -v "#" $file      | cut -f 4 | sort -n | head -1 | tr -d '-' )  # Min covariance observed
             eval=$( grep -m 1 "$min" $file | cut -f 5 )  # E-val of min covariance
             [[ "$eval" == "no significant pairs" ]] && eval=NA   
             echo $max,$eval >> rscape-dataset.csv
@@ -1019,6 +1048,39 @@ mv snp-intersection-average.csv additional-output/
 # Extracting expression for a region across Total & Small ENCODE datasets
 
 ############################################################################################################################
+
+# PPG: MOVED ENCODE CHECKS HERE...
+
+######## ENCODE Tissue Total & Small RNASeq BAM files for samtools
+
+tissue=$( ls $additional_folder/ENCODE-tissue/*.bam | wc -l )
+tissue_bam=$( ls $additional_folder/ENCODE-tissue/*.bam.bai | wc -l )
+tissue_max=$( cat $additional_folder/ENCODE-tissue/total-read-count.txt | wc -l )
+
+if [[ $tissue -eq $tissue_bam ]] && [ -f $additional_folder/ENCODE-tissue/total-read-count.txt ] && [[ $tissue -eq $tissue_max ]]
+then
+    :
+else
+    echo "Please confirm you have Tissue RNASeq BAM files downloaded from ENCODE."
+    echo
+    exit 1 
+fi
+
+######## ENCODE Primary Cell Total & Small RNA-seq BAM files for samtools
+
+primary_cell=$( ls $additional_folder/ENCODE-primary-cell/*.bam | wc -l )
+primary_bam=$( ls $additional_folder/ENCODE-primary-cell/*.bam.bai | wc -l )
+primary_max=$( ls $additional_folder/ENCODE-primary-cell/total-read-count.txt | wc -l )
+
+if [[ $primary_cell -eq $primary_bam ]] && [ -f $additional_folder/ENCODE-primary-cell/total-read-count.txt ] && [[ $primary_cell -eq $primary_max ]]
+then
+    :
+else
+    echo "Please confirm you have Primary Cell RNASeq BAM files downloaded from ENCODE."
+    echo
+    exit 1
+fi
+
 
 run_encode() {
 

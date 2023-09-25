@@ -40,6 +40,8 @@
 |[Variant Call Format 4.2](https://vcftools.github.io/downloads.html)|vcftools| Danecek et al., 2011 | 
 |[ViennaRNA 2.4.14](https://www.tbi.univie.ac.at/RNA/)|RNAalifold ; RNAcode ; RNAfold ; RNAplfold | Lorenz et al., 2011 | 
 
+# PPG: WHAT ARE THE DISK SPACE REQUIREMENTS??
+
 -----------------------------------------------------------------------
 
 ### Retrieval of functional genes
@@ -69,7 +71,16 @@ To obtain the chromosome coordinates for each RNAcentral ncRNA, the Homo sapiens
 
 * Short ncRNA: include HGNC database, exclude precursor miRNA/primary transcript, exclude rRNA, exclude lncRNA.
 
+# PPG: DO YOU STILL HAVE THE URL FOR THE QUERY, AND/OR THE RESULTING SEQS?
+
+** [RNAcentral query](https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20NOT%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Pre_miRNA%22%20AND%20NOT%20so_rna_type_name:%22RRNA%22%20AND%20NOT%20so_rna_type_name:%22MiRNA%22)
+
+
 * Precursor miRNA: include HGNC database, include precursor miRNA/primary transcript only.
+
+** [RNAcentral query](https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20so_rna_type_name:%22Pre_miRNA%22)
+
+** save as: 
 
 * lncRNA: include HGNC database, include lncRNA only.
 
@@ -77,11 +88,22 @@ The downloaded short ncRNA and precursor miRNA FASTA files are then processed us
 
 ```
 # Downloaded homo_sapiens.GRCh38.bed.gz from RNAcentral FTP directory
-wget ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/15.0/genome_coordinates/bed/
+wget ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/15.0/genome_coordinates/bed/homo_sapiens.GRCh38.bed.gz
+
 
 # Line 91 of short-ncrna-processing.sh can be altered to choose a specific number of precursor miRNAs to include.
 shuf -i 1-$max -n 89 > numbers
 ```
+
+# PPG: WHERE IS $max DEFINED?
+
+
+# PPG: WHERE DO WE FETCH "uni-prot-ucsc.bed" from?:
+wget http://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliSwissprot.bb
+wget http://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliTrembl.bb
+bigBedToBed unipAliSwissprot.bb unipAliSwissprot.bed
+bigBedToBed unipAliTrembl.bb    unipAliTrembl.bed
+cat unipAliSwissprot.bed unipAliTrembl.bed  >  uniprot-ucsc.bed
 
 -----------------------------------------------------------------------
 
@@ -95,11 +117,11 @@ wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_G
 gunzip GCF_000001405.39_GRCh38.p13_genomic.gff.gz
 
 # Download and unzip FNA file for human genome
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz   
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz   && 
 gunzip GCF_000001405.39_GRCh38.p13_genomic.fna.gz
 
 # Reformat FNA to tab delimited CSV file
-fasta_formatter -i GCF_000001405.39_GRCh38.p13_genomic.fna.gz -o GRCh38_interim.csv -t
+fasta_formatter -i GCF_000001405.39_GRCh38.p13_genomic.fna -o GRCh38_interim.csv -t
 
 # Remove any scaffolds or alternative chromosomes
 grep "NC_" GRCh38_interim.csv > GRCh38.p13_genome.csv
@@ -114,12 +136,20 @@ wget https://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliSwissprot.bb
 # Downloading GENCODE annotations of known ncRNAs
 wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_35/gencode.v35.annotation.gtf.gz
 
+
 # Converting GENCODE GTF to bed file:
 # Pipe two filters sequences so only known ncRNAs are included.
 # Pipes three and four reformat the data into a bed file format.
 
 cat gencode.v34.annotation.gtf | grep "Mt_rRNA\|Mt_tRNA\|miRNA\|misc_RNA\|rRNA\|scRNA\|snRNA\|snoRNA\|ribozyme\|sRNA\|scaRNA\|lncRNA" | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > gencode-ncrna-annotation.bed
 
+```
+
+
+```
+# Sample positive and negative control sequences from the downloaded datasets:
+
+./bin/short-ncrna-processing.sh data short-ncrnas.fasta homo_sapiens.GRCh38.bed GRCh38.p13_genome.csv uniprot-ucsc.bed gencode-ncrna-annotation.bed
 ```
 
 -----------------------------------------------------------------------
@@ -148,7 +178,9 @@ wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/phastCons100way/hg38.phastCo
 # 1 causes the score across the whole sequence to be reported
 
 bigWigSummary -type=mean hg38.phyloP100way.bw $chr $start $end 1
-bigWigSummary -type=max hg38.phyloP100way.bw $chr $start $end 1
+bigWigSummary -type=max  hg38.phyloP100way.bw $chr $start $end 1
+
+# PPG: WHERE IS $start/$end DEFINED?
 
 ```
 
@@ -163,9 +195,9 @@ bigWigToBedGraph gerp_conservation_scores.homo_sapiens.GRCh38.bw gerp_111_mammal
 
 # Order bedgraph file
 sort -k1,1 -k2,2n gerp_111_mammals_GRCh38.bedgraph | tr ' ' '\t' > gerp_111_mammals_GRCh38_sorted.bedgraph
-
+  
 # Split bedgraph by chromosomes, and input into a separate folder
-awk '{print $0 >> "gerp"$1".bed"}' gerp_111_amniotes_GRCh38_sorted.bedgraph
+awk '{print $0 >> "gerp"$1".bed"}' gerp_111_mammals_GRCh38_sorted.bedgraph
 mkdir gerp-mammals-index && mv gerp*.bed gerp-mammals-index/
 
 # bgzip each bed file and index with tabix to decrease runtime for bedtools
@@ -192,12 +224,33 @@ The links for the ENCODE total and small RNA-Seq data (BAM files) for [primary-c
 ```
 # Downloading ENCODE RNA-Seq datasets (must be done within a specified folder for each sample type)
 mkdir ENCODE-tissue && mkdir ENCODE-primary-cell
-xargs -L 1 curl -O -J -L < encode-tissue-rnaseq.txt         # Done within ENCODE-tissue/
-xargs -L 1 curl -O -J -L < encode-primary-cell-rnaseq.txt   # Done within ENCODE-primary-cell/
+cd ENCODE-tissue/
+xargs -L 1 curl -O -J -L < ../encode-tissue-rnaseq.txt         # Done within ENCODE-tissue/
+# if your downloads fail, delete empty files and restart downloads (check your rsync/backups aren't duplicating these!!!):
+ls -s *bam | perl -lane 'print "rm $F[1]" if($F[0]==0)' | sh && cat ../encode-tissue-rnaseq.txt | perl -lane 'if(/download\/(ENC\S+.bam)/){ if(-s $1){print "#$_"}else{print "$_"}  }' > blah && mv blah ../encode-tissue-rnaseq.txt
 
-# Index files and calculate total reads per RNA-Seq dataset (done within each specified sample type folder)
+cd ../ENCODE-primary-cell/
+xargs -L 1 curl -O -J -L < ../encode-primary-cell-rnaseq.txt   # Done within ENCODE-primary-cell/
+# if your downloads fail, delete empty files and restart downloads:
+ls -s *bam | perl -lane 'print "rm $F[1]" if($F[0]==0)' | sh && cat ../encode-primary-cell-rnaseq.txt | perl -lane 'if(/download\/(ENC\S+.bam)/){ if(-s $1){print "#$_"}else{print "$_"}  }' > blah && mv blah ../encode-primary-cell-rnaseq.txt
+
+nprocs=12
+for url in $(cat to-get.txt); 
+    do 
+       curl -O -J -L $url & 
+       pwait "$nprocs"
+done
+
+# Index files and calculate total reads per RNA-Seq dataset (done within each specified sample type folder [ENCODE-tissue/] & [ENCODE-primary-cell/])
 for file in $( ls *.bam ) ; do samtools index $file ; total=$( samtools view $file | wc -l ) ; echo $file,$total >> total-read-count.txt ; echo $file ; done
 ```
+
+# PPG: for indexing partially downloaded/indexed runs: 
+ls *bai | perl -lane 's/.bai$//g; print' | tr "\n" "|"
+ls *bam | egrep -v 'ENCFF003XND.bam|ENCFF015GPO.bam|ENCFF018MLY.bam|ENCFF022KDS.bam|ENCFF025WMR.bam|ENCFF040ULF.bam|ENCFF044SZR.bam|ENCFF053EDJ.bam|ENCFF054ZIN.bam|ENCFF063VHB.bam|ENCFF072WPN.bam|ENCFF085BXZ.bam|ENCFF096FNU.bam|ENCFF124IFE.bam|ENCFF136HDU.bam|ENCFF139VRN.bam|ENCFF146SZI.bam|ENCFF151OFT.bam|ENCFF151ZTF.bam|ENCFF157HFY.bam|ENCFF164UED.bam|ENCFF165SZN.bam|ENCFF166EQZ.bam|ENCFF176XWZ.bam|ENCFF199BEE.bam|ENCFF227RIN.bam|ENCFF263ZZQ.bam|ENCFF265AFD.bam|ENCFF265UEF.bam|ENCFF272UGL.bam|ENCFF274DJM.bam|ENCFF276QUS.bam' | perl -lane 'print "samtools index $F[0] && total=\$( samtools view $F[0] | wc -l ) && echo \$file,\$total >> total-read-count.txt" ' | sh
+
+ls *bam | egrep -v 'ENCFF017ZWH.bam|ENCFF019KCS.bam|ENCFF023PAK.bam|ENCFF029BEL.bam|ENCFF058KEP.bam|ENCFF071GAO.bam|ENCFF090FOY.bam|ENCFF116PFD.bam|ENCFF119POR.bam|ENCFF128NQX.bam|ENCFF159QAX.bam|ENCFF164JEV.bam|ENCFF166RKD.bam|ENCFF169KJY.bam|ENCFF184YUO.bam|ENCFF196YLT.bam|ENCFF202ETQ.bam|ENCFF220CVY.bam|ENCFF224PNI.bam|ENCFF333FFK.bam|ENCFF335UAF.bam|ENCFF376UOL.bam|ENCFF403LXD.bam|ENCFF406DEH.bam|ENCFF407VTT.bam|ENCFF413CTV.bam|ENCFF422EVZ.bam|ENCFF444EKY.bam|ENCFF460PJA.bam|ENCFF491VZY.bam|ENCFF514QIL.bam|ENCFF542GSD.bam|ENCFF549UBP.bam|ENCFF559BDS.bam|ENCFF575PML.bam|ENCFF584FBF.bam|ENCFF590PJR.bam|ENCFF592AWU.bam|ENCFF595LQV.bam|ENCFF596OPC.bam|ENCFF604QYU.bam|ENCFF681WQP.bam|ENCFF687MKT.bam|ENCFF701CAC.bam|ENCFF730CJE.bam|ENCFF741AOJ.bam|ENCFF751DPV.bam|ENCFF756NWQ.bam|ENCFF778XJG.bam|ENCFF804YQY.bam|ENCFF806MFZ.bam|ENCFF811MSS.bam|ENCFF816ZAP.bam|ENCFF836WKP.bam|ENCFF840PMN.bam|ENCFF841GMR.bam|ENCFF841MML.bam|ENCFF867ROO.bam|ENCFF883NIZ.bam|ENCFF969GXB.bam|ENCFF979LYG.bam' | perl -lane 'print "samtools index $F[0] && total=\$( samtools view $F[0] | wc -l ) && echo \$file,\$total >> total-read-count.txt" '
+
 -----------------------------------------------------------------------
 
 ### Genomic repeat associated features
@@ -231,10 +284,14 @@ wget https://www.dfam.org/releases/Dfam_3.1/annotations/hg38/hg38_dfam.nrph.hits
 # Pipe one removes the header
 # Pipe two obtains Chr, Start and End columns
 # Pipe three removes alternate chromosome, incomplete scaffolds and chromosomes Y/Mt
-grep -v "#seq_name" hg38_dfam.nrph.hits | cut -f 1,10,11 | grep -v "_random\|chrY\|chrM" > dfam-hg38-nrph.bed
+gunzip hg38_dfam.nrph.hits.gz
+#grep -v "#seq_name" hg38_dfam.nrph.hits | cut -f 1,10,11 | grep -v "_random\|chrY\|chrM" > dfam-hg38-nrph.bed
 
 # For loop reformats into bed format, and sorts the file so it can be used by bedtools
-for line in $( cat dfam-hg38-nrph.bed ) ; do chr=$( echo $line | cut -f 1 ) ; start=$( echo $line | cut -f 2 ) ; end=$( echo $line | cut -f 3 ) ; if [ "$start" -gt "$end" ] ; then echo -e $chr'\t'$end'\t'$start >> dfam-hg38.bed ; else echo $line >> dfam-hg38.bed ; fi ; done && sort -k1,1 -k2,2n dfam-hg38.bed > dfam-hg38-sorted.bed
+#for line in $( cat dfam-hg38-nrph.bed ) ; do chr=$( echo $line | cut -f 1 ) ; start=$( echo $line | cut -f 2 ) ; end=$( echo $line | cut -f 3 ) ; if [ "$start" -gt "$end" ] ; then echo -e $chr'\t'$end'\t'$start >> dfam-hg38.bed ; else echo $line >> dfam-hg38.bed ; fi ; done && sort -k1,1 -k2,2n dfam-hg38.bed > dfam-hg38-sorted.bed
+
+#Simpler & faster with a perl one-liner e.g.:
+cat hg38_dfam.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1V -k2,2n > dfam-hg38-sorted.bed
 
 ##################################
 
@@ -262,7 +319,14 @@ Coding potential scores were either calculated from sequence alignments using ``
 
 ##### RNA structure
 
-Covariance scores and associated E-values were calculated used ```rscape```, RNAalifold scores were calculated using ```RNAalifold```, MFE was calculated with ```RNAfold``` and accessibility was calculated using ```access_py.py``` (Bhandari et al., 2019; Lorenz et al., 2011). Multiple sequence alignments for each sequence were obtained from the UCSC multiz100way alignment using ```mafFetch``` (Haeussler et al., 2019). Unless described below, default parameters were used for each executable.
+Covariance scores and associated E-values were calculated used
+```rscape```, RNAalifold scores were calculated using
+```RNAalifold```, MFE was calculated with ```RNAfold``` and
+accessibility was calculated using ```access_py.py``` (Bhandari et
+al., 2019; Lorenz et al., 2011). Multiple sequence alignments for each
+sequence were obtained from the UCSC multiz100way alignment using
+```mafFetch``` (Haeussler et al., 2019). Unless described below,
+default parameters were used for each executable.
 
 ```
 # Parameters used for running mafFetch
@@ -272,6 +336,12 @@ Covariance scores and associated E-values were calculated used ```rscape```, RNA
 # mafOut is the name of the output file
 
 mafFetch hg38 multiz100way overBed mafOut
+
+#Follow the steps on this webpage to set up your $HOME/.hg.conf file:
+
+[https://genome.ucsc.edu/goldenPath/help/mysql.html](https://genome.ucsc.edu/goldenPath/help/mysql.html)
+
+
 
 ##################################
 
@@ -289,20 +359,20 @@ rscape -E 100 -s $rna_id.stk
 # --noPS prevents postscript files from being created
 # RNA.stk is the input file
 
-RNAalifold_exe -q -f S --noPS RNA.stk 
+RNAalifold -q -f S --noPS RNA.stk 
 ```
 -----------------------------------------------------------------------
 
 ##### RNA:RNA interactions
 
-Interaction energies were calculated using ```IntaRNA```, which were run against a interaction database containing [34 RNAcentral v15 ncRNAs](https://rnacentral.org/search?q=URS000013F331_9606%20OR%20URS00003D2CC9_9606%20OR%20URS000038803E_9606%20OR%20URS0000735371_9606%20OR%20URS000072E1AF_9606%20OR%20URS00006A14B6_9606%20OR%20URS000065DEBF_9606%20OR%20URS0000C8E9D4_9606%20OR%20URS0000233681_9606%20OR%20URS000047B05D_9606%20OR%20URS00001A72CE_9606%20OR%20URS0000639DBE_9606%20OR%20URS00006D74B2_9606%20OR%20URS0000659172_9606%20OR%20URS000074C9DF_9606%20OR%20URS0000733374_9606%20OR%20URS000067A424_9606%20OR%20URS000007E37F_9606%20OR%20URS000034AAC2_9606%20OR%20URS0000744456_9606%20OR%20URS0000C8E9CE_9606%20OR%20URS00000F9D45_9606%20OR%20URS00006BDF17_9606%20OR%20URS00003EE995_9606%20OR%20URS00003F07BD_9606%20OR%20URS000075BAAE_9606%20OR%20URS000035C796_9606%20OR%20URS000000A142_9606%20OR%20URS000075EF5D_9606%20OR%20URS000075ADBA_9606%20OR%20URS0000443498_9606%20OR%20URS0000103047_9606%20OR%20URS00005CF03F_9606%20OR%20URS0000007D24_9606) known to interact with a variety of RNAs (Mann et al., 2017; The RNAcentral Consortium, 2019). Default parameters ```-q``` query sequence and ```-t``` for target sequences were used for ```IntaRNA```.
+Interaction energies were calculated using ```IntaRNA```, which were run against a interaction database containing [34 RNAcentral v15 ncRNAs](https://rnacentral.org/search?q=(URS000013F331_9606%20OR%20URS00003D2CC9_9606%20OR%20URS000038803E_9606%20OR%20URS0000735371_9606%20OR%20URS000072E1AF_9606%20OR%20URS00006A14B6_9606%20OR%20URS000065DEBF_9606%20OR%20URS0000C8E9D4_9606%20OR%20URS0000233681_9606%20OR%20URS000047B05D_9606%20OR%20URS00001A72CE_9606%20OR%20URS0000639DBE_9606%20OR%20URS00006D74B2_9606%20OR%20URS0000659172_9606%20OR%20URS000074C9DF_9606%20OR%20URS0000733374_9606%20OR%20URS000067A424_9606%20OR%20URS000007E37F_9606%20OR%20URS000034AAC2_9606%20OR%20URS0000744456_9606%20OR%20URS0000C8E9CE_9606%20OR%20URS00000F9D45_9606%20OR%20URS00006BDF17_9606%20OR%20URS00003EE995_9606%20OR%20URS00003F07BD_9606%20OR%20URS000075BAAE_9606%20OR%20URS000035C796_9606%20OR%20URS000000A142_9606%20OR%20URS000075EF5D_9606%20OR%20URS000075ADBA_9606%20OR%20URS0000443498_9606%20OR%20URS0000103047_9606%20OR%20URS00005CF03F_9606%20OR%20URS0000007D24_9606)) known to interact with a variety of RNAs (Mann et al., 2017; The RNAcentral Consortium, 2019). Default parameters ```-q``` query sequence and ```-t``` for target sequences were used for ```IntaRNA```.
 
 ```
 # Remove newlines from downloaded RNAcentral fasta file
 
-n=$( grep -c ">" URS000013F331_9606_OR_URS00003D2CC9_9606_OR_URS000038803E_9606_OR_URS0000735371_9606_OR_URS000072E1AF_9606_OR_URS00006A14B6_9606_OR_URS000065DEBF_9606_OR_URS0000C8E9D4_9606_OR_URS0000233681_96_etc.fasta )
+n=$( grep -c ">" URS000013F331_9606_OR_URS00003D2CC9_9606_OR_URS000038803E_9606_OR_URS0000735371_9606_OR_URS000072E1AF_9606_OR_URS00006A14B6_9606_OR_URS000065DEBF_9606_OR_URS0000C8E9D4_9606_OR_URS0000233681_9_etc.fasta)
 num=$(( n*2 ))
-cat URS000013F331_9606_OR_URS00003D2CC9_9606_OR_URS000038803E_9606_OR_URS0000735371_9606_OR_URS000072E1AF_9606_OR_URS00006A14B6_9606_OR_URS000065DEBF_9606_OR_URS0000C8E9D4_9606_OR_URS0000233681_96_etc.fasta | awk '/^>/ {printf("\n%s\n",$1);next; } { printf("%s",$1);}  END {printf("\n");}' | tail -"$num" > curated-interaction-database.fa
+cat URS000013F331_9606_OR_URS00003D2CC9_9606_OR_URS000038803E_9606_OR_URS0000735371_9606_OR_URS000072E1AF_9606_OR_URS00006A14B6_9606_OR_URS000065DEBF_9606_OR_URS0000C8E9D4_9606_OR_URS0000233681_9_etc.fasta | awk '/^>/ {printf("\n%s\n",$1);next; } { printf("%s",$1);}  END {printf("\n");}' | tail -"$num" > curated-interaction-database.fa
 ```
 -----------------------------------------------------------------------
 
@@ -314,8 +384,20 @@ Prior to downloading the 1,000 Genomes Project (1kGP) data, the chromosome coord
 # Download UCSC hg38ToHg19.over.chain conversion file
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/liftOver/hg38ToHg19.over.chain.gz
 
+
+mkdir data/gnomad
+cd data/gnomad/
 # Download all chromosome gnomAD v3 VCF file
 curl -O https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
+#OR (235.7 GB file!)
+gsutil cp gs://gcp-public-data--gnomad/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz ./
+
+# PPG: Download all the 1000 genomes VCF files:
+ftp -i  ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
+And type "mget ALL*vcf*" 
+
+mkdir data/1000genomes
+mv ALL*vcf* data/1000genomes/
 
 ##################################
 
