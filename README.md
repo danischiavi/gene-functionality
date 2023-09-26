@@ -248,14 +248,18 @@ for file in $( ls *.bam ) ; do samtools index $file ; total=$( samtools view $fi
 ```
 
 # PPG: for indexing partially downloaded/indexed runs: 
+```
 ls *bai | perl -lane 's/.bai$//g; print' | tr "\n" "|"
 ls *bam | egrep -v 'ENCFF003XND.bam|ENCFF015GPO.bam|ENCFF018MLY.bam|ENCFF022KDS.bam|ENCFF025WMR.bam|ENCFF040ULF.bam|ENCFF044SZR.bam|ENCFF053EDJ.bam|ENCFF054ZIN.bam|ENCFF063VHB.bam|ENCFF072WPN.bam|ENCFF085BXZ.bam|ENCFF096FNU.bam|ENCFF124IFE.bam|ENCFF136HDU.bam|ENCFF139VRN.bam|ENCFF146SZI.bam|ENCFF151OFT.bam|ENCFF151ZTF.bam|ENCFF157HFY.bam|ENCFF164UED.bam|ENCFF165SZN.bam|ENCFF166EQZ.bam|ENCFF176XWZ.bam|ENCFF199BEE.bam|ENCFF227RIN.bam|ENCFF263ZZQ.bam|ENCFF265AFD.bam|ENCFF265UEF.bam|ENCFF272UGL.bam|ENCFF274DJM.bam|ENCFF276QUS.bam' | perl -lane 'print "samtools index $F[0] && total=\$( samtools view $F[0] | wc -l ) && echo \$file,\$total >> total-read-count.txt" ' | sh
 
 ls *bam | egrep -v 'ENCFF017ZWH.bam|ENCFF019KCS.bam|ENCFF023PAK.bam|ENCFF029BEL.bam|ENCFF058KEP.bam|ENCFF071GAO.bam|ENCFF090FOY.bam|ENCFF116PFD.bam|ENCFF119POR.bam|ENCFF128NQX.bam|ENCFF159QAX.bam|ENCFF164JEV.bam|ENCFF166RKD.bam|ENCFF169KJY.bam|ENCFF184YUO.bam|ENCFF196YLT.bam|ENCFF202ETQ.bam|ENCFF220CVY.bam|ENCFF224PNI.bam|ENCFF333FFK.bam|ENCFF335UAF.bam|ENCFF376UOL.bam|ENCFF403LXD.bam|ENCFF406DEH.bam|ENCFF407VTT.bam|ENCFF413CTV.bam|ENCFF422EVZ.bam|ENCFF444EKY.bam|ENCFF460PJA.bam|ENCFF491VZY.bam|ENCFF514QIL.bam|ENCFF542GSD.bam|ENCFF549UBP.bam|ENCFF559BDS.bam|ENCFF575PML.bam|ENCFF584FBF.bam|ENCFF590PJR.bam|ENCFF592AWU.bam|ENCFF595LQV.bam|ENCFF596OPC.bam|ENCFF604QYU.bam|ENCFF681WQP.bam|ENCFF687MKT.bam|ENCFF701CAC.bam|ENCFF730CJE.bam|ENCFF741AOJ.bam|ENCFF751DPV.bam|ENCFF756NWQ.bam|ENCFF778XJG.bam|ENCFF804YQY.bam|ENCFF806MFZ.bam|ENCFF811MSS.bam|ENCFF816ZAP.bam|ENCFF836WKP.bam|ENCFF840PMN.bam|ENCFF841GMR.bam|ENCFF841MML.bam|ENCFF867ROO.bam|ENCFF883NIZ.bam|ENCFF969GXB.bam|ENCFF979LYG.bam' | perl -lane 'print "samtools index $F[0] && total=\$( samtools view $F[0] | wc -l ) && echo \$file,\$total >> total-read-count.txt" '
+```
 
 -----------------------------------------------------------------------
 
 ### Genomic repeat associated features
+
+# PPG: Replace blastn with nhmmer? 
 
 Prior to using ```blastn``` to estimate the number of sequence copies in the human genome, as local blast database was created from the previously downloaded [GRCh38.p13 human genome](https://www.ncbi.nlm.nih.gov/genome/guide/human/) (Altschul et al., 1990; O’Leary et al., 2016). 
 
@@ -367,6 +371,8 @@ RNAalifold -q -f S --noPS RNA.stk
 
 ##### RNA:RNA interactions
 
+# PPG: replace with RNAup?
+
 Interaction energies were calculated using ```IntaRNA```, which were run against a interaction database containing [34 RNAcentral v15 ncRNAs](https://rnacentral.org/search?q=(URS000013F331_9606%20OR%20URS00003D2CC9_9606%20OR%20URS000038803E_9606%20OR%20URS0000735371_9606%20OR%20URS000072E1AF_9606%20OR%20URS00006A14B6_9606%20OR%20URS000065DEBF_9606%20OR%20URS0000C8E9D4_9606%20OR%20URS0000233681_9606%20OR%20URS000047B05D_9606%20OR%20URS00001A72CE_9606%20OR%20URS0000639DBE_9606%20OR%20URS00006D74B2_9606%20OR%20URS0000659172_9606%20OR%20URS000074C9DF_9606%20OR%20URS0000733374_9606%20OR%20URS000067A424_9606%20OR%20URS000007E37F_9606%20OR%20URS000034AAC2_9606%20OR%20URS0000744456_9606%20OR%20URS0000C8E9CE_9606%20OR%20URS00000F9D45_9606%20OR%20URS00006BDF17_9606%20OR%20URS00003EE995_9606%20OR%20URS00003F07BD_9606%20OR%20URS000075BAAE_9606%20OR%20URS000035C796_9606%20OR%20URS000000A142_9606%20OR%20URS000075EF5D_9606%20OR%20URS000075ADBA_9606%20OR%20URS0000443498_9606%20OR%20URS0000103047_9606%20OR%20URS00005CF03F_9606%20OR%20URS0000007D24_9606)) known to interact with a variety of RNAs (Mann et al., 2017; The RNAcentral Consortium, 2019). Default parameters ```-q``` query sequence and ```-t``` for target sequences were used for ```IntaRNA```.
 
 ```
@@ -386,6 +392,8 @@ Prior to downloading the 1,000 Genomes Project (1kGP) data, the chromosome coord
 # Download UCSC hg38ToHg19.over.chain conversion file
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/liftOver/hg38ToHg19.over.chain.gz
 
+
+# PPG: Update to Gnomad 3.1? This URL may need updating
 
 mkdir data/gnomad
 cd data/gnomad/
