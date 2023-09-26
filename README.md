@@ -143,10 +143,6 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_35/gencode.
 
 cat gencode.v34.annotation.gtf | grep "Mt_rRNA\|Mt_tRNA\|miRNA\|misc_RNA\|rRNA\|scRNA\|snRNA\|snoRNA\|ribozyme\|sRNA\|scaRNA\|lncRNA" | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > gencode-ncrna-annotation.bed
 
-```
-
-
-```
 # Sample positive and negative control sequences from the downloaded datasets:
 
 ./bin/short-ncrna-processing.sh data short-ncrnas.fasta homo_sapiens.GRCh38.bed GRCh38.p13_genome.csv uniprot-ucsc.bed gencode-ncrna-annotation.bed
