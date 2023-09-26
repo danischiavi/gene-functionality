@@ -162,6 +162,8 @@ All features were calculated using the custom script [feature-generation.sh](bin
 
 ### Sequence conservation features
 
+# PPG: Replace with Zoonomia derived scores... 
+
 The PhastCons and PhyloP scores for each sequence were extracted from the UCSC PhastCons and PhyloP 100-way bigWig files using ```bigWigSummary``` (Haeussler et al., 2019). 
 
 ```
