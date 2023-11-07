@@ -56,7 +56,7 @@ rm -rf right-intersect
 ###########################################################################################################################
 
 ######## Convert input from FASTA to CSV file for easier parsability
-[ -f $1/fasta_formatter ] && $1/fasta_formatter -i $lncrna_fasta -o $d-converted.csv -t || fasta_formatter -i $lncrna_fasta -o $d-converted.csv -t
+[ -f $dep_folder/fasta_formatter ] && $dep_folder/fasta_formatter -i $lncrna_fasta -o $d-converted.csv -t || fasta_formatter -i $lncrna_fasta -o $d-converted.csv -t
 
 ######## Obtain chromosome coordinates for each functional ncRNA
 count=1
@@ -205,14 +205,14 @@ echo
 grep -v "Start" $d-left.csv | cut -d ',' -f 1,2,3 | tr ',' ' ' | perl -lane '{print "$F[0] $F[1] $F[2]"}' | tr ' ' '\t' > $d-left-coordinates.bed
 
 ######## Uniprot filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $uniprot_bed -b $d-left-coordinates.bed > $d-left-intersect.bed || bedtools intersect -a $uniprot_bed -b $d-left-coordinates.bed > $d-left-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $uniprot_bed -b $d-left-coordinates.bed > $d-left-intersect.bed || bedtools intersect -a $uniprot_bed -b $d-left-coordinates.bed > $d-left-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat $d-left-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > $d-left-intersect
 left_count=$( cat $d-left-intersect | wc -l )
 
 ######## GENCODE filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $ncrna_bed -b $d-left-coordinates.bed > left-intersect.bed || bedtools intersect -a $ncrna_bed -b $d-left-coordinates.bed > left-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $ncrna_bed -b $d-left-coordinates.bed > left-intersect.bed || bedtools intersect -a $ncrna_bed -b $d-left-coordinates.bed > left-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat left-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > left-intersect
@@ -248,14 +248,14 @@ done
 grep -v "Start" $d-right.csv | cut -d ',' -f 1,2,3 | tr ',' ' ' | perl -lane '{print "$F[0] $F[1] $F[2]"}' | tr ' ' '\t' > $d-right-coordinates.bed
 
 ######## Uniprot filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $uniprot_bed -b $d-right-coordinates.bed > $d-right-intersect.bed || bedtools intersect -a $uniprot_bed -b $d-right-coordinates.bed > $d-right-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $uniprot_bed -b $d-right-coordinates.bed > $d-right-intersect.bed || bedtools intersect -a $uniprot_bed -b $d-right-coordinates.bed > $d-right-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat $d-right-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > $d-right-intersect
 right_count=$( cat $d-right-intersect | wc -l )
 
 ######## GENCODE filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $ncrna_bed -b $d-right-coordinates.bed > right-intersect.bed || bedtools intersect -a $ncrna_bed -b $d-right-coordinates.bed > right-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $ncrna_bed -b $d-right-coordinates.bed > right-intersect.bed || bedtools intersect -a $ncrna_bed -b $d-right-coordinates.bed > right-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat right-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > right-intersect

@@ -19,6 +19,14 @@
 
 ######## General setup
 
+#### Rename positional parameters for better readability 
+dep_folder=$1
+ref_ids=$dep_folder/$2
+genome_gff=$dep_folder/$3
+genome_csv=$dep_folder/$4
+uniprot_bed=$dep_folder/$5
+ncrna_bed=$dep_folder/$6
+
 # set -xv
 IFS=$'\n'
 d=$(date +%y%m%d) 
@@ -47,7 +55,7 @@ rm -rf true-coordinates
 ###########################################################################################################################
 
 ######## Create list of randomly selected numbers, so sequences can be selected at random. 
-max=$( cat $1/$2 | wc -l )
+max=$( cat $ref_ids | wc -l )
 shuf -i 1-$max -n $max > numbers
 count=1
 
@@ -59,9 +67,9 @@ echo ID,Functional,Chromosome,Start,End,Sequence > $d-protein-exon3-dataset.csv
 
 for line in $( cat numbers )
 do
-    id=$( sed -n "$line"p $1/$2 )  # Choose a randomly selected ID
+    id=$( sed -n "$line"p $ref_ids )  # Choose a randomly selected ID
 
-    grep "exon-$id" $1/$3 > info                  # Grep sequence information from GFF based on RefSeq ID
+    grep "exon-$id" $genome_gff > info                  # Grep sequence information from GFF based on RefSeq ID
     coords_one=$( head -1 info | cut -f 1,4,5 )   # Required to generate the upstream negative control sequences
     coords_two=$( head -2 info | tail -1 | cut -f 1,4,5 )   # Exon two coordinates
     coords_three=$( head -3 info | tail -1 | cut -f 1,4,5 ) # Exon three coordinates
@@ -102,8 +110,8 @@ do
         end_two=$( echo $coords_two | cut -f 3 )             # End position of exon two
         start_three=$( echo $coords_three | cut -f 2 )       # Start position of exon three
         end_three=$( echo $coords_three | cut -f 3 )         # End position of exon three
-        seq_two=$( grep -w "chromosome $chr" $1/$4 | cut -f 2 | cut -c$start_two-$end_two )             # Exon two sequence
-        seq_three=$( grep -w "chromosome $chr" $1/$4 | cut -f 2 | cut -c$start_three-$end_three )       # Exon three sequence
+        seq_two=$( grep -w "chromosome $chr" $genome_csv | cut -f 2 | cut -c$start_two-$end_two )             # Exon two sequence
+        seq_three=$( grep -w "chromosome $chr" $genome_csv | cut -f 2 | cut -c$start_three-$end_three )       # Exon three sequence
         end_final=$( echo $final_end | cut -f 3 )            # End position of final exon
 	
         len_two=$(( $end_two - $start_two ))                 # Length of exon two
@@ -163,8 +171,8 @@ do
 
     #Generate null sequence 20,000 upstream of sequence
     left_end=$(( $start - 20000 ))
-    left_start=$(( $left_end - $length ))
-    if [[ $left_end -lt 0 ]] || [[ $left_start -lt 0 ]] ; then left_sequence= ; else left_sequence=$( grep -w "chromosome $chromo" $1/$4 | cut -f 2 | cut -c$left_start-$left_end ) ; fi
+    left_start=$(( $left_end - $left_length ))
+    if [[ $left_end -lt 0 ]] || [[ $left_start -lt 0 ]] ; then left_sequence= ; else left_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$left_start-$left_end ) ; fi
    
     if [ -z $left_sequence ]   # If no sequence extracted, then remove.
     then
@@ -178,8 +186,8 @@ do
 
     #Generate null sequence 20,000 downstream of sequence
     right_start=$(( $end + 20000 ))
-    right_end=$(( $right_start + $length ))
-    if [[ $right_start -lt 0 ]] || [[ $right_end -lt 0 ]] ; then right_sequence= ; else right_sequence=$( grep -w "chromosome $chromo" $1/$4 | cut -f 2 | cut -c$right_start-$right_end ) ; fi
+    right_end=$(( $right_start + $right_length ))
+    if [[ $right_start -lt 0 ]] || [[ $right_end -lt 0 ]] ; then right_sequence= ; else right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$right_start-$right_end ) ; fi
     
     if [ -z $right_sequence ]     # If no sequence extracted, then remove.
     then
@@ -202,14 +210,14 @@ done
 grep -v "Start" $d-left.csv | cut -d ',' -f 1,2,3 | tr ',' ' ' | perl -lane '{print "$F[0] $F[1] $F[2]"}' | tr ' ' '\t' > $d-left-coordinates.bed
 
 ######## Uniprot filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $1/$5 -b $d-left-coordinates.bed > $d-left-intersect.bed || bedtools intersect -a $1/$5 -b $d-left-coordinates.bed > $d-left-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $uniprot_bed -b $d-left-coordinates.bed > $d-left-intersect.bed || bedtools intersect -a $uniprot_bed -b $d-left-coordinates.bed > $d-left-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat $d-left-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > $d-left-intersect
 left_count=$( cat $d-left-intersect | wc -l )
 
 ######## GENCODE filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $1/$6 -b $d-left-coordinates.bed > left-intersect.bed || bedtools intersect -a $1/$6 -b $d-left-coordinates.bed > left-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $ncrna_bed -b $d-left-coordinates.bed > left-intersect.bed || bedtools intersect -a $ncrna_bed -b $d-left-coordinates.bed > left-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat left-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > left-intersect
@@ -244,14 +252,14 @@ done
 grep -v "Start" $d-right.csv | cut -d ',' -f 1,2,3 | tr ',' ' ' | perl -lane '{print "$F[0] $F[1] $F[2]"}' | tr ' ' '\t' > $d-right-coordinates.bed
 
 ######## Uniprot filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $1/$5 -b $d-right-coordinates.bed > $d-right-intersect.bed || bedtools intersect -a $1/$5 -b $d-right-coordinates.bed > $d-right-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $uniprot_bed -b $d-right-coordinates.bed > $d-right-intersect.bed || bedtools intersect -a $uniprot_bed -b $d-right-coordinates.bed > $d-right-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat $d-right-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > $d-right-intersect
 right_count=$( cat $d-right-intersect | wc -l )
 
 ######## GENCODE filtering
-[ -f $1/bedtools ] && $1/bedtools intersect -a $1/$6 -b $d-right-coordinates.bed > right-intersect.bed || bedtools intersect -a $1/$6 -b $d-right-coordinates.bed > right-intersect.bed
+[ -f $dep_folder/bedtools ] && $dep_folder/bedtools intersect -a $ncrna_bed -b $d-right-coordinates.bed > right-intersect.bed || bedtools intersect -a $ncrna_bed -b $d-right-coordinates.bed > right-intersect.bed
 
 ######## Extract chromosome coordinates of overlapping negative control sequences
 cat right-intersect.bed | cut -f 1,2,3 | tr -d "chr" | tr '\t' ',' > right-intersect
