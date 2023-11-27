@@ -463,18 +463,18 @@ do
     ID=$( echo $line | cut -d ',' -f 1 )   # ID for calling correct VCF file
     start=$( echo $line | cut -d ',' -f 4 )  # Start position
     end=$( echo $line | cut -d ',' -f 5 )    # End position
-    len=$( calc $end-$start )   # Sequence length
+    len=$(( $end-$start ))   # Sequence length
     f="$ID-1k.vcf"
     echo "[$ID][$start][$end][$len][$f]"  >> tabix.log
     
     ######## Determine SNP frequencies for each ncRNA sequence
-    echo "$vcftools_exe --vcf VCF/$f --freq --out freq-afr &> /dev/null" >> tabix.log
+    echo "$vcftools_exe --vcf VCF/$f --freq --out freq-afr &> /dev/null" >> tabix.log  
     $vcftools_exe --vcf VCF/$f --freq --out freq-afr &> /dev/null
     
     ######## Extract each SNP at frequency observed at that position into a parsable format
     grep -v "CHROM" freq-afr.frq | cut -f 5,6 | perl -lane '{print "$F[0]:$F[1]"}' > snps.file
     total=0   # No. of SNPs observed
-    count=$(grep -v "CHROM" freq-afr.frq | wc -l)   # Maximum data available
+    
     min=0.99  # Min MAF observed
     sum=0
     for line in $(cat snps.file)
@@ -488,8 +488,8 @@ do
             snpa=$(echo $line | cut -d ':' -f 1,3 | tr ":" " " | perl -lane '{print "$F[0]"}')
             snpb=$(echo $line | cut -d ':' -f 1,3 | tr ":" " " | perl -lane '{print "$F[1]"}')
             maf=$(echo $line | cut -d ":" -f 4)
-	    sum=$sum+$maf
-            ######## If the maximum is recorded as zero, set the new values automatically as the max
+	        sum=$(echo $sum+$maf | bc )
+            ######## If the maximum is recorded as zero, set the new values automatically as the max D:???? where is max defined? 
             if (( $(echo "$max == 0" | bc -l) ))
             then
                 min=$maf
@@ -511,11 +511,11 @@ do
         density='NA'
         average='NA'
     else
-        density=$( calc $count/$len )   # SNP Density
-	average=$( calc $sum/$count )
+        density=$(echo "scale=3; $count/$len" | bc )   # SNP Density
+	    average=$(echo "scale=3; $sum/$count" | bc )
     fi
 
-    echo $count,$density,$average >> 1000g-freqsummary.csv
+    echo "$count,$density,$average" >> 1000g-freqsummary.csv
 
 done
 
@@ -556,7 +556,7 @@ do
     name='RNA'$var'-gnomad'
     start=$( echo $line | cut -d ":" -f 2 | cut -d "-" -f 1 )
     end=$( echo $line | cut -d ":" -f 2 | cut -d "-" -f 2 )
-    len=$( calc $end-$start )
+    len=$(( $end-$start ))
     
     #until
     echo Extracting $name.vcf >> tabix.log ;
@@ -567,16 +567,16 @@ do
 #    done
     
     count=$( grep -v "#" $name.vcf | wc -l )
-    density=$( calc $count/$len )
+    density=$(echo "scale=3; $count/$len" | bc)
     maf=0
         
     for snp in $( grep -v "#" $name.vcf )
     do
-        af=$( echo $snp | cut -f 8 | cut -d ';' -f 3 | tr -d "AF=" )
-        maf=$( calc $maf+$af )
+        af=$( echo $snp | cut -f 8 | cut -d ';' -f 3 | tr -d "AF=" )  #Not doing what is suppose to
+        maf=$(echo "$maf+$af" | bc )
     done
 
-    [[ "$count" -eq 0 ]] && avg_maf=NA || avg_maf=$( calc $maf/$count )
+    [[ "$count" -eq 0 ]] && avg_maf=NA || avg_maf=$(echo "scale=3; $maf/$count" | bc)
 
     [[ "$count" -eq 0 ]] && echo NA,NA,NA >> $date-gnomad.csv || echo $count,$density,$avg_maf >> gnomad.csv
 
@@ -702,16 +702,17 @@ echo RNAcode_score,RNAalifold_score > rnacode.csv
 echo MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > conservation.csv
 echo mammals_mean_gerp,mammals_max_gerp > gerp.csv
 
-for line in  $(cat coordinates)
+
+while IFS=$'\t' read -r line
 do
     echo '#####################RNA'$var'#####################' >> errors.log 
     ######## Format data for phastCons and phyloP
-        echo $line > overBed      # Input for mafFetch (Multiple Alignments)
-        echo $line | tr -d 'chr' | tr " " "\t" > input.bed    # Input for bedtools (GERP)
-        chr=$(    echo $line |               cut -d ' ' -f 1 ) # Formatting for bigWigSummary
-        chromo=$( echo $line | tr -d 'chr' | cut -d ' ' -f 1 ) # Formatting for bedtools
-        start=$(  echo $line |               cut -d ' ' -f 2 ) # Formatting for bigWigSummary
-        end=$(    echo $line |               cut -d ' ' -f 3 ) # Formatting for bigWigSummary
+    echo $line > overBed      # Input for mafFetch (Multiple Alignments)
+    echo $line | tr -d 'chr' | tr " " "\t" > input.bed    # Input for bedtools (GERP)
+    chr=$(    echo $line |               cut -d ' ' -f 1 ) # Formatting for bigWigSummary
+    chromo=$( echo $line | tr -d 'chr' | cut -d ' ' -f 1 ) # Formatting for bedtools
+    start=$(  echo $line |               cut -d ' ' -f 2 ) # Formatting for bigWigSummary
+    end=$(    echo $line |               cut -d ' ' -f 3 ) # Formatting for bigWigSummary
 
 	echo "[chr:$chr] [chromo:$chromo] [start:$start] [end:$end]" >> errors.log 
         ######## Obtain phastCons (pc) and phyloP (pp) values for each set of chromosome coordinates
@@ -744,7 +745,7 @@ do
         mean_mammal=$( echo $mammal_output | cut -f 4 )   # Mean GERP Score
         max_mammal=$( echo $mammal_output | cut -f 5 )    # Max GERP Score
 	
-        ######## Convert any missing data to NAs
+        ######## Convert any missing data to NAs    
         if [[ ! "$mean_mammal" == "." ]] ; then : ; else mean_mammal=NA ; fi
         if [[ ! "$max_mammal" == "." ]] ; then : ; else max_mammal=NA ; fi
 	
@@ -828,7 +829,7 @@ do
         rm -rf *.power
         rm -rf rnacode_output
 
-done
+done < coordinates
 
 zip -r maf maf &> /dev/null
 rm -rf maf/
@@ -849,8 +850,8 @@ while [ $count_file -le $total_rna ]
 do
         if [ -f rscapedata/RNA$count_file.cov ] && [ -s rscapedata/RNA$count_file.cov ]  # Check file exists and is not empty
         then
-            f=./rscapedata/RNA$count_file.cov
-            max=$(  grep -r 'GTp' $f       | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)  # Max covariance observed
+            file=./rscapedata/RNA$count_file.cov
+            max=$(  grep -r 'GTp' $file       | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)  # Max covariance observed
             min=$(  grep -v "#" $file      | cut -f 4 | sort -n | head -1 | tr -d '-' )  # Min covariance observed
             eval=$( grep -m 1 "$min" $file | cut -f 5 )  # E-val of min covariance
             [[ "$eval" == "no significant pairs" ]] && eval=NA   
@@ -890,19 +891,19 @@ echo InteractionMIN,InteractionAVE > interaction-intermediate.csv
 
 for seq in $( grep ">" $initial_fasta )
 do
-    grep -A 1 $seq $initial_fasta > target.fa
+    grep -A 1 $seq $initial_fasta >target.fa 
     if [ -z "$lib_directory" ]   # If Boost library didn't have to specified, run as normal.
     then
-        $IntaRNA_exe -q target.fa -t $interaction_database > intaRNA-results 2>>errors.log
+        $IntaRNA_exe -t $interaction_database -m target.fa > intaRNA-results 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)
     else
         LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -q target.fa -t $interaction_database > intaRNA-results 2>>errors.log
     fi 
     
     ######## Grab all recorded interactions
-    grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol
+    grep "energy" intaRNA-results | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol #It was: grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol --> but for me output -> energy: -5.20598 kcal/mol
 
     min=0    # Min interaction energy
-    count=$( grep -c "interaction energy" intaRNA-results )   # Number of interaction energies recorded
+    count=$( grep -c "energy" intaRNA-results )   # Number of interaction energies recorded
     sum=0    # Sum of all energies calculated, prior to averaging
 
     for number in $( cat kcal_mol )
@@ -911,9 +912,9 @@ do
         if (( $( echo "$number < $min" | bc -l ) ))
         then
             min=$number
-            sum=$( calc $sum+$number )
+            sum=$(echo "scale=3; $sum+$number" | bc)
         else
-            sum=$( calc $sum+$number )
+            sum=$(echo "scale=3; $sum+$number" | bc)
         fi
     done
 
@@ -923,7 +924,7 @@ do
         ave=NA
         min=NA
     else
-        ave=$( calc $sum/$count )
+        ave=$(echo "scale=3; $sum/$count" | bc )
     fi
 
     echo $min,$ave >> interaction-intermediate.csv
@@ -941,7 +942,7 @@ rm -rf kcal_mol
 ############################################################################################################################
 
 ######## Run blastn to identify number of matches within human genome
-echo Genome_copy_number,Genome_complete_match > copy-number.csv
+echo Genome_copy_number,Genome_complete_match > copy-number.csv #genome_complete_match??? 
 
 $blastn_exe -query $initial_fasta -db $human_genome -evalue 0.01 -out output.csv -outfmt "10 qaccver saccver pident" >/dev/null 2>>errors.log
 
@@ -950,7 +951,7 @@ count_file=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 while [ $count_file -le $total_rna ]
 do
     ######## Process each RNA in the file (by ID) as the counter increases
-    grep "RNA$count_file" output.csv > results
+    grep -w "RNA$count_file" output.csv > results  
     total=$(cat results | wc -l)
     [ -z "$total" ] && echo NA >> copy-number.csv || echo $total >> copy-number.csv
     count_file=$(( $count_file + 1 ))
@@ -982,26 +983,24 @@ paste <( cut -f 1,2,3,7 dfam_downstream.bed ) <( cut -f 7 dfam_upstream.bed ) --
 ######## Calculate sum of upstream and downstream, and combine into one file
 echo Chromosome,Start,End,Dfam_min,Dfam_sum > dfam-distance.csv
 
-for line in $( cat dfam_combined.bed )
+while IFS=$'\t' read -r chr start end downstream upstream
 do
-    chr=$( echo $line | cut -f 1 | cut -c 4- )
-    start=$( echo $line | cut -f 2 )
-    end=$( echo $line | cut -f 3 )
-    downstream=$( echo $line | cut -f 4 )
-    upstream=$( echo $line | cut -f 5 | tr -d '-' )
+    chr_numb=$( echo "$chr" | cut -c 4- )
+    upstream=$( echo "$upstream" | tr -d '-' )
     [ -z "$downstream" ] && downstream=0    # Implies that no region up or downstream, rather than data missing.
     [ -z "$upstream" ] && upstream=0 
-    sum=$( calc $downstream+$upstream )
-    if [[ $upstream -lt $downstream ]]    # Taking into account forward and reverse strand
+    sum=$(( $downstream+$upstream ))
+    if [[ "$upstream" -lt "$downstream" ]]    # Taking into account forward and reverse strand
     then
         echo $chr,$start,$end,$upstream,$sum >> dfam-distance.csv
-    elif [[ $downstream -lt $upstream ]]
+    elif [[ "$downstream" -lt "$upstream" ]]
     then
         echo $chr,$start,$end,$downstream,$sum >> dfam-distance.csv
     else
-        echo $chr,$start,$end,$downstream,$sum >> dfam-distance.csv
+        echo $chr,$start,$end,$downstream,$sum >> dfam-distance.csv #??? is it necessary? 
     fi
-done
+
+done < dfam_combined.bed
 
 mv dfam_downstream.bed additional-output/
 mv dfam_upstream.bed additional-output/
@@ -1173,11 +1172,13 @@ rm -rf sequence
 
 echo MFE > MFE.csv
 
-$RNAfold_exe --outfile=rnafold-output $initial_fasta >/dev/null 2>>errors.log
+$RNAfold_exe < $initial_fasta >> rnafold-output 2>>errors.log
 
 grep "(" rnafold-output | rev | cut -d "(" -f 1 | rev | tr -d ")" | tr -d " " >> MFE.csv
 awk '!NF{$0="0"}1' MFE.csv > MFE-final.csv
 rm -rf *.ps
+rm -rf MFE.csv 
+
 
 ######## Accessibility calculation
 
@@ -1203,11 +1204,10 @@ done
 
 sed -i 's/nan/NA/g' access.csv  # make NA readable by R
 
-rm -rf MFE.csv
 
 ######## Fickett score calculation (python script so cannot be added to $PATH)
 
-python2 $cpc2_directory/CPC2.py -i $initial_fasta -o output >/dev/null 2>>errors.log    # Original version
+python2 $cpc2_directory/CPC2.py -i $initial_fasta -o output.txt >/dev/null 2>>errors.log    # Original version
 #python3 $cpc2_directory/CPC2.py -i $initial_fasta -o output >/dev/null 2>>errors.log   # Uses updated biopython packages
 cat output.txt | cut -f 4 > CPC2.csv
 rm -rf output.txt
