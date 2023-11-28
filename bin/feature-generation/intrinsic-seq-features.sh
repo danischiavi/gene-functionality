@@ -18,8 +18,8 @@ initial_data=$1-dataset.csv
 echo GC_percentage > GC.csv 
 
 {
-    read
-    while IFS=, read -r _ _ _ _ _ seq 
+    read                                                     #skip .csv header 
+    while IFS=, read -r _ _ _ _ _ seq                        #6th field .csv: sequence
     do
         G_cont=$( echo "$seq" | grep -o "G\|g" | wc -l )
         C_cont=$( echo "$seq" | grep -o "C\|c" | wc -l )
