@@ -543,7 +543,7 @@ max=$( tail -1 $initial_data | cut -d ',' -f 1 | tr -d RNA )
 var=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 count=1
 
-######## Reformat chromosome coordinates for to obtain hg19 coordinates
+######## Reformat chromosome coordinates for to obtain hg19 coordinates #D:??? initial data is in hg38 coordinates... 
 grep -v 'Chromosome' $initial_data | cut -d ',' -f 3,4,5 | tr ',' ' ' | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' > coordinates
 
 ######## Headers
@@ -572,8 +572,9 @@ do
         
     for snp in $( grep -v "#" $name.vcf )
     do
-        af=$( echo $snp | cut -f 8 | cut -d ';' -f 3 | tr -d "AF=" )  #Not doing what is suppose to
-        maf=$(echo "$maf+$af" | bc )
+        af=$( echo $snp | cut -f 8 | cut -d ';' -f 3 | tr -d "AF=" ) >> af.txt #Not doing what is suppose to
+        af_decimal=$(printf "%.10f" "$af")                              #from scientific annotation to decimal for bc (check smallest maf in database)
+        maf=$(echo "$maf+$af_decimal" | bc )
     done
 
     [[ "$count" -eq 0 ]] && avg_maf=NA || avg_maf=$(echo "scale=3; $maf/$count" | bc)
@@ -1083,7 +1084,7 @@ fi
 
 run_encode() {
 
-name=$2
+name=$2 
 
 echo RPKM_$name,MRD_$name > $name-rnaseq.csv
 
@@ -1096,7 +1097,7 @@ do
     ######## Determine sequence length
     start=$( echo $line | cut -d ':' -f 2 | cut -d '-' -f 1 )
     end=$( echo $line | cut -d ':' -f 2 | cut -d '-' -f 2 )
-    length=$(calc $end-$start)
+    length=$( calc $end-$start )
     length_kb=$( calc $length/1000 )  # Convert to Kb
 
     ######## Record RPKM and MRD across all RNAseq files

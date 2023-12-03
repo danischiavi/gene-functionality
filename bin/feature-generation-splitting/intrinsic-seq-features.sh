@@ -7,13 +7,11 @@
 # Input: $1 is the file identifier for the dataset. Eg: 200702-functional-ncrna
 #        
 #
+########################################################################################################################### 
+
+# GC% calculation
+
 ###########################################################################################################################
-
-######## General setup
-
-initial_data=$1-dataset.csv  
-
-######## GC% calculation
 
 echo GC_percentage > GC.csv 
 
@@ -34,7 +32,7 @@ echo GC_percentage > GC.csv
             GC=0
             percentage=NA
         else
-            GC=$( echo "scale=2; $GC_count/$total" | bc )  #Check standard digits  
+            GC=$( echo "scale=2; $GC_count/$total" | bc )  #D:Check standard digits?
             percentage=$( echo "$GC*100" | bc )
         fi
 

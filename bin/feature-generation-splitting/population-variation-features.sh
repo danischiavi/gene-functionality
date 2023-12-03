@@ -14,10 +14,10 @@
 
 ############################################################################################################################
 
-#### Variable declarations
 initial_data=$1
 additional_folder=$2 
 
+####Checks 
 
 ##vcftools
 if find $additional_folder/ -executable -type f | grep -q vcftools #maybe this could be in the runall script? 
@@ -31,12 +31,10 @@ else
     #exit 1
 fi
 
-
 ## to alter count according to what number the RNA IDs start at
 initial_max=$( tail -1 $initial_data | cut -d ',' -f 1 | tr -d RNA )
 initial_var=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 initial_count=1
-
 
 ## tabix
 if find $additional_folder/ -executable -type f | grep -q tabix
@@ -50,7 +48,6 @@ else
     exit 1
 fi
 
-
 ## gnomAD VCF file
 
 if [ -f $additional_folder/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz ] 
@@ -62,29 +59,19 @@ al_folder/$i ; echo ; done
 fi
 
 
-
 #### File creation 
 echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > 1000g-freqsummary.csv
 echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > gnomad.csv
 
-######## Reformat chromosome coordinates for to obtain hg19 coordinates
-grep -v 'Chromosome' $initial_data | cut -d ',' -f 3,4,5 | tr ',' '\t' > coordinates
-grep -v 'Chromosome' $initial_data | cut -d ',' -f 1 > id
-paste -d '\t' coordinates id > input.bed
 
 ######## Convert coordinates to hg19 genome version
-echo "$liftOver_exe input.bed $chain_file output.bed unlifted.bed &> /dev/null" >> errors.log
+echo "$liftOver_exe coordinates-rnaid.bed $chain_file output.bed unlifted.bed &> /dev/null" >> errors.log
 $liftOver_exe input.bed $chain_file output.bed unlifted.bed &> /dev/null
 
 
 ###########################################################################################################################
 
-#Obtain VCF Files from 1kGP 
-
-### 
-
-rm -rf coordinates
-
+#### Obtain VCF Files from 1kGP 
 max="$initial_max"
 var="$initial_var"
 count="$initial_count"
@@ -211,12 +198,15 @@ VCF2summary() {
 
 }
 
+############################################################################################################################
 
-######## Loop through VCF files to calculate features
+# Calculate features from 1kGP
+
+############################################################################################################################
 
 {
     read
-    while IFS=, read -r id _ _ start end seq        
+    while IFS=, read -r id _ _ start end seq        # Loop through VCF files
     do
         len=$(( $end-$start ))   # Sequence length
         f="$id-1k.vcf"
@@ -233,11 +223,12 @@ VCF2summary() {
 } < $initial_data   #would be better to loop through coordinates file? 
 
 
+
 ############################################################################################################################
 
-# Obtain VCF Files from gnomAD.
+# Obtain VCF Files from gnomAD and calculate features
 
-###
+############################################################################################################################
 
 ### Variables 
 max="$initial_max"
