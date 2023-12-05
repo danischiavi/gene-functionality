@@ -68,10 +68,10 @@ do
     then
         meta=$( grep -m 1 $ID $1/$3 )
         chr=$( echo $meta | cut -f 1 )
-        start=$( echo $meta | cut -f 2 )
+        true_start=$( echo $meta | cut -f 2 )
         true_end=$( echo $meta | cut -f 3 )
         len=$( echo $meta | cut -f 11 | cut -d ',' -f 1 )
-        end=$(( $start + $len ))
+        end=$(( $true_start + $len ))
         exon_count=$( echo $meta | cut -f 10 )
 
         if [ -z $sequence ]   # If no sequence available for lncRNA, remove
