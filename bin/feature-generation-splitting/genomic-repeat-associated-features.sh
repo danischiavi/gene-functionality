@@ -48,10 +48,33 @@ else
     exit 1
 fi
 
+######## bedtools
+
+if find $additional_folder/ -executable -type f | grep -q bedtools
+then
+    bedtools_exe=$additional_folder/bedtools
+elif command -v bedtools &> /dev/null
+then
+    bedtools_exe=bedtools
+else
+    echo Please check that bedtools is installed.
+    exit 1
+fi
+
+
+######## Local bedfile of Dfam hits for bedtools
+
+if [ -f $additional_folder/dfam-hg38-sorted.bed ]        
+then
+    dfam_hits=$additional_folder/dfam-hg38-sorted.bed
+else
+    until [ -f $dfam_hits ] ; do read -p "Please enter custom name of Dfam non-redundant hits (bed): " d ; dfam_hits=$additional_folder/$d ; echo ; done
+fi
+
 
 #### File generation
-echo Genome_copy_number,Genome_complete_match > copy-number.csv
-echo Chromosome,Start,End,Dfam_min,Dfam_sum > dfam-distance.csv
+echo Genome_copy_number,Genome_complete_match > ./data/copy-number.csv
+echo Chromosome,Start,End,Dfam_min,Dfam_sum > ./data/dfam-distance.csv
 
 ############################################################################################################################
 
@@ -87,12 +110,12 @@ rm -rf sequences
 ############################################################################################################################
 
 ######## Upstrean hits
-$bedtools_exe closest -a sorted-coordinates.bed -b $dfam_hits -io -D ref -iu > dfam_downstream.bed 2>>errors.log
+$bedtools_exe closest -a ./data/sorted-coordinates.bed -b $dfam_hits -io -D ref -iu > ./data/dfam_downstream.bed 2>>errors.log
 
 ######## Downstream hits
-$bedtools_exe closest -a sorted-coordinates.bed -b $dfam_hits -io -D ref -id > dfam_upstream.bed 2>>errors.log
+$bedtools_exe closest -a ./data/sorted-coordinates.bed -b $dfam_hits -io -D ref -id > ./data/dfam_upstream.bed 2>>errors.log
 
-paste <( cut -f 1,2,3,7 dfam_downstream.bed ) <( cut -f 7 dfam_upstream.bed ) --delimiters '\t' > dfam_combined.bed
+paste <( cut -f 1,2,3,7 ./data/dfam_downstream.bed ) <( cut -f 7 ./data/dfam_upstream.bed ) --delimiters '\t' > dfam_combined.bed
 
 
 ######## Calculate sum of upstream and downstream, and combine into one file
@@ -105,16 +128,48 @@ do
     sum=$(( $downstream+$upstream ))
     if [[ "$upstream" -lt "$downstream" ]]    # Taking into account forward and reverse strand
     then
-        echo $chr,$start,$end,$upstream,$sum >> dfam-distance.csv
-    elif [[ "$downstream" -lt "$upstream" ]]
-    then
-        echo $chr,$start,$end,$downstream,$sum >> dfam-distance.csv
+        echo $chr,$start,$end,$upstream,$sum >> ./data/dfam-distance.csv
     else
-        echo $chr,$start,$end,$downstream,$sum >> dfam-distance.csv #??? is it necessary? 
+        echo $chr,$start,$end,$downstream,$sum >> ./data/dfam-distance.csv #??? is it necessary? 
     fi
 
-done < dfam_combined.bed
+done < ./data/dfam_combined.bed
 
 mv dfam_downstream.bed additional-output/
 mv dfam_upstream.bed additional-output/
 rm -rf dfam_combined.bed
+
+
+######## Function for matching up dfam-distance to ncRNA in R (bedtools is unordered)
+
+reformat_dfam() {
+
+R --save << RSCRIPT
+df1 <- read.csv("file1.csv", stringsAsFactors=F)
+df2 <- read.csv("file2.csv", stringsAsFactors=F)
+for(i in 1:nrow(df2)){
+        index <- grep(df2[i, 2], df1[,4])
+        df1[index,'snp_num'] <- df2[i,4]
+        df1[index,'snp_ave'] <- df2[i,5]
+}
+write.csv(df1, "file3.csv", quote=F, row.names=F)
+RSCRIPT
+
+}
+
+######## Reorder dfam-distance data
+cat $initial_data > file1.csv
+cat dfam-distance.csv > file2.csv
+reformat_dfam >/dev/null 2>>errors.log
+cat file3.csv | cut -d ',' -f 7,8 > ncrna-dfam-distance.csv
+
+rm -rf dfam-distance.csv
+rm -rf rnacentraloutput_FINAL_sorted1.bed
+rm -rf rnacentraloutput_FINAL.bed
+rm -rf rnacentraloutput_FINAL_sorted.bed
+rm -rf file1.csv
+rm -rf file2.csv
+rm -rf file3.csv
+
+mv snp-intersection.bed additional-output/
+mv snp-intersection-average.csv additional-output/

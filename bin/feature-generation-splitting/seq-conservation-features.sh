@@ -16,9 +16,6 @@
 
 ###########################################################################################################################
 
-coordinates=$1
-additional_folder=$2
-
 ####Checks 
 
 ## bigWigSummary
@@ -62,6 +59,18 @@ else
 $additional_folder/$mammal ; echo ; done
 fi
 
+######## bedtools
+
+if find $additional_folder/ -executable -type f | grep -q bedtools
+then
+    bedtools_exe=$additional_folder/bedtools
+elif command -v bedtools &> /dev/null
+then
+    bedtools_exe=bedtools
+else
+    echo Please check that bedtools is installed.
+    exit 1
+fi
 
 ############################################################################################################################
 
@@ -69,8 +78,10 @@ fi
 
 ############################################################################################################################
 
-echo MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > conservation.csv
-echo mammals_mean_gerp,mammals_max_gerp > gerp.csv
+echo MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > ./data/conservation.csv
+echo mammals_mean_gerp,mammals_max_gerp > ./data/gerp.csv
+
+var="$first_rna_id"
 
 while IFS=$'\t' read -r chr start end
 do
@@ -101,7 +112,7 @@ do
         test_mxc=$( echo $max_pc | wc -w )
         if [[ "$test_mxc" -eq "1" ]] ; then : ; else max_pc=NA ; fi
 	
-    echo $mean_pp,$max_pp,$mean_pc,$max_pc >> conservation.csv
+    echo $mean_pp,$max_pp,$mean_pc,$max_pc >> ./data/conservation.csv
 
     ######## Obtain GERP Scores for each set of chromosome coordinates
 	#need to strip "chr" from input.bed & from "gerp$chr.bed.gz"
@@ -114,7 +125,7 @@ do
     if [[ ! "$mean_mammal" == "." ]] ; then : ; else mean_mammal=NA ; fi
     if [[ ! "$max_mammal" == "." ]] ; then : ; else max_mammal=NA ; fi
 	
-    echo $mean_mammal,$max_mammal >> gerp.csv
+    echo $mean_mammal,$max_mammal >> ./data/gerp.csv
  
 	
 	mkdir -p aliout
@@ -138,7 +149,7 @@ do
         rm -rf *.power
         rm -rf rnacode_output
 
-done < coordinates
+done < ./data/coordinates
 
 zip -r maf maf &> /dev/null
 rm -rf maf/

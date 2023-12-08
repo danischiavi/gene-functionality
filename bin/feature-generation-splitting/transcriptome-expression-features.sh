@@ -16,10 +16,6 @@
 
 ############################################################################################################################
 
-locations=$1
-additional_folder=$2
-
-
 #### Checks 
 
 ## samtools
@@ -70,7 +66,7 @@ fi
 
 run_encode() {
 
-name=$2 
+name=$dep_folder 
 
 echo RPKM_$name,MRD_$name > $name-rnaseq.csv
 

@@ -19,7 +19,24 @@
 
 ############################################################################################################################
 
-#### Variable declarations
+#set -xv
+IFS=$'\n'
+date=$(date +%y%m%d)
+
+######## Function for calculation with float numbers
+
+calc() { awk "BEGIN{print $*}"; }
+
+
+######## Delete previous log files
+
+rm -rf tabix.log
+rm -rf errors.log
+
+
+#### Global variables 
+
+######## CSV and FASTA for initial data
 initial_data=$1-dataset.csv 
 initial_fasta=$1-seq.fa 
 
@@ -31,20 +48,33 @@ else
     :
 fi
 
-additional_folder=$2 
-if [ ! -d $additional_folder/ ]
-then
-    echo "Folder with required local databases does not exist."
+
+######## Folder with local databases and version specific executables
+#additional_folder=$2  # is the best way to organize the project? 
+#if [ ! -d $additional_folder/ ]
+#then
+#    echo "Folder with required local databases does not exist."
     #exit 1
-else
-    :
-fi
+#else
+#    :
+#fi
+
+last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+first_rna_id=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+
+
+######## Create folder for files generated
+
+[ -d results/"$date"/ ] && rm -rf results/"$date"/* || mkdir -p results/"$date"/
+echo
+
+
 
 #### Reformat initial dataset
-awk -F',' 'NR > 1 {print $3, $4, $5}' $initial_data > coordinates
+awk -F',' 'NR > 1 {print $3, $4, $5}' $initial_data > ./data/coordinates  # for mafFetch
 awk -F',' 'NR > 1 {print $3":"$4"-"$5}' $initial_data > locations
-awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' "$initial_data" | sort -k1,1 -k2,2n > sorted-coordinates.bed
-awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > coordinates-rnaid.bed
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' "$initial_data" | sort -k1,1 -k2,2n > ./data/sorted-coordinates.bed # for bedtools
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > ./data/hg38-coordinates.bed # for VFC 1kGP files
 
 
 ############################################################################################################################
@@ -53,20 +83,17 @@ awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > coordinates-rn
 
 ############################################################################################################################
 
-#do I have to add the files as variables for the scripts? 
+./intrinsic-seq-features.sh 
 
-./intrinsic-seq-features.sh $initial_data
+./seq-conservation-features.sh 
 
-./seq-conservation-features.sh coordinates $additional_folder #with $ or without? 
+./transcriptome-expression-features.sh 
 
-./transcriptome-expression-features.sh locations $additional_folder
+./genomic-repeat-associated-features.sh 
 
-./genomic-repeat-associated-features.sh $initial_data $initial_fasta sorted-coordinates.bed $additional_folder
+./protein-and-rna-specific-features.sh
 
-./protein-and-rna-specific-features.sh xxx
-
-./population-variation-features.sh coordinates-rnaid.bed $initial_data $additional_folder 
-
+./population-variation-features.sh 
 
 ############################################################################################################################
 

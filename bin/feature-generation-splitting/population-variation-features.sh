@@ -14,9 +14,6 @@
 
 ############################################################################################################################
 
-initial_data=$1
-additional_folder=$2 
-
 ####Checks 
 
 ##vcftools
@@ -30,11 +27,6 @@ else
     echo Please check that vcftools is installed.
     #exit 1
 fi
-
-## to alter count according to what number the RNA IDs start at
-initial_max=$( tail -1 $initial_data | cut -d ',' -f 1 | tr -d RNA )
-initial_var=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
-initial_count=1
 
 ## tabix
 if find $additional_folder/ -executable -type f | grep -q tabix
@@ -58,36 +50,69 @@ else
 al_folder/$i ; echo ; done
 fi
 
+######## Conversion file for changing coordinates between hg19 and hg38 for liftOver
+
+if [ -f $additional_folder/hg38ToHg19.over.chain ]
+then
+    chain_file=$additional_folder/hg38ToHg19.over.chain
+else
+    until [ -f $chain_file ] ; do read -p "Please enter custom name of coordinates file for converting between hg38 and Hg19 genome versions (chain): " chain ; chain_file=$additional_file/$chain ; echo ; done
+fi
+
+######## liftOver
+
+if find $additional_folder/ -executable -type f | grep -q liftOver
+then
+    liftOver_exe=$additional_folder/liftOver
+elif command -v liftOver &> /dev/null
+then
+    liftOver_exe=liftOver
+else
+    echo Please check that liftOver is installed.
+    exit 1
+fi
+
+######## tabix
+
+if find $additional_folder/ -executable -type f | grep -q tabix
+then
+    tabix_exe=$additional_folder/tabix
+elif command -v tabix &> /dev/null
+then
+    tabix_exe=tabix
+else
+    echo Please check that tabix is installed.
+    exit 1
+fi
+
 
 #### File creation 
-echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > 1000g-freqsummary.csv
-echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > gnomad.csv
+echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > ./data/1000g-freqsummary.csv
+echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > ./data/gnomad.csv
 
 
 ######## Convert coordinates to hg19 genome version
-echo "$liftOver_exe coordinates-rnaid.bed $chain_file output.bed unlifted.bed &> /dev/null" >> errors.log
-$liftOver_exe input.bed $chain_file output.bed unlifted.bed &> /dev/null
-
+echo "$liftOver_exe ./data/hg38-coordinates.bed $chain_file .data/hg19-coordinates.bed ./data/unlifted.bed &> /dev/null" >> errors.log
+$liftOver_exe ./data/hg38-coordinates.bed $chain_file ./data/hg19-coordinates.bed ./data/unlifted.bed &> /dev/null
 
 ###########################################################################################################################
 
 #### Obtain VCF Files from 1kGP 
-max="$initial_max"
-var="$initial_var"
-count="$initial_count"
+max="$last_rna_id"
+var="$first_rna_id"
 
 ######## If available, unzip previously downloaded VCF files
 if [ -f VCF.zip ]
 then
     unzip VCF.zip &> /dev/null
 else
-    mkdir -p VCF
+    mkdir -p ./data/VCF
     
-    ######## Downloaded VCF files according to hg19 chromosome coordinates
+    ######## Download VCF files according to hg19 chromosome coordinates
     while [ $var -le $max ]
     do
         ######## Grab the coordinates for each RNA as the counter increases
-        line=$( grep -w "RNA$var" output.bed | cut -f 1,2,3 | tr '\t' ' ' | tr -d "chr" | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' )
+        line=$( grep -w "RNA$var" .data/hg19-coordinates.bed | cut -f 1,2,3 | tr '\t' ' ' | tr -d "chr" | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' )
         
         ######## If previous coordinate was associated with an annoated chromosome, use hg38 coordinates
         if [ -z $line ] || [[ $line == *"Un_"* ]]
@@ -131,18 +156,17 @@ else
         fi                                                                            
 
         ######## Move VCF so it doesn't need to be redownloaded.
-        mv $name.vcf VCF/
-        var=$((var+1))
+        mv $name.vcf data/VCF/
+        (( var++ ))
         rm -rf text.file
-        count=$(( $count + 1 ))
+        
     done
 fi
 
 ######## Remove excess files
-rm -rf output.bed
-rm -rf input.bed
-rm -rf unlifted.bed
-
+rm -rf ./data/hg19-coordinated.bed
+# rm -rf ./data/hg38-coordinates.bed
+rm -rf ./data/unlifted.bed
 
 
 ##### Function declarations
@@ -216,7 +240,7 @@ VCF2summary() {
 
         VCF2summary "$vcftools_exe" "$input_vcf" "$output_prefix" "$len"
 
-        echo "$count,$density,$average" >> 1000g-freqsummary.csv
+        echo "$count,$density,$average" >> ./data/processed/1000g-freqsummary.csv
     
     done
    
@@ -231,15 +255,15 @@ VCF2summary() {
 ############################################################################################################################
 
 ### Variables 
-max="$initial_max"
-var="$initial_var"
+max="$last_rna_id"
+var="$first_rna_id"
 count="$intial_count"
 
 {
     read
     while IFS='/t' read -r id start end
     do
-        len=$(( $end-$start ))   # Sequence length
+        len=$(( $end-$start ))   
         name='RNA'$var'-gnomad'
         tabix_input=$id':'$start'-'$end
 
@@ -263,13 +287,18 @@ count="$intial_count"
 
     [[ "$count" -eq 0 ]] && avg_maf=NA || avg_maf=$(echo "scale=3; $maf/$count" | bc)
 
-    [[ "$count" -eq 0 ]] && echo NA,NA,NA >> $date-gnomad.csv || echo $count,$density,$avg_maf >> gnomad.csv
+    [[ "$count" -eq 0 ]] && echo NA,NA,NA >> gnomad.csv || echo $count,$density,$avg_maf >> gnomad.csv
 
     #rm -rf $name.vcf
-    var=$((var+1))
+    (( var++ )) 
 
-    mv $name.vcf VCF/
+    mv $name.vcf .data/VCF/
     
     done
    
-} < $coordinates
+} < ./data/coordinates
+
+
+######## Zip VCF files for further analyses
+zip -r VCF VCF &> /dev/null
+rm -rf VCF/
