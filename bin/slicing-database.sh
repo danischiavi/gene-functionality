@@ -43,7 +43,7 @@ calc() { awk "BEGIN{print $*}"; }
 file_creation() {
 
     local name=$1
-    echo "ID,Functional,Chromosome,Start,End,Sequence" > $name-dataset.csv
+    echo "ID,Functional,Chromosome,Start,End,Sequence" > ./data/$name-dataset.csv
 }
 
 names=("protein-exon2" "protein-exon3" "functional-lncrna-exon2" "functional-lncrna-exon3" "functional-short-ncrna")
@@ -189,21 +189,18 @@ done
 
 gff2Info() {
 
-    local info=$1
+    local exons=$1
     local genome_csv=$2
-    
 
-    coords_one=$(   awk 'NR==1 {print $1, $4, $5}' info)       # Required to generate the upstream negative control sequences
-    coords_two=$(   awk 'NR==2 {print $1, $4, $5}' info)       # Exon two coordinates
-    coords_three=$( awk 'NR==3 {print $1, $4, $5}' info)       # Exon three coordinates
-    final_end=$(tail -1 info | awk '{print $1, $4, $5}')       # Required to generate the downstream negative control sequences
+    coords_one=$(   awk 'NR==1 {print $1, $4, $5}' "$exons")       # Required to generate the upstream negative control sequences
+    coords_two=$(   awk 'NR==2 {print $1, $4, $5}' "$exons")       # Exon two coordinates
+    coords_three=$( awk 'NR==3 {print $1, $4, $5}' "$exons")       # Exon three coordinates
+    final_end=$(tail -1 "$exons" | awk '{print $1, $4, $5}')       # Required to generate the downstream negative control sequences
 
     chr=$( echo $coords_one | cut -d ' ' -f 1 | tr -d "NC_" | cut -d '.' -f 1 | cut -c5,6 )   # Chromosome variable
     test=$( echo $chr | cut -c1 )   # Records any zeros in the chromosome variable
     other=$( echo $chr | cut -c2 )  # If zero is in chromosome variable, only record the single digit (ie: 01 becomes 1).
     mt_test=$( echo $coords_one | cut -d ' ' -f 1 )   # Variable to check if gene is located on the mitochondrial genome.
-    
-    echo "1"
 
      # Reformat chr variable
     if [ -z "$chr" ]  # If chromosome variable empty (genes/mRNA that have been removed), then rename to allow it to be filtered out.
@@ -221,7 +218,7 @@ gff2Info() {
     else
         :
     fi
-    echo "2"
+
     # Process exon data to create a dataset
     if [ "$chr" -le "22" ] || [[ "$chr" == "X" ]]   
     then
@@ -235,30 +232,29 @@ gff2Info() {
 	
         len_two=$(( $end_two - $start_two ))                                                                    # Length of exons
         len_three=$(( $end_three - $start_three ))          
-        echo "3"
-        # Included sequence must have a least 4 exons and not contained any unknown nucleotides (N)
+    
+        # Exclude empty and with any unknown nucleotides (N) sequences
         if [ ! -z "$seq_two" ] && [ ! -z "$seq_three" ] && [[ "$seq_two" != *"N"* ]] && [[ "$seq_three" != *"N"* ]]
         then
-            echo "5"
-	    # Exclude sequences out of length limit 
+       
+	    # Exclude sequences out of length limits 
 	        if [ "$len_two" -ge "$lower_limit" ] && [ "$len_two" -le "$upper_limit" ] || [ "$len_three" -ge "$lower_limit" ] && [ "$len_three" -le "$upper_limit" ] 
 	        then
-                echo "6"
+               
                 ((pi_count++))
-                echo RNA$pi_count,Yes,chr$chr,$start_two,$end_two,$seq_two >> protein-exon2-dataset.csv
-                echo RNA$pi_count,Yes,chr$chr,$start_three,$end_three,$seq_three >> protein-exon3-dataset.csv
+                echo RNA$pi_count,Yes,chr$chr,$start_two,$end_two,$seq_two >> ./data/protein-exon2-dataset.csv
+                echo RNA$pi_count,Yes,chr$chr,$start_three,$end_three,$seq_three >> ./data/protein-exon3-dataset.csv
+    
+                if [ "$start_one" -gt "$end_final" ]   # Reverse transcripts can alter order of start/end positions
+                then
+		            # File to generate negative control sequences that are the same length as exons two and three
+                    echo chr$chr,$end_final,$start_one,$len_two,$len_three >> ./data/coords-for-negative-control.csv
+                else
+                    echo chr$chr,$start_one,$end_final,$len_two,$len_three >> ./data/coords-for-negative-control.csv
+                fi
             else
                 :
             fi 
-            
-            if [ "$start_one" -gt "$end_final" ]   # Reverse transcripts can alter order of start/end positions
-            then
-                echo "7"
-		    # True coordinates file is used to generate negative control sequences that are the same length as exons two and three
-                echo chr$chr,$end_final,$start_one,$len_two,$len_three >> true-coordinates
-            else
-                echo chr$chr,$start_one,$end_final,$len_two,$len_three >> true-coordinates
-            fi
         else
             :
 	    fi
@@ -269,9 +265,14 @@ gff2Info() {
 
 ## Pi coding rna
 
+pi_count=0
+
 while IFS= read -r id
 do
-    grep "exon-$id" "$genome_gff" > info    # Grep sequence information from GFF based on RefSeq ID
-    gff2Info info "$genome_csv"
-
+    grep "exon-$id" "$genome_gff" > ./data/exons        # Grep sequence information from GFF based on RefSeq ID
+    if [ "$(wc -l < ./data/exons)" -ge 4 ]; then        # At least 4 exons 
+    gff2Info ./data/exons "$genome_csv"
+    else
+        :
+    fi
 done < "$ids_HGNC"
