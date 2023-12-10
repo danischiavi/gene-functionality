@@ -62,6 +62,23 @@ fi
 last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 first_rna_id=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 
+#### 
+lncrna_fasta="$1"
+short_ncrna_fasta="$2"
+chr_coord_ncrna="$3"
+ids_HGNC="$4"
+genome_gff="$5"
+genome_csv="$6"
+
+# Input:
+#        $1 is the downloaded fasta file from RNAcentral containing the lncRNAs. 
+#        $2 is the downloaded fasta file from RNAcentral containing the short-ncRNAs.
+#        $3 is the downloaded chromosome coordinates file from RNAcentral for all ncRNAs in the database. Eg: Homo_sapiens.GRCh38.bed
+#        $4 is the text file containing RefSeq IDs from HGNC
+#        $5 is the GFF file for the downloaded human genome Eg: GCF_000001405.39_GRCh38.p13_genomic.gff
+#        $6 is the converted CSV file of the human genome. Eg: GRCh38.p13_genome.csv
+##### 
+
 
 ######## Create folder for files generated
 
