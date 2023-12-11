@@ -1,0 +1,31 @@
+
+# Function to get coordinates for exons required to generate the lncRNA dataset and negative control 
+# It does not work yet: error bash: relative_start_2=0,1769: command not found
+
+get_exon_coords() {             # Gets exon starting and end coordinates for lncRNA from RNAcentral ncRNA coordinates ($meta)
+    
+    local exon=$1
+
+    relative_start_"$exon"=$(echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon="$exon" -F',' '{print $exon}')   # Position relative to Start (bed format) for exons
+    start_"$exon"=$(( $seq_start + $relative_start_"$exon" + 1 ))                                       # +1 to account for the first relative start pos being 0
+    end_"$exon"=$(( $start_"$exon" + $len_"$exon" ))
+
+ }  
+
+exons=("1" "2" "3" "$exon_count") 
+for exon in "${exons[@]}"; do
+    get_exon_coords "$exon"
+done
+
+
+
+
+######## Folder with local databases and version specific executables
+#additional_folder=$2  # is the best way to organize the project? 
+#if [ ! -d $additional_folder/ ]
+#then
+#    echo "Folder with required local databases does not exist."
+    #exit 1
+#else
+#    :
+#fi

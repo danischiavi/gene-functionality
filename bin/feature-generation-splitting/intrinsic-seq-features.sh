@@ -4,20 +4,17 @@
 #
 # Description: This script calculates intrinsic sequence feature GC% 
 #
-# Input: $1 is the file identifier for the dataset. Eg: 200702-functional-ncrna
-#        
-#
 ########################################################################################################################### 
 
 # GC% calculation
 
 ###########################################################################################################################
 
-echo GC_percentage > GC.csv 
+echo GC_percentage > ./data/$name_dataset-GC.csv            # Global variable defined in runall.sh for dataset name  
 
 {
-    read                                                     #skip .csv header 
-    while IFS=, read -r _ _ _ _ _ seq                        #6th field .csv: sequence
+    read                                                    #skips .csv header 
+    while IFS=, read -r _ _ _ _ _ seq                       #6th field .csv: sequence
     do
         G_cont=$( echo "$seq" | grep -o "G\|g" | wc -l )
         C_cont=$( echo "$seq" | grep -o "C\|c" | wc -l )
@@ -36,7 +33,7 @@ echo GC_percentage > GC.csv
             percentage=$( echo "$GC*100" | bc )
         fi
 
-        echo $percentage >> GC.csv
+        echo $percentage >> ./data/$name_dataset-GC.csv
     done
 
-} < "$initial_data"
+} < "$initial_data"                                        # Global variable defined in runall.sh for dataset reference

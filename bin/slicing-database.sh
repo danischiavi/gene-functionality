@@ -81,6 +81,7 @@ set_variables() {                                  ## Set variables to filter ou
     
     fi
 }
+                
 
 
 gff2Info() {                                                                                ## Get info from the Human genome database gff file to filter out pi-coding sequences 
@@ -159,7 +160,7 @@ gff2Info() {                                                                    
 
 ###########################################################################################################################
 
-# Obtain chromosome coordinates for each functional ncRNA
+# Obtain chromosome coordinates and sequence for each functional ncRNA
 
 ###########################################################################################################################
 
@@ -177,6 +178,7 @@ while IFS=$'\t' read -r _ _ _ ID _; do
 done < "$rnacentral_ncrna_coords"
    
 lncrna_count=0
+short_count=0
 
 ## Searching for the Id on the RNAcentral database
 for id in "${IDs_ncrna[@]}"; do
@@ -187,25 +189,40 @@ for id in "${IDs_ncrna[@]}"; do
         if [ "$status" != 'not-pass' ]                                                              # Status returned by function if sequence empty or belongs to mitocondrial or Y chr
         then 
             exon_count=$( echo "$meta" | cut -f 10 )
-            if [ "$exon_count" -ge "4" ]                                                            # Filter for sequences with at least 4 exons
+            if [ "$exon_count" -ge 4 ]                                                            # Filter for sequences with at least 4 exons
             then 
                 len_two=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}')       # Length exons within range
                 len_three=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $3}') 
-                
+                len_last=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')
+
                 if ([ "$len_two" -ge "$lower_limit" ] && [ "$len_two" -le "$upper_limit" ]) && ([ "$len_three" -ge "$lower_limit" ] && [ "$len_three" -le "$upper_limit" ])  
                 then
                     ((lncrna_count++))
 
-                    seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                          # 0-start
-                    relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')      # position relative to Start (bed format)
+                    seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                     # 0-start. Function in progress for this (see ./bin/draft)
+                    relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to Start (bed format) for exons     
+                    relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')     
                     relative_start_three=$(echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $3}')
-                    start_two=$(( $seq_start + $relative_start_two + 1 ))                                         # +1 to account for the first relative start pos being 0
-                    start_three=$(( $seq_start + $three + 1 )) 
-                    end_two=$(( $start_two + $len_two ))
-                    end_three=$(( $start_three + $len_three ))
-
-                    echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq" >> ./data/lncrna-exon2-dataset.csv
+                    relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  
+                    
+                    start_one=$((   $seq_start + $relative_start_one + 1 ))                                    # +1 to account for the first relative start pos being 0
+                    start_two=$((   $seq_start + $relative_start_two + 1 ))                                         
+                    start_three=$((              $seq_start + $three + 1 ))
+                    start_last=$(( $seq_start + $relative_start_last + 1 )) 
+                    end_two=$((                    $start_two + $len_two ))
+                    end_three=$((              $start_three + $len_three ))
+                    end_last=$((                 $start_last + $len_last ))
+                                         
+                    echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq"     >> ./data/lncrna-exon2-dataset.csv
                     echo RNA$lncrna_count,Yes,"$chr","$start_three","$end_three","$seq" >> ./data/lncrna-exon3-dataset.csv  #"ID,Functional,Chromosome,Start,End,Sequence" > $name-dataset.csv
+
+                    if [ "$start_one" -gt "$end_last" ]                                                            # Reverse transcripts can alter order of start/end positions
+                    then
+		            # To generate negative control sequences that are the same length as exons two and three
+                        echo $chr,$end_last,$start_one,$len_two,$len_three >> ./data/coords-for-negative-control.csv
+                    else
+                        echo $chr,$start_one,$end_last,$len_two,$len_three >> ./data/coords-for-negative-control.csv
+                    fi
                 else
                     :
                 fi
@@ -225,26 +242,30 @@ for id in "${IDs_ncrna[@]}"; do
             if [ "$len" -ge "$lower_limit" ] && [ "$len" -le "$upper_limit" ]  
             then
                 ((short_count++))
-                echo echo RNA$short_count,Yes,"$chr","$start","$end","$seq" >> ./data/functional-short-ncrna-dataset.csv
-        
+                echo RNA$short_count,Yes,"$chr","$start","$end","$seq" >> ./data/functional-short-ncrna-dataset.csv
+                
+                if [ "$start" -gt "$end" ]                                                            # Reverse transcripts can alter order of start/end positions
+                then
+		            # To generate negative control sequences that are the same length as exons two and three
+                    echo $chr,$end,$start,$len,'NA' >> ./data/coords-for-negative-control.csv
+                else
+                    echo $chr,$start,$end,$len,'NA' >> ./data/coords-for-negative-control.csv
+                fi
             else
                 :
-        
             fi 
-        fi
-    
+        fi   
     else 
         :
     fi
-
 done
 
 
+###########################################################################################################################
 
+# Obtain chromosome coordinates and sequence for each protein coding RNA
 
-
-
-## Pi coding rna
+###########################################################################################################################
 
 pi_count=0
 

@@ -9,6 +9,14 @@
 # Input: $1 is the file identifier for the dataset and fasta file. Eg: 200702-functional-ncrna
 #        $2 is the location of the folder with the local databases/datasets or version specific executables
 # 
+# Input:
+#        $1 is the downloaded fasta file from RNAcentral containing the lncRNAs. 
+#        $2 is the downloaded fasta file from RNAcentral containing the short-ncRNAs.
+#        $3 is the downloaded chromosome coordinates file from RNAcentral for all ncRNAs in the database. Eg: Homo_sapiens.GRCh38.bed
+#        $4 is the text file containing RefSeq IDs from HGNC
+#        $5 is the GFF file for the downloaded human genome Eg: GCF_000001405.39_GRCh38.p13_genomic.gff
+#        $6 is the converted CSV file of the human genome. Eg: GRCh38.p13_genome.csv
+##### 
 #
 # Log files: tabix.log records any potential VCF files that weren't downloaded correctly.
 
@@ -24,21 +32,17 @@ IFS=$'\n'
 date=$(date +%y%m%d)
 
 ######## Function for calculation with float numbers
-
 calc() { awk "BEGIN{print $*}"; }
 
-
 ######## Delete previous log files
-
 rm -rf tabix.log
 rm -rf errors.log
 
-
 #### Global variables 
 
-######## CSV and FASTA for initial data
-initial_data=$1-dataset.csv 
-initial_fasta=$1-seq.fa 
+# CSV and FASTA for initial data
+initial_data=./data/$1-dataset.csv         
+initial_fasta=./data/$1-seq.fa 
 
 if [ ! -f $initial_data ] || [ ! -f $initial_fasta ]
 then
@@ -48,19 +52,12 @@ else
     :
 fi
 
+name_dataset=$( echo $initial_data | cut -d '-' -f 2,3 )  # CHECK IF WORKS
 
-######## Folder with local databases and version specific executables
-#additional_folder=$2  # is the best way to organize the project? 
-#if [ ! -d $additional_folder/ ]
-#then
-#    echo "Folder with required local databases does not exist."
-    #exit 1
-#else
-#    :
-#fi
-
-last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+# Variables to count
 first_rna_id=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+
 
 #### 
 lncrna_fasta="$1"
@@ -70,24 +67,15 @@ ids_HGNC="$4"
 genome_gff="$5"
 genome_csv="$6"
 
-# Input:
-#        $1 is the downloaded fasta file from RNAcentral containing the lncRNAs. 
-#        $2 is the downloaded fasta file from RNAcentral containing the short-ncRNAs.
-#        $3 is the downloaded chromosome coordinates file from RNAcentral for all ncRNAs in the database. Eg: Homo_sapiens.GRCh38.bed
-#        $4 is the text file containing RefSeq IDs from HGNC
-#        $5 is the GFF file for the downloaded human genome Eg: GCF_000001405.39_GRCh38.p13_genomic.gff
-#        $6 is the converted CSV file of the human genome. Eg: GRCh38.p13_genome.csv
-##### 
-
 
 ######## Create folder for files generated
+[ -d ./data/feature-generation] && rm -rf ./data/feature-generation]/* || mkdir -p ./data/feature-generation]
 
-[ -d results/"$date"/ ] && rm -rf results/"$date"/* || mkdir -p results/"$date"/
-echo
 
 
 
 #### Reformat initial dataset
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' $initial_data > ./data/tab-coordinates
 awk -F',' 'NR > 1 {print $3, $4, $5}' $initial_data > ./data/coordinates  # for mafFetch
 awk -F',' 'NR > 1 {print $3":"$4"-"$5}' $initial_data > locations
 awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' "$initial_data" | sort -k1,1 -k2,2n > ./data/sorted-coordinates.bed # for bedtools
@@ -100,7 +88,7 @@ awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > ./data/hg38-co
 
 ############################################################################################################################
 
-./intrinsic-seq-features.sh 
+./bin/intrinsic-seq-features.sh 
 
 ./seq-conservation-features.sh 
 
