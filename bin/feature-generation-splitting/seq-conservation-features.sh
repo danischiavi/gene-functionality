@@ -87,12 +87,12 @@ fi
 
 ############################################################################################################################
 
-echo MeanPhyloP-Z,MaxPhyloP-Z,MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > ./data/$name_set-conservation.csv
+echo Zoonomia-MeanPhyloP,Zoonomia-MaxPhyloP,MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > ./data/$name_set-conservation.csv
 echo mammals_mean_gerp,mammals_max_gerp > ./data/$name_set-gerp.csv
 
 var="$first_rna_id"
 
-while IFS=$'\t' read -r chr start end
+while IFS=',' read -r _ _ chr start end _
 do
     #echo '#####################RNA'$var'#####################' >> errors.log #D:i think I dont need the var in this section. Maybe another to append to error.log?
     
@@ -110,29 +110,26 @@ do
     zoonomia_max_pp=$(   $bigWigSummary_exe -type=max $zoonomia_phylo_bw $chr $start $end 1 2>&1 )
     
 
-    ######## Convert any missing data to NAs (mean = mn, max = mx, phyloP = p, phastCons = c)
+    ######## Convert any missing data to NAs (mean = mn, max = mx, phyloP = p, phastCons = c) --> D: declare a short function for this
         test_mnp=$( echo $mean_pp | wc -w )
-        if [[ "$test_mnp" -eq "1" ]] ; then : ; else mean_pp=NA ; fi
+        if [[ "$test_mnp" -eq "1" ]]; then : ; else mean_pp=NA ; fi
 	
         test_mxp=$( echo $max_pp | wc -w )
-        if [[ "$test_mxp" -eq "1" ]] ; then : ; else max_pp=NA ; fi
+        if [[ "$test_mxp" -eq "1" ]]; then : ; else max_pp=NA ; fi
 	
         test_mnc=$( echo $mean_pc | wc -w )
-        if [[ "$test_mnc" -eq "1" ]] ; then : ; else mean_pc=NA ; fi
+        if [[ "$test_mnc" -eq "1" ]]; then : ; else mean_pc=NA ; fi
 	
         test_mxc=$( echo $max_pc | wc -w )
-        if [[ "$test_mxc" -eq "1" ]] ; then : ; else max_pc=NA ; fi
+        if [[ "$test_mxc" -eq "1" ]]; then : ; else max_pc=NA; fi
 	
         test_mnc=$( echo $zoonomia_mean_pp | wc -w )
-        if [[ "$test_mnc" -eq "1" ]] ; then : ; else mean_pc=NA ; fi
+        if [[ "$test_mnc" -eq "1" ]]; then : ; else mean_pc=NA ; fi
 	
         test_mxc=$( echo $zoonomia_max_pp | wc -w )
-        if [[ "$test_mxc" -eq "1" ]] ; then : ; else max_pc=NA ; fi
+        if [[ "$test_mxc" -eq "1" ]]; then : ; else max_pc=NA ; fi
 
-    echo $zoonomia_mean_pp,$zoonomia_max_pp$mean_pp,$max_pp,$mean_pc,$max_pc >> ./data/$name_dataset-conservation.csv
-
-    
-    
+    echo $zoonomia_mean_pp,$zoonomia_max_pp,$mean_pp,$max_pp,$mean_pc,$max_pc >> ./data/$name_dataset-conservation.csv
     
     ######## Obtain GERP Scores for each set of chromosome coordinates
     ## Format data for bedtools
@@ -143,38 +140,17 @@ do
 
 	echo "$bedtools_exe map -a ./data/input-gerp.bed -b $mammals_bed/gerp$chromo.bed.gz -c 4,4 -o mean,max -sorted 2>>/dev/null" >> errors.log  #  map: Apply a function to a column for each overlapping interval
 	mammal_output=$( $bedtools_exe map -a ./data/input-gerp.bed -b $mammals_bed/gerp$chromo.bed.gz -c 4,4 -o mean,max -sorted 2>> errors.log)     # -c Specify the column from the B file to map onto intervals in A 
-    mean_mammal=$( echo $mammal_output | cut -f 4 )   # Mean GERP Score
-    max_mammal=$( echo $mammal_output | cut -f 5 )    # Max GERP Score
+    IFS=$'\t' read -r _ _ _ mean_mammal max_mammal <<< "$mammal_output"     # Mean and Max GERP Score
 	
     ######## Convert any missing data to NAs
-    if [[ ! "$mean_mammal" == "." ]] ; then : ; else mean_mammal=NA ; fi
-    if [[ ! "$max_mammal" == "." ]] ; then : ; else max_mammal=NA ; fi
+    if [[ "$mean_mammal" == "." ]]; then mean_mammal=NA ; else : ; fi
+    if [[ "$max_mammal" == "." ]]; then max_mammal=NA ; else : ; fi
+    
+    #CHECK IF THIS ONES ARE NEEDED:     
+    if [ -z "$mean_mammal" ]; then mean_mammal='NA'; else :; fi
+    if [ -z "$max_mammal" ]; then max_mammal='NA'; else :; fi
 	
-    echo $mean_mammal,$max_mammal >> ./data/gerp.csv
- 
-[[[]	
-	mkdir -p aliout
-        var=$(($var+1))
-        rm -rf *.sorted.cov
-        mv *.cov rscapedata &> /dev/null
-        rm -rf overBed
-        rm -rf blank.txt
-        #rm -rf *.pdf
-        #rm -rf *ss.ps
-        #rm -rf *.svg
-        #rm -rf *.surv
-        #rm -rf *.sto
-	mv RNA*.ps  aliout/
-	mv RNA*.stk aliout/
-	mv RNA*svg  aliout/
-	mv RNA*sto  aliout/
-	mv RNA*pdf  aliout/
-	mv RNA*surv  aliout/
-	mv *rnaalifold aliout/
-        rm -rf *.power
-        rm -rf rnacode_output
+    echo $mean_mammal,$max_mammal >> ./data/$name_dataset-gerp.csv
+ 	
+done < "$initial_data"
 
-done < ./data/coordinates
-
-zip -r maf maf &> /dev/null
-rm -rf maf/

@@ -61,56 +61,53 @@ else
     exit 1
 fi
 
+encode_folder=$1
 
 #### Function declaration 
-
 run_encode() {
 
-name=$dep_folder 
+sample_type=$1
 
-echo RPKM_$name,MRD_$name > $name-rnaseq.csv
+echo RPKM_$sample_type,MRD_$sample_type > ./data/$name_set-$sample_type-rnaseq.csv
 
 ######## Define location of downloaded ENCODE RNAseq data
-encode_data=$1/*.bam
+encode_data=$encode_folder/ENCODE-$sample_type/*.bam
+total_read_file=$encode_folder/ENCODE-$sample_type/total-read-count.txt ##BROKEN FILE!
 
-for line in $(cat locations)
+while IFS=',' read -r _ _ chr start end _
 do
-
-    ######## Determine sequence length
-    start=$( echo $line | cut -d ':' -f 2 | cut -d '-' -f 1 )
-    end=$( echo $line | cut -d ':' -f 2 | cut -d '-' -f 2 )
-    length=$( calc $end-$start )
-    length_kb=$( calc $length/1000 )  # Convert to Kb
-
-    ######## Record RPKM and MRD across all RNAseq files
+    length=$(( $end-$start ))
+    length_kb=$( echo "scale=2; $length/1000" | bc )                                             # Convert to Kb
+    input_samtools=$chr':'$start'-'$end
     
-    count_max=0  # Variable for recording the maximum RPKM observed
-    max_depth=0  # Variable for recording the maximum MRD observed
+    ######## Record RPKM and MRD across all RNAseq files
+    count_max=0                                                                                  # To record maximum RPKM and MRD observed
+    max_depth=0                                                                                  # To record maximum MRD observed
 
-    for file in $encode_data  # Loop through all RNAseq datasets
+    for file in $encode_data                                                                     # Loop through all RNAseq datasets
     do 
-        read=$( $samtools_exe view -c $file $line 2>>errors.log )   # Number of reads for sequence of interest
-        file_name=$( echo $file | rev | cut -d '/' -f 1 | rev )     # ID for RNAseq dataset
-        total_read=$( grep "$file_name" /Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/ENCODE-tissue/total-read-count.txt | cut -d ',' -f 2 )   # Obtain total number of reads for specific RNAseq dataset (precomputed to save time)
-        scaling=$( echo "$total_read/1000000" | bc )   # Create the "by per million" scaling 
-        rpm=$( calc $read/$scaling )    # Reads per million
-        rpkm=$( calc $rpm/$length_kb )  # Final RPKM calculation
+        read=$( $samtools_exe view -c $file $input_samtools 2>>errors.log )                                # Number of reads for sequence of interest
+        file_name=$( echo $file | rev | cut -d '/' -f 1 | rev )                                  # ID for RNAseq dataset
+        total_read=$( grep "$file_name" $total_read_file | cut -d ',' -f 2 )                     # Obtain total number of reads for specific RNAseq dataset (precomputed to save time)
+        scaling=$(   echo "$total_read/1000000" | bc )                                           # Create the "by per million" scaling 
+        rpm=$(   echo "scale=2; $read/$scaling" | bc )                                           # Reads per million
+        rpkm=$( echo "scale=2; $rpm/$length_kb" | bc )                                           # Final RPKM calculation
         
         # If RPKM is greater than previously recorded, then overwrite the variable.
-        
         if (( $(echo "$rpkm > $count_max" | bc -l) )) ; then count_max=$rpkm ; else : ; fi
         
-        max=$( $samtools_exe depth -r $line $file 2>>errors.log | cut -f 3 | sort -V | tail -1 )  # Maximum Read Depth
+        max=$( $samtools_exe depth -r $input_samtools $file 2>>errors.log | cut -f 3 | sort -V | tail -1 )  # Maximum Read Depth
+       
         # If MRD is greater than previously recorded, then overwrite the variable.
         if [[ $max -ge $max_depth ]] ; then max_depth=$max ; else : ; fi
     done 
 
-    [ -z "$max_depth" ] && max_depth=0    # Record MRD as zero rather than blank
-    if [ -z "$count_max" ] ; then count_max=NA ; max_depth=NA ; else : ; fi   # But if no transcription whatsoever, set everything to NA 
+    [ -z "$max_depth" ] && max_depth=0                                                            # Record MRD as zero rather than blank
+    if [ -z "$count_max" ] ; then count_max=NA ; max_depth=NA ; else : ; fi                       # But if no transcription whatsoever, set everything to NA 
 
-    echo $count_max,$max_depth >> $name-rnaseq.csv
+    echo $count_max,$max_depth >> $name_dataset-rnaseq.csv
 
-done
+done < $initial_data
 
 }
 
@@ -120,5 +117,5 @@ done
 
 ############################################################################################################################
 
-run_encode $additional_folder/ENCODE-tissue tissue
-run_encode $additional_folder/ENCODE-primary-cell primary-cell
+run_encode 'tissue'
+run_encode 'primary-cell'

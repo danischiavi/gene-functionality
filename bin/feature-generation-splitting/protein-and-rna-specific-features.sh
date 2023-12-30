@@ -146,11 +146,11 @@ fi
 ############################################################################################################################
 
 #### File declaration
-echo InteractionMIN,InteractionAVE > ./data/interaction-intermediate.csv
-echo MFE > ./data/MFE.csv
-echo Accessibility > ./data/access.csv
-echo RNAcode_score,RNAalifold_score > ./data/rnacode.csv
-echo Max_covariance,Min_covariance_Eval > ./data/rscape-dataset.csv
+echo InteractionMIN,InteractionAVE > ./data/$name_set-interaction-intermediate.csv
+echo MFE > ./data/$name_set-MFE.csv
+echo Accessibility > ./data/$name_set-access.csv
+echo RNAcode_score,RNAalifold_score > ./data/$name_set-rnacode.csv
+echo Max_covariance,Min_covariance_Eval > ./data/$name_set-rscape-dataset.csv
 
 #### Create folder for generated r-scape output
 rm -rf ./data/rscapedata && mkdir -p ./data/rscapedata
@@ -172,14 +172,15 @@ fi
 ######## Need to clear any previously set lib path, as otherwise the defined lib path will be appended onto the previous
 [ -z "$lib_directory" ] || unset LD_LIBRARY_PATH
 
-for seq in $( grep ">" $initial_fasta )
+for seq in $( grep ">" $initial_fasta)
 do
-    grep -A 1 $seq $initial_fasta >target.fa 
+    intaRNA_input=$seq
+    
     if [ -z "$lib_directory" ]   # If Boost library didn't have to specified, run as normal.
     then
-        $IntaRNA_exe -t $interaction_database -m target.fa > intaRNA-results 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)
+        $IntaRNA_exe -t $interaction_database -m $intaRNA_input > ./data/intaRNA-results 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)
     else
-        LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -q target.fa -t $interaction_database > intaRNA-results 2>>errors.log
+        LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -m $intaRNA_input -t $interaction_database > ./data/intaRNA-results 2>>errors.log
     fi 
     
     ######## Grab all recorded interactions

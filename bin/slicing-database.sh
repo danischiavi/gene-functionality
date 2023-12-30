@@ -278,3 +278,12 @@ do
         :
     fi
 done < "$ids_HGNC"
+
+
+###########################################################################################################################
+
+# Generate functional FASTA file --> Convert it to a function
+
+###########################################################################################################################
+for line in $( grep -v "Start" $d-protein-exon2-dataset.csv ) ; do echo $line | cut -d ',' -f 1,6 | tr ',' ' ' | perl -lane '{print ">$F[0]\n$F[1]"}' >> $d-protein-exon2-seq.fa ; done
+for line in $( grep -v "Start" $d-protein-exon3-dataset.csv ) ; do echo $line | cut -d ',' -f 1,6 | tr ',' ' ' | perl -lane '{print ">$F[0]\n$F[1]"}' >> $d-protein-exon3-seq.fa ; done

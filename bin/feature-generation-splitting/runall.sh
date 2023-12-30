@@ -54,33 +54,20 @@ fi
 
 name_dataset=$( echo $initial_data | cut -d '-' -f 2,3 )  # CHECK IF WORKS
 
-# Variables to count
-first_rna_id=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
-last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
-
-
 #### 
 lncrna_fasta="$1"
 short_ncrna_fasta="$2"
-chr_coord_ncrna="$3"
+rnacentral_ncrna_coords="$3"
 ids_HGNC="$4"
 genome_gff="$5"
 genome_csv="$6"
 
+# Variables to count
+first_rna_id=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 
 ######## Create folder for files generated
 [ -d ./data/feature-generation] && rm -rf ./data/feature-generation]/* || mkdir -p ./data/feature-generation]
-
-
-
-
-#### Reformat initial dataset
-awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' $initial_data > ./data/tab-coordinates
-awk -F',' 'NR > 1 {print $3, $4, $5}' $initial_data > ./data/coordinates  # for mafFetch
-awk -F',' 'NR > 1 {print $3":"$4"-"$5}' $initial_data > locations
-awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' "$initial_data" | sort -k1,1 -k2,2n > ./data/sorted-coordinates.bed # for bedtools
-awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > ./data/hg38-coordinates.bed # for VFC 1kGP files
-
 
 ############################################################################################################################
 

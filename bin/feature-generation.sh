@@ -892,7 +892,7 @@ echo InteractionMIN,InteractionAVE > interaction-intermediate.csv
 
 for seq in $( grep ">" $initial_fasta )
 do
-    grep -A 1 $seq $initial_fasta >target.fa 
+    grep -A 1 $seq $initial_fasta > target.fa 
     if [ -z "$lib_directory" ]   # If Boost library didn't have to specified, run as normal.
     then
         $IntaRNA_exe -t $interaction_database -m target.fa > intaRNA-results 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)

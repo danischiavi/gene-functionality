@@ -10,7 +10,7 @@
 
 ###########################################################################################################################
 
-echo GC_percentage > ./data/$name_dataset-GC.csv            # Global variable defined in runall.sh for dataset name  
+echo GC_percentage > data/GC-dataset-$name.csv            # Global variable defined in runall.sh for dataset name  
 
 {
     read                                                    #skips .csv header 
@@ -33,7 +33,7 @@ echo GC_percentage > ./data/$name_dataset-GC.csv            # Global variable de
             percentage=$( echo "$GC*100" | bc )
         fi
 
-        echo $percentage >> ./data/$name_dataset-GC.csv
+        echo $percentage >> data/GC-dataset-$name.csv 
     done
 
 } < "$initial_data"                                        # Global variable defined in runall.sh for dataset reference
