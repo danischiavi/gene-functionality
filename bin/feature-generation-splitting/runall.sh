@@ -77,15 +77,15 @@ last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 
 ./bin/intrinsic-seq-features.sh 
 
-./seq-conservation-features.sh 
+./bin/seq-conservation-features.sh 
 
-./transcriptome-expression-features.sh 
+./bin/transcriptome-expression-features.sh 
 
-./genomic-repeat-associated-features.sh 
+./bin/genomic-repeat-associated-features.sh 
 
-./protein-and-rna-specific-features.sh
+./bin/protein-and-rna-specific-features.sh
 
-./population-variation-features.sh 
+./bin/population-variation-features.sh 
 
 ############################################################################################################################
 

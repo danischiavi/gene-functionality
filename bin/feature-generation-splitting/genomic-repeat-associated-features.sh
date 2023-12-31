@@ -78,12 +78,12 @@ echo Chromosome,Start,End,Dfam_min,Dfam_sum > ./data/dfam-distance.csv
 
 ############################################################################################################################
 
-# Calculate genomic copy number
+# Calculate genomic copy number (identify number of matches within human genome)
 
 ############################################################################################################################
 
-######## Run blastn to identify number of matches within human genome
-$blastn_exe -query $initial_fasta -db $human_genome -evalue 0.01 -out output.csv -outfmt "10 qaccver saccver pident" >/dev/null 2>>errors.log
+######## Run blastn 
+$blastn_exe -query $initial_fasta -db $human_genome -evalue 0.01 -out ./data/blastn-output.csv -outfmt "10 qaccver saccver pident" >/dev/null 2>>errors.log
 
 ######## Counter to process each RNA in order
 count_file=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
@@ -92,9 +92,9 @@ total_rna=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 while [ $count_file -le $total_rna ]
 do
     ######## Process each RNA in the file (by ID) as the counter increases
-    grep -w "RNA$count_file" output.csv > results  
-    total=$(cat results | wc -l)
-    [ -z "$total" ] && echo NA >> copy-number.csv || echo $total >> copy-number.csv
+    grep -w "RNA$count_file" ./data/blastn/output.csv > ./data/blastn/results  
+    total=$(cat ./data/blastn/results | wc -l)
+    [ -z "$total" ] && echo NA >> ./data/copy-number.csv || echo $total >> ./data/copy-number.csv
     count_file=$(( $count_file + 1 ))
 done
 
@@ -102,6 +102,21 @@ rm -rf results
 rm -rf rna.fa
 rm -rf output.csv
 rm -rf sequences
+
+######## Run nhmmer  
+
+var=$first_rna_id                       # Global variables for given id number to first and last RNA sequence of the dataset
+last_seq=$last_rna_id               
+
+while [ $var -le $last_seq ]
+do
+    echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/nhmmer-input.fasta
+    nhmmer --tblout nhmmer-output -E 0.01 --noali data/nhmmer-input.fasta data/GRCh38_p14_genomic.fna > /dev/null 2>&1 # -E <x> : report sequences <= this E-value threshold in output; don't output alignments
+    nhmmer_hits=$( grep -v "#" nhmmer-output | wc -l )
+    minimap2 data/GRCh38_p14_genomic.fna data/nhmmer-input.fasta >> data/minimap-output
+    echo $hits >> data/nhmmer-copy-number.csv
+    (( var++ ))
+done
 
 ############################################################################################################################
 

@@ -86,7 +86,7 @@ do
 
     for file in $encode_data                                                                     # Loop through all RNAseq datasets
     do 
-        read=$( $samtools_exe view -c $file $input_samtools 2>>errors.log )                                # Number of reads for sequence of interest
+        read=$( $samtools_exe view -c $file $input_samtools 2>>errors.log )                      # Number of reads for sequence of interest
         file_name=$( echo $file | rev | cut -d '/' -f 1 | rev )                                  # ID for RNAseq dataset
         total_read=$( grep "$file_name" $total_read_file | cut -d ',' -f 2 )                     # Obtain total number of reads for specific RNAseq dataset (precomputed to save time)
         scaling=$(   echo "$total_read/1000000" | bc )                                           # Create the "by per million" scaling 

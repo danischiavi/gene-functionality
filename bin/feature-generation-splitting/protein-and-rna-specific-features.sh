@@ -172,7 +172,7 @@ fi
 ######## Need to clear any previously set lib path, as otherwise the defined lib path will be appended onto the previous
 [ -z "$lib_directory" ] || unset LD_LIBRARY_PATH
 
-for seq in $( grep ">" $initial_fasta)
+for seq in $( grep ">" $initial_fasta)      # CHECK THE ORDER HOW ITS EXTRACTING THE SEQUENCES
 do
     intaRNA_input=$seq
     
