@@ -1,0 +1,85 @@
+
+# Download text file for all protein-coding genes from HGNC
+wget ftp://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/locus_types/gene_with_protein_product.txt
+
+# Pipes one and two removes sequences encoded in the Y and Mt chromosomes or are no longer approved genes.
+# Pipes three to five extracts the columns associated with RefSeq IDs, and removes sequences associated with more than one ID.
+
+grep -v "mitochondrially encoded\|Entry Withdrawn\|Yq" data/raw/gene_with_protein_product.txt | grep "Approved" | cut -f 24 | grep -v "|" | grep . > data/raw/hgnc-protein-coding-RefSeq.txt
+
+
+
+#### Protein-Coding-RNA
+
+# Download and unzip GFF file for human genome
+wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.gff.gz   
+gunzip GRCh38_latest_genomic.gff.gz
+
+# Download and unzip FNA file for human genome
+wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz   && 
+gunzip GRCh38_latest_genomic.fna.gz
+
+# Reformat FNA to tab delimited CSV file
+fasta_formatter -i data/raw/GRCh38_p14_genomic.fna -o data/raw/GRCh38_interim.csv -t 
+
+# Remove any scaffolds or alternative chromosomes
+grep "NC_" data/raw/GRCh38_interim.csv > data/raw/GRCh38.p14_genome.csv
+rm data/raw/GRCh38_interim.csv
+
+
+#### Non-Coding-RNA
+
+## Chromosome coordinates for each RNAcentral ncRNA
+# Homo sapiens GRCh38 bed file from the RNAcentral FTP directory (The RNAcentral Consortium, 2019)
+wget -P data/raw ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/22.0/genome_coordinates/bed/homo_sapiens.GRCh38.bed.gz
+gunzip -c data/raw/homo_sapiens.GRCh38.bed.gz > data/raw/rnacentral_GRCh38_coordinates.bed && rm data/raw/homo_sapiens.GRCh38.bed.gz
+
+
+#Download to local machine and copy and unzip in server: 
+## Short-ncRNA: 
+# Include HGNC database, exclude precursor miRNA/primary transcript, exclude rRNA, exclude lncRNA
+# RNAcentral Query: Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND NOT so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Pre_miRNA" AND NOT so_rna_type_name:"RRNA" AND NOT so_rna_type_name:"MiRNA" AND length:[75 TO 3000]) AND entry_type:"Sequence"
+#URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20NOT%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Pre_miRNA%22%20AND%20NOT%20so_rna_type_name:%22RRNA%22%20AND%20NOT%20so_rna_type_name:%22MiRNA%22
+gunzip data/raw/short-ncrna-rnacentral.fasta.gz
+
+# Precursor miRNA: include HGNC database, include precursor miRNA/primary transcript only
+# RNAcentral Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"Pre_miRNA" AND length:[75 TO 180]) AND entry_type:"Sequence"
+#URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20so_rna_type_name:%22Pre_miRNA%22
+gunzip data/raw/pre-miRNA-rnacentral.fasta.gz
+
+## LncRNA:
+# Include HGNC database, include lncRNA only (including antisense RNA?)
+# RNAcentral Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Antisense_lncRNA" AND length:[106 TO 3000]) AND entry_type:"Sequence"
+#URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Antisense_lncRNA%22%20AND%20length:%5B106%20TO%203000%5D
+gunzip data/raw/lncrna-rnacentral.fasta.gz
+
+
+mmseqs createdb data/raw/GRCh38_p14_genomic.fna data/raw/mmseqs/human_genome
+
+####Dfam database
+#data/raw
+wget -P data/raw https://www.dfam.org/releases/Dfam_3.8/annotations/hg38/hg38.nrph.hits.gz
+gunzip data/raw/hg38.nrph.hits.gz
+
+# Pipe one removes the header
+# Pipe two obtains Chr, Start and End columns
+# Pipe three removes alternate chromosome, incomplete scaffolds and chromosomes Y/Mt
+grep -v "#seq_name" data/raw/hg38.nrph.hits | cut -f 1,10,11 | grep -v "_random\|chrY\|chrM" > data/raw/dfam-hg38-nrph.bed
+
+
+
+while IFS=$'\t' read -r chr start end
+do 
+    if [ "$start" -gt "$end" ]
+    then 
+        echo -e "$chr\t$end\t$start" >> data/dfam-hg38.bed ; 
+    else 
+        echo -e "$chr\t$start\t$end" >> data/dfam-hg38.bed 
+    fi 
+done < data/raw/dfam-hg38-nrph.bed
+
+sort -k1,1 -k2,2n dfam-hg38.bed > dfam-hg38-sorted.bed
+
+#Simpler & faster with a perl one-liner e.g.:
+cat hg38_dfam.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1V -k2,2n > dfam-hg38-sorted.bed
+

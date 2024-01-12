@@ -73,8 +73,8 @@ fi
 
 
 #### File generation
-echo Genome_copy_number,Genome_complete_match > ./data/copy-number.csv
-echo Chromosome,Start,End,Dfam_min,Dfam_sum > ./data/dfam-distance.csv
+echo Genome_copy_number,Genome_complete_match, mmseqs_copy_number, nhmmer_copy_number > data/copy-number-$name.csv
+echo Chromosome,Start,End,Dfam_min,Dfam_sum > data/dfam-distance-$name.csv
 
 ############################################################################################################################
 
@@ -82,40 +82,34 @@ echo Chromosome,Start,End,Dfam_min,Dfam_sum > ./data/dfam-distance.csv
 
 ############################################################################################################################
 
-######## Run blastn 
-$blastn_exe -query $initial_fasta -db $human_genome -evalue 0.01 -out ./data/blastn-output.csv -outfmt "10 qaccver saccver pident" >/dev/null 2>>errors.log
+######## Run blastn and MMseqs2
 
-######## Counter to process each RNA in order
-count_file=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
-total_rna=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
+$blastn_exe -query $initial_fasta -db $human_genome -evalue 0.01 -out data/blastn-output.csv -outfmt "10 qaccver saccver pident" >/dev/null 2>>errors.log
+mmseqs easy-search $initial_fasta data/raw/mmseqs/human_genome data/mmseqs-output data/tmp --search-type 3 --format-output query,target,evalue
 
-while [ $count_file -le $total_rna ]
-do
-    ######## Process each RNA in the file (by ID) as the counter increases
-    grep -w "RNA$count_file" ./data/blastn/output.csv > ./data/blastn/results  
-    total=$(cat ./data/blastn/results | wc -l)
-    [ -z "$total" ] && echo NA >> ./data/copy-number.csv || echo $total >> ./data/copy-number.csv
-    count_file=$(( $count_file + 1 ))
-done
+######## Run nhmmer and process Blastn and mmseqs results in order 
 
-rm -rf results
-rm -rf rna.fa
-rm -rf output.csv
-rm -rf sequences
-
-######## Run nhmmer  
-
-var=$first_rna_id                       # Global variables for given id number to first and last RNA sequence of the dataset
+var=$first_rna_id                                                   # Global variables for given id number to first and last RNA sequence of the dataset
 last_seq=$last_rna_id               
 
 while [ $var -le $last_seq ]
 do
     echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/nhmmer-input.fasta
-    nhmmer --tblout nhmmer-output -E 0.01 --noali data/nhmmer-input.fasta data/GRCh38_p14_genomic.fna > /dev/null 2>&1 # -E <x> : report sequences <= this E-value threshold in output; don't output alignments
-    nhmmer_hits=$( grep -v "#" nhmmer-output | wc -l )
-    minimap2 data/GRCh38_p14_genomic.fna data/nhmmer-input.fasta >> data/minimap-output
-    echo $hits >> data/nhmmer-copy-number.csv
+    nhmmer --tblout data/nhmmer-output -E 0.01 --noali data/nhmmer-input.fasta data/raw/GRCh38_p14_genomic.fna > /dev/null 2>&1 # -E <x> : report sequences <= this E-value threshold in output; don't output alignments
+    nhmmer_hits=$( grep -v "#" data/nhmmer-output | wc -l )
+    #minimap2 data/raw/GRCh38_p14_genomic.fna data/nhmmer-input.fasta >> data/minimap-output
+    
+    ######## Process each RNA in the file (by ID) as the counter increases
+    total_blastn=$( grep -w "RNA$var" data/blastn-output.csv | wc -l)  
+    total_mmseqs=$( grep -w "RNA$var" data/mmseqs-output | wc -l)  
+
+    if [ -z "$total_blastn" ]; then total_blastn='NA'; else :; fi 
+    if [ -z "$total_mmseqs" ]; then total_mmseqs='NA'; else :; fi 
+    if [ -z "$nhmmer_hits" ]; then nhmmer_hits='NA'; else :; fi
+    
+    echo "$total_blastn, $total_mmseqs, $nhmmer_hits" >> data/copy-number-$name.csv
     (( var++ ))
+   
 done
 
 ############################################################################################################################
@@ -125,12 +119,12 @@ done
 ############################################################################################################################
 
 ######## Upstrean hits
-$bedtools_exe closest -a ./data/sorted-coordinates.bed -b $dfam_hits -io -D ref -iu > ./data/dfam_downstream.bed 2>>errors.log
+$bedtools_exe closest -a data/sorted-coordinates.bed -b $dfam_hits -io -D ref -iu > data/dfam_downstream.bed 2>>errors.log
 
 ######## Downstream hits
-$bedtools_exe closest -a ./data/sorted-coordinates.bed -b $dfam_hits -io -D ref -id > ./data/dfam_upstream.bed 2>>errors.log
+$bedtools_exe closest -a data/sorted-coordinates.bed -b $dfam_hits -io -D ref -id > data/dfam_upstream.bed 2>>errors.log
 
-paste <( cut -f 1,2,3,7 ./data/dfam_downstream.bed ) <( cut -f 7 ./data/dfam_upstream.bed ) --delimiters '\t' > dfam_combined.bed
+paste <( cut -f 1,2,3,7 data/dfam_downstream.bed ) <( cut -f 7 data/dfam_upstream.bed ) --delimiters '\t' > dfam_combined.bed
 
 
 ######## Calculate sum of upstream and downstream, and combine into one file
@@ -138,17 +132,17 @@ while IFS=$'\t' read -r chr start end downstream upstream
 do
     chr_numb=$( echo "$chr" | cut -c 4- )
     upstream=$( echo "$upstream" | tr -d '-' )
-    [ -z "$downstream" ] && downstream=0    # Implies that no region up or downstream, rather than data missing.
+    [ -z "$downstream" ] && downstream=0                                    # Implies that no region up or downstream, rather than data missing.
     [ -z "$upstream" ] && upstream=0 
     sum=$(( $downstream+$upstream ))
-    if [[ "$upstream" -lt "$downstream" ]]    # Taking into account forward and reverse strand
+    if [[ "$upstream" -lt "$downstream" ]]                                  # Taking into account forward and reverse strand
     then
-        echo $chr,$start,$end,$upstream,$sum >> ./data/dfam-distance.csv
+        echo $chr,$start,$end,$upstream,$sum >> data/dfam-distance.csv
     else
-        echo $chr,$start,$end,$downstream,$sum >> ./data/dfam-distance.csv #??? is it necessary? 
+        echo $chr,$start,$end,$downstream,$sum >> data/dfam-distance.csv    #??? is it necessary? 
     fi
 
-done < ./data/dfam_combined.bed
+done < data/dfam_combined.bed
 
 mv dfam_downstream.bed additional-output/
 mv dfam_upstream.bed additional-output/

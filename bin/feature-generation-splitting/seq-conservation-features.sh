@@ -76,7 +76,7 @@ fi
 ############################################################################################################################
 
 echo Zoonomia-MeanPhyloP,Zoonomia-MaxPhyloP,MeanPhyloP,MaxPhyloP,MeanPhastCons,MaxPhastCons > data/conservation-$name.csv
-echo GERP_mean,GERP_max_gerp > data/gerp-$name.csv
+echo GERP_mean,GERP_max > data/gerp-$name.csv
 
 while IFS=',' read -r _ _ chr start end _
 do

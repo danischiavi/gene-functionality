@@ -41,8 +41,8 @@ rm -rf errors.log
 #### Global variables 
 
 # CSV and FASTA for initial data
-initial_data=./data/$1-dataset.csv         
-initial_fasta=./data/$1-seq.fa 
+initial_data=data/$1-dataset.csv         
+initial_fasta=data/$1-seq.fa 
 
 if [ ! -f $initial_data ] || [ ! -f $initial_fasta ]
 then

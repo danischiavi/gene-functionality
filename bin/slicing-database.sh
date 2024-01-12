@@ -131,7 +131,7 @@ for id in "${IDs_ncrna[@]}"; do
         if [ "$status" != 'not-pass' ]                                                                      # Status returned by function if empty sequence or mitocondrial/Ychr
         then 
             exon_count=$( echo "$meta" | cut -f 10 )
-            if [ "$exon_count" -ge 4 ]                                                                      # Filter for sequences with at least 4 exons
+            if [ "$exon_count" -ge 3 ]                                                                      # Filter for sequences with at least 4 exons
             then 
                 len_two=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}')               # Length exons within range
                 len_three=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $3}') 
@@ -161,7 +161,7 @@ for id in "${IDs_ncrna[@]}"; do
                     if [ "$start_one" -gt "$end_last" ]                                                       # Reverse transcripts can alter order of start/end positions
                     then
 		            # To generate negative control sequences that are the same length as exons two and three
-                        echo $chr,$end_last,$start_one,$len_two,$len_three >> data/coords-for-negative-control-ncrna.csv    #REMOVE NCRNA
+                        echo $chr,$end_last,$start_one,$len_two,$len_three >> data/coords-for-negative-control-ncrna.csv    #REMOVE NCRNA from name
                     else
                         echo $chr,$start_one,$end_last,$len_two,$len_three >> data/coords-for-negative-control-ncrna.csv
                     fi
@@ -334,13 +334,12 @@ done < "$RefSeq_protein_coding"
 
 ###########################################################################################################################
 
-csv_to_fasta() {                    # CHECK IF WORKS!! 
+csv_to_fasta() {                     
     
     {
-        read 
-        while IFS= read -r id _ _ _ _ seq
+        while IFS=',' read -r id _ _ _ _ seq
         do
-            echo ">$id\n$seq" >> data/$name-seq.fa
+            echo -e ">$id\n$seq" >> data/$name-seq.fa
         
         done
     } < data/$name-dataset.csv   
