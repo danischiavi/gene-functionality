@@ -73,7 +73,7 @@ fi
 
 
 #### File generation
-echo Genome_copy_number,Genome_complete_match, mmseqs_copy_number, nhmmer_copy_number > data/copy-number-$name.csv
+echo Genome_copy_number,(Genome_complete_match)?, mmseqs_copy_number, nhmmer_copy_number > data/copy-number-$name.csv
 echo Chromosome,Start,End,Dfam_min,Dfam_sum > data/dfam-distance-$name.csv
 
 ############################################################################################################################
@@ -112,19 +112,24 @@ do
    
 done
 
+
 ############################################################################################################################
 
 # Distance to nearest transposable element (Dfam)
 
 ############################################################################################################################
 
+######## Format data for bedtools
+grep -v 'Chromosome' $initial_data |  cut -f 3,4,5 -d "," | tr ',' '\t' > data/initial-data-$name.bed
+sort -k1,1 -k2,2n data/initial-data.bed | tr ' ' '\t' > data/initial-data-sorted-$name.bed 
+
 ######## Upstrean hits
-$bedtools_exe closest -a data/sorted-coordinates.bed -b $dfam_hits -io -D ref -iu > data/dfam_downstream.bed 2>>errors.log
+$bedtools_exe closest -a data/initial-data-sorted-$name.bed -b $dfam_hits -io -D ref -iu > data/dfam-downstream-$name.bed 2>>errors.log
 
 ######## Downstream hits
-$bedtools_exe closest -a data/sorted-coordinates.bed -b $dfam_hits -io -D ref -id > data/dfam_upstream.bed 2>>errors.log
+$bedtools_exe closest -a data/initial-data-sorted-$name.bed -b $dfam_hits -io -D ref -id > data/dfam-upstream-$name.bed 2>>errors.log
 
-paste <( cut -f 1,2,3,7 data/dfam_downstream.bed ) <( cut -f 7 data/dfam_upstream.bed ) --delimiters '\t' > dfam_combined.bed
+paste <( cut -f 1,2,3,7 data/dfam-downstream-$name.bed ) <( cut -f 7 data/dfam-upstream-$name.bed ) --delimiters '\t' > data/dfam-combined-$name.bed
 
 
 ######## Calculate sum of upstream and downstream, and combine into one file
@@ -132,21 +137,30 @@ while IFS=$'\t' read -r chr start end downstream upstream
 do
     chr_numb=$( echo "$chr" | cut -c 4- )
     upstream=$( echo "$upstream" | tr -d '-' )
-    [ -z "$downstream" ] && downstream=0                                    # Implies that no region up or downstream, rather than data missing.
+    [ -z "$downstream" ] && downstream=0                                                # Implies that no region up or downstream, rather than data missing.
     [ -z "$upstream" ] && upstream=0 
     sum=$(( $downstream+$upstream ))
-    if [[ "$upstream" -lt "$downstream" ]]                                  # Taking into account forward and reverse strand
-    then
-        echo $chr,$start,$end,$upstream,$sum >> data/dfam-distance.csv
+    if [[ "$upstream" -lt "$downstream" ]]; then                                              # Taking into account forward and reverse strand
+        echo $chr,$start,$end,$upstream,$sum >> data/dfam-distance-$name.csv
     else
-        echo $chr,$start,$end,$downstream,$sum >> data/dfam-distance.csv    #??? is it necessary? 
+        echo $chr,$start,$end,$downstream,$sum >> data/dfam-distance-$name.csv    
     fi
 
-done < data/dfam_combined.bed
+done < data/dfam-combined-$name.bed
 
+#### Remove unnessesary files
 mv dfam_downstream.bed additional-output/
 mv dfam_upstream.bed additional-output/
-rm -rf dfam_combined.bed
+rm -rf data/dfam-combined-$name.bed
+rm -rf data/dfam-upstream-$name.bed
+rm -rf data/dfam-downstream-$name.bed
+rm -rf data/initial-data-$name.bed
+
+rm -rf data/nhmmer-input.fasta
+rm -rf data/nhmmer-output
+
+
+
 
 
 ######## Function for matching up dfam-distance to ncRNA in R (bedtools is unordered)

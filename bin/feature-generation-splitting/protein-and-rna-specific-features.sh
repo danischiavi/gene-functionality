@@ -146,21 +146,21 @@ fi
 ############################################################################################################################
 
 #### File declaration
-echo InteractionMIN,InteractionAVE > ./data/$name_set-interaction-intermediate.csv
-echo MFE > ./data/$name_set-MFE.csv
-echo Accessibility > ./data/$name_set-access.csv
-echo RNAcode_score,RNAalifold_score > ./data/$name_set-rnacode.csv
-echo Max_covariance,Min_covariance_Eval > ./data/$name_set-rscape-dataset.csv
+echo InteractionMIN,InteractionAVE > data/interaction-intermediate-$name.csv
+echo MFE > data/MFE-$name.csv
+echo Accessibility > data/access-$name.csv
+echo RNAcode_score,RNAalifold_score > data/rnacode-$name.csv
+echo Max_covariance,Min_covariance_Eval > data/rscape-dataset-$name.csv
 
 #### Create folder for generated r-scape output
-rm -rf ./data/rscapedata && mkdir -p ./data/rscapedata
+rm -rf data/rscapedata && mkdir -p data/rscapedata
 
 ######## If multiz100way files already downloaded, use them instead of re-downloading 
 if [ -f maf.zip ] 
 then 
-    unzip ./data/maf.zip &> /dev/null && rm ./data/maf.zip
+    unzip data/maf.zip &> /dev/null && rm data/maf.zip
 else 
-    mkdir -p ./data/maf  
+    mkdir -p data/maf  
 fi
 
 ############################################################################################################################
@@ -172,52 +172,95 @@ fi
 ######## Need to clear any previously set lib path, as otherwise the defined lib path will be appended onto the previous
 [ -z "$lib_directory" ] || unset LD_LIBRARY_PATH
 
-for seq in $( grep ">" $initial_fasta)      # CHECK THE ORDER HOW ITS EXTRACTING THE SEQUENCES
+var=$first_rna_id                                                   # Global variables for given id number to first and last RNA sequence of the dataset
+last_seq=$last_rna_id               
+
+while [ $var -le $last_seq ]
 do
-    intaRNA_input=$seq
+    echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/intaRNA-input
     
-    if [ -z "$lib_directory" ]   # If Boost library didn't have to specified, run as normal.
-    then
-        $IntaRNA_exe -t $interaction_database -m $intaRNA_input > ./data/intaRNA-results 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)
-    else
-        LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -m $intaRNA_input -t $interaction_database > ./data/intaRNA-results 2>>errors.log
-    fi 
+    
+    #if [ -z "$lib_directory" ]                                                                       # If Boost library didn't have to specified, run as normal.
+    #then
+    $IntaRNA_exe -t $interaction_database -m data/intaRNA-input > data/intaRNA-results-$name 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)
+    #else
+    #    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -m $intaRNA_input -t $interaction_database > data/intaRNA-results 2>>errors.log
+    #fi 
     
     ######## Grab all recorded interactions
-    grep "energy" intaRNA-results | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol #It was: grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol --> but for me output -> energy: -5.20598 kcal/mol
+    grep "energy" data/intaRNA-results-$name | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > data/kcal_mol        #It was: grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol --> but for me output -> energy: -5.20598 kcal/mol
 
-    min=0    # Min interaction energy
-    count=$( grep -c "energy" intaRNA-results )   # Number of interaction energies recorded
-    sum=0    # Sum of all energies calculated, prior to averaging
+                                                                                             # Min interaction energy
+    count=$(wc -l < data/kcal_mol )                                           # Number of interaction energies recorded
+    min=$( head -n 1 data/kcal_mol) 
+    sum=0                                                                                            # Sum of all energies calculated, prior to averaging
 
-    for number in $( cat kcal_mol )
-    do
+    while read -r number; do 
         ######## If the interaction energy is smaller than the recorded min, update the min
-        if (( $( echo "$number < $min" | bc -l ) ))
-        then
-            min=$number
-            sum=$(echo "scale=3; $sum+$number" | bc)
-        else
-            sum=$(echo "scale=3; $sum+$number" | bc)
+        if (( $(echo "$number < $min" | bc -l) )); then
+            min=$number 
         fi
-    done
+
+        sum=$(echo "scale=3; $sum+$number" | bc)
+    
+    done < data/kcal_mol
 
     ######## If no interactions were recorded, set minimum and average as NA 
-    if (( $( echo "$count == 0" | bc -l) ))
-    then
-        ave=NA
-        min=NA
+    if [[ "$count" == 0 ]]; then
+        ave='NA'
+        min='NA'
     else
         ave=$(echo "scale=3; $sum/$count" | bc )
     fi
 
-    echo $min,$ave >> interaction-intermediate.csv
+    #### RNAup
 
+    # RNA input: sequence following by the curated sequences
+    cat data/intaRNA-input data/curated-interaction-database.fa > data/RNAup-input
+
+    # Run
+    RNAup --interaction_first --no_output_file -b --noLP -c 'S' < data/RNAup-input > data/RNAup.out
+    # −b, −−include_both : Include the probability of unpaired regions in both (b) RNAs.
+    # −−interaction_first : Activate interaction mode using first sequence only.
+    # ? −−noLP : Produce structures without lonely pairs (helices of length 1).
+    rm -rf *.out 
+
+    # Extract min and ave energy from output
+    grep '(&)' data/RNAup.out | awk -F'=' '{print $1}' | awk -F' ' '{print $NF}' | tr -d '(' > data/kcal_mol-RNAup 
+    count_RNAup=$( wc -l < data/kcal_mol-RNAup )
+    min_RNAup=$(head -n 1 data/kcal_mol-RNAup)
+    sum_RNAup=0
+
+    while read -r number; do
+        ######## If the interaction energy is smaller than the recorded min, update the min
+        if (( $(echo "$number < $min_RNAup" | bc -l) )); then
+            min_RNAup=$number
+        fi
+        
+        sum_RNAup=$(echo "scale=3; $sum_RNAup+$number" | bc)
+        
+    done < data/kcal_mol-RNAup
+
+    ######## If no interactions were recorded, set minimum and average as NA 
+    if [[ "$count_RNAup" == 0 ]]; then
+        ave_RNAup=NA
+        min_RNAup=NA
+    else
+        ave_RNAup=$(echo "scale=3; $sum_RNAup/$count_RNAup" | bc )
+    fi
+
+
+    echo RNA$var,$min,$ave,$min_RNAup,$ave_RNAup >> data/interaction-intermediate-$name.csv
+
+    (( var++ ))
+   
 done
 
 rm -rf target.fa
 rm -rf intaRNA-results
 rm -rf kcal_mol
+
+
 
 
 ############################################################################################################################

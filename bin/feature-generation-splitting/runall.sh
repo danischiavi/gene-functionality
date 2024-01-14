@@ -67,7 +67,7 @@ first_rna_id=$( head -2 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 last_rna_id=$( tail -1 $initial_data | tail -1 | cut -d ',' -f 1 | tr -d RNA )
 
 ######## Create folder for files generated
-[ -d ./data/feature-generation] && rm -rf ./data/feature-generation]/* || mkdir -p ./data/feature-generation]
+[ -d data/feature-generation] && rm -rf data/feature-generation]/* || mkdir -p data/feature-generation]
 
 ############################################################################################################################
 
