@@ -146,9 +146,10 @@ fi
 ############################################################################################################################
 
 #### File declaration
-echo InteractionMIN,InteractionAVE > data/interaction-intermediate-$name.csv
+echo InteractionMIN_IntaRNA,InteractionAVE_IntaRNA,InteractionMIN_RNAup,InteractionAVE_RNAup > data/interaction-intermediate-$name.csv
 echo MFE > data/MFE-$name.csv
 echo Accessibility > data/access-$name.csv
+echo Ficket_score > data/CPC2-"$name".csv
 echo RNAcode_score,RNAalifold_score > data/rnacode-$name.csv
 echo Max_covariance,Min_covariance_Eval > data/rscape-dataset-$name.csv
 
@@ -172,7 +173,7 @@ fi
 ######## Need to clear any previously set lib path, as otherwise the defined lib path will be appended onto the previous
 [ -z "$lib_directory" ] || unset LD_LIBRARY_PATH
 
-var=$first_rna_id                                                   # Global variables for given id number to first and last RNA sequence of the dataset
+var=$first_rna_id                                                                                             # Global variables for given id number to first and last RNA sequence of the dataset
 last_seq=$last_rna_id               
 
 while [ $var -le $last_seq ]
@@ -180,20 +181,20 @@ do
     echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/intaRNA-input
     
     
-    #if [ -z "$lib_directory" ]                                                                       # If Boost library didn't have to specified, run as normal.
+    #if [ -z "$lib_directory" ]                                                                               # If Boost library didn't have to specified, run as normal.
     #then
-    $IntaRNA_exe -t $interaction_database -m data/intaRNA-input > data/intaRNA-results-$name 2>>errors.log #swap -m for -q (its how IntaRNA works in my session...)
+    $IntaRNA_exe -t $interaction_database -m data/intaRNA-input > data/intaRNA-output 2>>errors.log           #swap -m for -q (its how IntaRNA works in my session...)
     #else
     #    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -m $intaRNA_input -t $interaction_database > data/intaRNA-results 2>>errors.log
     #fi 
     
     ######## Grab all recorded interactions
-    grep "energy" data/intaRNA-results-$name | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > data/kcal_mol        #It was: grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol --> but for me output -> energy: -5.20598 kcal/mol
+    grep "energy" data/intaRNA-output | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > data/kcal_mol        #It was: grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol --> but for me output -> energy: -5.20598 kcal/mol
 
-                                                                                             # Min interaction energy
-    count=$(wc -l < data/kcal_mol )                                           # Number of interaction energies recorded
+                                                                                                              # Min interaction energy
+    count=$(wc -l < data/kcal_mol )                                                                           # Number of interaction energies recorded
     min=$( head -n 1 data/kcal_mol) 
-    sum=0                                                                                            # Sum of all energies calculated, prior to averaging
+    sum=0                                                                                                     # Sum of all energies calculated, prior to averaging
 
     while read -r number; do 
         ######## If the interaction energy is smaller than the recorded min, update the min
@@ -216,14 +217,14 @@ do
     #### RNAup
 
     # RNA input: sequence following by the curated sequences
-    cat data/intaRNA-input data/curated-interaction-database.fa > data/RNAup-input
+    cat data/intaRNA-input data/raw/curated-interaction-database.fa > data/RNAup-input
 
     # Run
     RNAup --interaction_first --no_output_file -b --noLP -c 'S' < data/RNAup-input > data/RNAup.out
     # −b, −−include_both : Include the probability of unpaired regions in both (b) RNAs.
     # −−interaction_first : Activate interaction mode using first sequence only.
     # ? −−noLP : Produce structures without lonely pairs (helices of length 1).
-    rm -rf *.out 
+    rm -rf *.out  #no_output_files option is not working.. 
 
     # Extract min and ave energy from output
     grep '(&)' data/RNAup.out | awk -F'=' '{print $1}' | awk -F' ' '{print $NF}' | tr -d '(' > data/kcal_mol-RNAup 
@@ -256,12 +257,14 @@ do
    
 done
 
-rm -rf target.fa
-rm -rf intaRNA-results
-rm -rf kcal_mol
-
-
-
+rm -rf data/intaRNA-results
+rm -rf data/kcal_mol
+rm -rf data/kcal_mol-RNAup
+rm -rf data/intaRNA-input
+rm -rf data/intaRNA-output
+rm -rf data/RNAup-input
+rm -rf data/RNAup-output
+rm -rf data/RNAup.out
 
 ############################################################################################################################
 
@@ -269,37 +272,35 @@ rm -rf kcal_mol
 
 ############################################################################################################################
 
-## MFE calculation
-$RNAfold_exe < $initial_fasta >> rnafold-output 2>>errors.log
+#### MFE calculation
+$RNAfold_exe < $initial_fasta >> data/rnafold-output 2>>errors.log
 
-grep "(" rnafold-output | rev | cut -d "(" -f 1 | rev | tr -d ")" | tr -d " " >> ./data/MFE.csv
-awk '!NF{$0="0"}1' ./data/MFE.csv > ./data/MFE-final.csv
+# Extract the data from output file
+grep "(" data/rnafold-output | rev | cut -d "(" -f 1 | rev | tr -d ")" | tr -d " " >> data/MFE.csv
+awk '!NF{$0="0"}1' data/MFE.csv >> data/MFE-$name.csv                                               # Replace empty lines with zero
 rm -rf *.ps
-rm -fr ./data/MFE.csv 
+rm -rf data/MFE.csv 
+rm -rf data/rnafold-output
 
 
-## Accessibility calculation
+#### Accessibility calculation
 for sequence in $( grep -v ">" $initial_fasta )
 do 
-    access=$( timeout 60m python3 $additional_folder/access_py.py -s $sequence 2>>errors.log ) 
+    access=$( timeout 60m python3 bin/access_py.py -s $sequence 2>>errors.log ) 
     exit_status=$?
-    if [ -z "$access" ]  # If no value calculated, record NA
-    then
-        echo NA >> ./data/access.csv
-    elif [[ "$access" == "THIS happened"* ]]   # If error occurred, record NA
-    then
-        echo NA >> ./data/access.csv
-    elif [ "$exit_status" -eq "124" ]    # If calculation timed out, record NA
-    then
-        echo NA >> ./data/access.csv
+    if [ -z "$access" ]; then                                                                       # If no value calculated, record NA
+        echo 'NA' >> data/access-$name.csv
+    elif [[ "$access" == "THIS happened"* ]]; then                                                  # If error occurred, record NA
+        echo 'NA' >> data/access-$name.csv
+    elif [ "$exit_status" -eq "124" ]; then                                                         # If calculation timed out, record NA
+        echo 'NA' >> data/access-$name.csv
     else
-        echo $access >> ./data/access.csv
+        echo "$access" >> data/access-$name.csv
     fi
 done
 
-sed -i 's/nan/NA/g' ./data/access.csv  # make NA readable by R
+sed -i 's/nan/NA/g' data/access-$name.csv                                                           # make NA readable by R
 
-rm -rf ./data/MFE.csv
 
 ############################################################################################################################
 
@@ -309,11 +310,11 @@ rm -rf ./data/MFE.csv
 
 ## (python script so cannot be added to $PATH)
 
-$cpc2_directory/CPC2.py -i $initial_fasta -o ./data/output.txt >/dev/null 2>>errors.log    # Original version
-#python3 $cpc2_directory/CPC2.py -i $initial_fasta -o output >/dev/null 2>>errors.log   # Uses updated biopython packages
-cat ./data/output.txt | cut -f 4 > ./data/CPC2.csv
-rm -rf ./data/output.txt
+python3 bin/CPC2_standalone-1.0.1/bin/CPC2.py -i $initial_fasta -o data/cpc2-output >/dev/null 2>>errors.log        
 
+# Extract data
+awk 'NR > 1 {printf "%.2f\n", $4}' data/cpc2-output.txt >> data/CPC2-"$name".csv                                    # Ficket score in field 4 of output file, extract value with 2 decimals
+rm -rf data/cpc2-output.txt
 
 ############################################################################################################################
 

@@ -82,12 +82,13 @@ echo Chromosome,Start,End,Dfam_min,Dfam_sum > data/dfam-distance-$name.csv
 
 ############################################################################################################################
 
-######## Run blastn and MMseqs2
+## Run blastn and MMseqs2
 
 $blastn_exe -query $initial_fasta -db $human_genome -evalue 0.01 -out data/blastn-output.csv -outfmt "10 qaccver saccver pident" >/dev/null 2>>errors.log
+
 mmseqs easy-search $initial_fasta data/raw/mmseqs/human_genome data/mmseqs-output data/tmp --search-type 3 --format-output query,target,evalue
 
-######## Run nhmmer and process Blastn and mmseqs results in order 
+## Run nhmmer and process Blastn and mmseqs results in order 
 
 var=$first_rna_id                                                   # Global variables for given id number to first and last RNA sequence of the dataset
 last_seq=$last_rna_id               
@@ -97,6 +98,7 @@ do
     echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/nhmmer-input.fasta
     nhmmer --tblout data/nhmmer-output -E 0.01 --noali data/nhmmer-input.fasta data/raw/GRCh38_p14_genomic.fna > /dev/null 2>&1 # -E <x> : report sequences <= this E-value threshold in output; don't output alignments
     nhmmer_hits=$( grep -v "#" data/nhmmer-output | wc -l )
+
     #minimap2 data/raw/GRCh38_p14_genomic.fna data/nhmmer-input.fasta >> data/minimap-output
     
     ######## Process each RNA in the file (by ID) as the counter increases
@@ -111,6 +113,27 @@ do
     (( var++ ))
    
 done
+
+## Telomere-to-telomere assembly
+
+var=$first_rna_id                                                   # Global variables for given id number to first and last RNA sequence of the dataset
+last_seq=$last_rna_id 
+T2T_genome='/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-functional-human-genes/data/raw/ncbi_dataset/data/GCF_009914755.1/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna'              
+
+while [ $var -le $last_seq ]
+do
+    echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/nhmmer-input.fasta
+    nhmmer --tblout data/nhmmer-output -E 0.01 --noali data/nhmmer-input.fasta $T2T_genome > /dev/null 2>&1 # -E <x> : report sequences <= this E-value threshold in output; don't output alignments
+    nhmmer_hits_T2T=$( grep -v "#" data/nhmmer-output | wc -l )
+    
+    if [ -z "$nhmmer_hits_T2T" ]; then nhmmer_hits_T2T='NA'; else :; fi
+
+    echo "$nhmmer_hits_T2T" >> data/T2T-copy-number-$name.csv
+
+    (( var++ ))
+
+done
+
 
 
 ############################################################################################################################

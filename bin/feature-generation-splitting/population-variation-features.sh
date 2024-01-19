@@ -85,142 +85,102 @@ else
     exit 1
 fi
 
+# DEFINE : $onekGP_directory
 
 #### File creation 
-echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > ./data/1000g-freqsummary.csv
-echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > ./data/gnomad.csv
+echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > data/1000g-freqsummary-$name.csv
+echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > data/gnomad-$name.csv
 
 
-######## Convert coordinates to hg19 genome version
-echo "$liftOver_exe ./data/hg38-coordinates.bed $chain_file .data/hg19-coordinates.bed ./data/unlifted.bed &> /dev/null" >> errors.log
-$liftOver_exe ./data/hg38-coordinates.bed $chain_file ./data/hg19-coordinates.bed ./data/unlifted.bed &> /dev/null
 
 ###########################################################################################################################
 
-#### Obtain VCF Files from 1kGP 
+# Obtain VCF Files from 1kGP 
+
+###########################################################################################################################
+
+#### Convert coordinates to hg19 genome version
+
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > data/hg38-coordinates.bed     # Reformat coordinates for LiftOver
+
+echo "$liftOver_exe data/hg38-coordinates.bed $chain_file data/hg19-coordinates.bed data/unlifted.bed &> /dev/null" >> errors.log
+$liftOver_exe data/hg38-coordinates.bed $chain_file data/hg19-coordinates.bed data/unlifted.bed &> /dev/null
+
+##
+
 max="$last_rna_id"
 var="$first_rna_id"
 
-######## If available, unzip previously downloaded VCF files
-if [ -f VCF.zip ]
-then
-    unzip VCF.zip &> /dev/null
+## If available, unzip previously VCF files, otherwise extract files
+if [ -f data/1kGP-VCF.zip ]; then
+
+    unzip data/VCF.zip &> /dev/null
+
 else
-    mkdir -p ./data/VCF
+    mkdir -p data/1kGP-VCF
     
-    ######## Download VCF files according to hg19 chromosome coordinates
+    ## Obtain VCF files according to hg19 chromosome coordinates
     while [ $var -le $max ]
     do
-        ######## Grab the coordinates for each RNA as the counter increases
-        line=$( grep -w "RNA$var" .data/hg19-coordinates.bed | cut -f 1,2,3 | tr '\t' ' ' | tr -d "chr" | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' )
+        ## Grab the coordinates for each RNA as the counter increases
+        line=$( grep -w "RNA$var" data/hg19-coordinates.bed | cut -f 1,2,3 | tr '\t' ' ' | tr -d "chr" | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' )
         
-        ######## If previous coordinate was associated with an annoated chromosome, use hg38 coordinates
-        if [ -z $line ] || [[ $line == *"Un_"* ]]
-        then
+        ## If previous coordinate was associated with an annotated chromosome, use hg38 coordinates
+        if [ -z $line ] || [[ $line == *"Un_"* ]]; then
+      
             line=$( grep -w "RNA$var" $initial_data | cut -d ',' -f 3,4,5 | tr ',' ' ' | tr -d "chr" | perl -lane '{print "$F[0]:$F[1]-$F[2]"}' )
             
-        ######## Reformatting scaffolds of annotated chromosomes
-        elif [[ $line == *"_"* ]]
-        then
+        ## Reformatting scaffolds of annotated chromosomes
+        elif [[ $line == *"_"* ]]; then
+        
             a=$( echo $line | cut -d "_" -f 1 )
             b=$( echo $line | cut -d ":" -f 2 )
             line=$( echo $a:$b )
-        else
-            :
+
         fi
         
-        name='RNA'$var'-1k'
+        rna_id='RNA'$var'-1k'
         chr=$( echo $line | cut -d ':' -f 1 )
 	
-        ######## The X chromosome is downloaded from a different folder to the autosomal chromosomes.
-        if [ $chr == 'X' ]
-        then
+        ## The X chromosome is downloaded from a different folder to the autosomal chromosomes.
+        if [ $chr == 'X' ]; then
+        
             #until
-	    echo "$tabix_exe -f -h $additional_folder/1000genomes/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;"  >> tabix.log		                                   
-	    #$tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
-	    $tabix_exe -f -h $additional_folder/1000genomes/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;
-	    #do
-	    echo Processing $name.vcf >> tabix.log ; echo >> tabix.log ;
-	    #./data/1000genomes/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
-	    #./data/1000genomes/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
-	    #done
+	        echo "$tabix_exe -f -h $onekGP_directory/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz $line > $rna_id.vcf 2>>tabix.log ;"  >> tabix.log		                                   
+	        #$tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
+	        $tabix_exe -f -h $onekGP_directory/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz $line > $rna_id.vcf 2>>tabix.log ;
+	        #do
+	        echo Processing $rna_id.vcf >> tabix.log ; echo >> tabix.log ;
+	        #./data/1000genomes/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
+	        #./data/1000genomes/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+	        #done
             ######## Tabix is very sensitive to crashing, so repeat the command until a valid VCF file has been downloaded.
         else
             #until
-	    echo "$tabix_exe -f -h $additional_folder/1000genomes/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;"  >> tabix.log
-	    #$tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
-	    $tabix_exe -f -h $additional_folder/1000genomes/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ;
-	    #do
-	    echo Processing $name.vcf >> tabix.log ; echo >> tabix.log ;
-	    #done
+	        echo "$tabix_exe -f -h $onekGP_directory/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz $line > $rna_id.vcf 2>>tabix.log ;"  >> tabix.log
+	        #$tabix_exe -f -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz $line > $name.vcf 2>>tabix.log ; do echo Downloading $name.vcf >> tabix.log ; echo >> tabix.log ; done
+	        $tabix_exe -f -h $onekGP_directory/ALL.chr$chr.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz $line > $rna_id.vcf 2>>tabix.log ;
+	        #do
+	        echo Processing $rna_id.vcf >> tabix.log ; echo >> tabix.log ;
+	        #done
         fi                                                                            
 
         ######## Move VCF so it doesn't need to be redownloaded.
-        mv $name.vcf data/VCF/
+        mv $rna_id.vcf data/1kGP-VCF
+        
         (( var++ ))
+       
         rm -rf text.file
         
     done
 fi
 
 ######## Remove excess files
-rm -rf ./data/hg19-coordinated.bed
-# rm -rf ./data/hg38-coordinates.bed
-rm -rf ./data/unlifted.bed
+rm -rf data/hg19-coordinated.bed
+# rm -rf data/hg38-coordinates.bed
+rm -rf data/unlifted.bed
 
 
-##### Function declarations
-VCF2summary() {
-
-    local vfctools_exe="$1"
-    local vcf_input="$2"
-    local output_prefix="$3"
-    local len="$4"
-
-    ######## Determine SNP frequencies for each ncRNA sequence
-    #echo "$vcftools_exe --vcf $input_vcf --freq --out $output_prefix &> /dev/null" >> tabix.log  #are they doing the same? 
-    $vcftools_exe --vcf $input_vcf --freq --out $output_prefix &> /dev/null
-
-    ######## Extract each SNP at frequency observed at that position into a parsable format
-    grep -v "CHROM" $output_prefix.frq | cut -f 5,6 | perl -lane '{print "$F[0]:$F[1]"}' > snps.file  
-    min=0  # Min MAF observed?? it was min=0.99, but I think should be min=0! 
-    sum=0
-    count=0
-
-    while IFS=: read -r snpa _ snpb maf  # # Add a way to Stop loop crashing if VCF file is empty
-    do
-        sum=$(echo "$sum + $maf" | bc )
-
-        # I think all this section is not doing anything?? 
-        ######## If the maximum? (dont really understand what max is.. I think it should be minimun?? ) is recorded as zero, set the new values automatically as the max D:???? where is max defined? 
-        #if (( $(echo "$min == 0" | bc -l) ))
-        #then
-        #   min=$maf
-        ######## If the new SNP analysed has a frequency smaller than the recorded min, update the min
-        #elif (( $(echo "$maf < $min" | bc -l) ))
-        #then
-        #    min=$maf
-        #else
-        #    :
-        #fi
-        
-
-        (( count++ ))
-
-    done < snps.file
-
-    if [[ "$count" == "0" ]] || [ -z "$count" ]   # If no SNPs were recorded, set everything to NA
-    then
-        count='NA'
-        density='NA'
-        average='NA'
-    else
-        density=$(echo "scale=3; $count/$len" | bc )   # SNP Density
-	    average=$(echo "scale=3; $sum/$count" | bc )
-    fi
-
-
-}
 
 ############################################################################################################################
 
@@ -228,25 +188,58 @@ VCF2summary() {
 
 ############################################################################################################################
 
+## Function declaration
+VCF2summary() {
+
+    local input_vcf="$1"
+    local len="$2"
+
+    ## Determine SNP frequencies for each ncRNA sequence
+    echo "$vcftools_exe --vcf $input_vcf --freq --out data/vcftools-output &> /dev/null" >> tabix.log   
+    $vcftools_exe --vcf $input_vcf --freq --out data/vcftools-output &> /dev/null
+
+    ## Extract SNPs for each sequence at frequency observed at that position into a parsable format
+    awk -F'\t' 'NR > 1 {print $5":"$6}' data/vcftools-output.frq > data/snps    
+
+    SNPs_count=$( wc -l < data/snps)
+    MAF_sum=$(awk -F':' '{sum += $4} END {print sum}' data/snps)
+
+    if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
+    
+        SNPs_count='NA'
+        SNPs_density='NA'
+        MAF_average='NA'
+    
+    else
+
+        SNPs_density=$(echo "scale=4; $SNPs_count/$len" | bc )   
+	    MAF_average=$(echo "scale=4; $MAF_sum/$SNPs_count" | bc )
+    
+    fi
+}
+
+
+## Call function for each sequence
 {
     read
-    while IFS=, read -r id _ _ start end seq        # Loop through VCF files
+    while IFS=, read -r id _ _ start end seq                              
     do
-        len=$(( $end-$start ))   # Sequence length
-        f="$id-1k.vcf"
-        input_vcf="VCF/$f"
-        output_prefix="freq-afr"
-        echo "[$id][$start][$end][$len][$f]"  >> tabix.log  
+        len=$(( $end-$start ))                                              # to calculate SNP density
+        input_vcf="data/1kGP-VCF/$id-1k.vcf"
+        echo "[$id][$start][$end][$len][$id-1k.vcf]"  >> tabix.log  
 
-        VCF2summary "$vcftools_exe" "$input_vcf" "$output_prefix" "$len"
+        VCF2summary "$input_vcf" "$len"                                     
 
-        echo "$count,$density,$average" >> ./data/processed/1000g-freqsummary.csv
+        echo "$SNPs_count,$SNPs_density,$MAF_average" >> data/1kGP-freqsummary-$name.csv
     
     done
    
-} < $initial_data   #would be better to loop through coordinates file? 
+} < $initial_data   
 
-
+rm -rf data/hg19-coordinates.bed
+rm -rf data/hg38-coordinates.bed
+rm -rf data/snps
+# remove VCF files or zip them? 
 
 ############################################################################################################################
 
@@ -254,49 +247,63 @@ VCF2summary() {
 
 ############################################################################################################################
 
+mkdir -p data/VCF-gnomad 
+
+awk -F',' 'NR > 1 {print $3":"$4"-"$5}' "$initial_data" > data/coordinates
+
 ### Variables 
 max="$last_rna_id"
 var="$first_rna_id"
-count="$intial_count"
 
 {
     read
-    while IFS='/t' read -r id start end
+    while IFS= read -r line
     do
-        len=$(( $end-$start ))   
-        name='RNA'$var'-gnomad'
-        tabix_input=$id':'$start'-'$end
+        tabix_input="$line"
 
-        echo Extracting $name.vcf >> tabix.log ;
-        echo "$tabix_exe -f -h $gnomad_database $tabix_input > $name.vcf 2>>tabix.log ;" >>tabix.log
-        $tabix_exe -f -h $gnomad_database $tabix_input > $name.vcf 2>>tabix.log ;
+        start=$(echo "$line" | awk -F'[:-]' '{print $2}')
+        end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density
+        len=$(( $end-$start ))  
+
+        rna_id="RNA$var-gnomad"
+
+        chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
+        gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites.$chr.vcf.bgz          # make it a variable with user input
+
+        echo Extracting $rna_id.vcf >> tabix.log ;
+        echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
+        $tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;
         #do
-        echo >> tabix.log ;
+        echo >> tabix.log 
 #       done
-    
-        count=$( grep -v "#" $name.vcf | wc -l )
-        density=$(echo "scale=3; $count/$len" | bc)
-        maf=0
+
+        awk -F';' '{for(i=1;i<=NF;i++) if($i ~ /^AF=/) {split($i, a, "="); print a[2]}}' $rna_id.vcf > data/snps-gnomad
         
-    for snp in $( grep -v "#" $name.vcf )  #  careful with IFS! maybe is worth to define it for this specific loop
-    do
-        af=$( echo $snp | cut -f 8 | cut -d ';' -f 3 | tr -d "AF=" ) >> af.txt #bcftools??
-        af_decimal=$(printf "%.10f" "$af")                              #from scientific annotation to decimal for bc (check smallest maf in database)
-        maf=$(echo "$maf+$af_decimal" | bc )
-    done
+        SNPs_count=$( wc -l < data/snps-gnomad)
+        MAF_sum=$(awk -F':' '{sum += $1} END {print sum}' data/snps-gnomad)
 
-    [[ "$count" -eq 0 ]] && avg_maf=NA || avg_maf=$(echo "scale=3; $maf/$count" | bc)
+        if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
+    
+            SNPs_count='NA'
+            SNPs_density='NA'
+            MAF_average='NA'
+    
+        else
 
-    [[ "$count" -eq 0 ]] && echo NA,NA,NA >> gnomad.csv || echo $count,$density,$avg_maf >> gnomad.csv
+            SNPs_density=$(echo "scale=4; $SNPs_count/$len" | bc )   
+	        MAF_average=$(echo "scale=5; $MAF_sum/$SNPs_count" | bc )
+    
+        fi
+   
+        echo "$SNPs_count,$SNPs_density,$MAF_average" >> gnomad-$name.csv 
+    
+        (( var++ )) 
 
-    #rm -rf $name.vcf
-    (( var++ )) 
-
-    mv $name.vcf .data/VCF/
+        mv "$rna_id.vcf" "data/VCF-gnomad/$rna_id.vcf"
     
     done
    
-} < ./data/coordinates
+} < data/coordinates
 
 
 ######## Zip VCF files for further analyses

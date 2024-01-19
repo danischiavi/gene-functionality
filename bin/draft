@@ -29,3 +29,39 @@ done
 #else
 #    :
 #fi
+
+
+	mkdir -p aliout
+        var=$(($var+1))
+        rm -rf *.sorted.cov
+        mv *.cov rscapedata &> /dev/null
+        rm -rf overBed
+        rm -rf blank.txt
+        #rm -rf *.pdf
+        #rm -rf *ss.ps
+        #rm -rf *.svg
+        #rm -rf *.surv
+        #rm -rf *.sto
+	mv RNA*.ps  aliout/
+	mv RNA*.stk aliout/
+	mv RNA*svg  aliout/
+	mv RNA*sto  aliout/
+	mv RNA*pdf  aliout/
+	mv RNA*surv  aliout/
+	mv *rnaalifold aliout/
+        rm -rf *.power
+        rm -rf rnacode_output
+
+
+zip -r maf maf &> /dev/null
+rm -rf maf/
+
+
+
+
+
+#### Reformat initial dataset
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' $initial_data > ./data/tab-coordinates
+awk -F',' 'NR > 1 {print $3,$4,$5}' $initial_data > ./data/coordinates  # for mafFetch
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5}' "$initial_data" | sort -k1,1 -k2,2n > ./data/sorted-coordinates.bed # for bedtools
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > ./data/hg38-coordinates.bed # for VFC 1kGP files
