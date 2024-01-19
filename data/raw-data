@@ -83,3 +83,40 @@ sort -k1,1 -k2,2n dfam-hg38.bed > dfam-hg38-sorted.bed
 #Simpler & faster with a perl one-liner e.g.:
 cat hg38_dfam.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1V -k2,2n > dfam-hg38-sorted.bed
 
+
+
+##### CPC2.py
+# https://github.com/gao-lab/CPC2_standalone/releases
+wget -P bin/ https://github.com/gao-lab/CPC2_standalone/archive/refs/tags/v1.0.1.tar.gz 
+gzip -dc bin/v1.0.1.tar.gz | tar xf - 
+mv CPC2_standalone-1.0.1 bin/
+cd bin/CPC2_standalone-1.0.1
+cd libs/libsvm
+gzip -dc libsvm-3.18.tar.gz | tar xf -
+cd libsvm-3.18
+make clean && make
+cd ../../../../..
+
+# To run it
+python3 bin/CPC2_standalone-1.0.1/bin/CPC2.py -i $initial_fasta -o data/cpc2-output.txt
+
+
+# gnomAD database
+conda install gsutil
+
+mkdir data/raw/gnomad
+cd data/raw/gnomad/
+gsutil cp gs://gcp-public-data--gnomad/release/4.0/vcf/genomes/gnomad.genomes.v4.0.sites.chr*.vcf.bgz.tbi
+
+
+
+# T2T
+https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_009914755.1/ 
+cd data/raw/
+wget https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/GCF_009914755.1/download?include_annotation_type=GENOME_FASTA
+unzip download?include_annotation_type=GENOME_FASTA 
+cd ../..
+
+# Chain to map coordinates from hg38 to chm13 (i think i dont need it)
+https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/
+wget https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/hg38-chm13v2.over.chain.gz
