@@ -68,7 +68,7 @@ run_encode() {
 
 sample_type=$1
 
-echo RPKM_$sample_type,MRD_$sample_type > ./data/$name_set-$sample_type-rnaseq.csv
+echo RPKM_$sample_type,MRD_$sample_type > data/$sample_type-rnaseq-$name.csv
 
 ######## Define location of downloaded ENCODE RNAseq data
 encode_data=$encode_folder/ENCODE-$sample_type/*.bam
@@ -105,7 +105,7 @@ do
     [ -z "$max_depth" ] && max_depth=0                                                            # Record MRD as zero rather than blank
     if [ -z "$count_max" ] ; then count_max=NA ; max_depth=NA ; else : ; fi                       # But if no transcription whatsoever, set everything to NA 
 
-    echo $count_max,$max_depth >> $name_dataset-rnaseq.csv
+    echo $count_max,$max_depth >> rnaseq-$name.csv
 
 done < $initial_data
 

@@ -120,3 +120,15 @@ cd ../..
 # Chain to map coordinates from hg38 to chm13 (i think i dont need it)
 https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/
 wget https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/hg38-chm13v2.over.chain.gz
+
+
+
+# ENCODE data
+for file in *.bam; do
+    # Check if the file exists and is a regular file
+    if [ -f "$file" ]; then
+        #samtools index "$file"
+        total=$(samtools view -c "$file")
+        echo "$file,$total" >> total-read-count.txt
+    fi
+done
