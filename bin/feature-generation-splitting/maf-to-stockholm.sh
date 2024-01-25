@@ -2,82 +2,87 @@
 
 maf_to_stockholm() {
 
+    local input_file=$1
+    local file_id=$2
+
+    mkdir data/maf-to-stk
+    local temp_dir='data/maf-to-stk'
+
+    
 ######## Extract all the multiz100way alignment information 
-grep -v "#\|score" data/maf/mafOut > data/maf/mafOut.txt
+grep -v "#\|score" $input_file > $temp_dir/aligns.txt
 
 ######## Split each file into individual alignments
-awk -v RS= '{print > ("data/maf/mafOut-" NR ".txt")}' data/maf/mafOut.txt
+awk -v RS= '{print > ("temp_dir/align-" NR ".txt")}' $temp_dir/aligns.txt
 
 
-max=$( ls data/maf/mafOut-*.txt | wc -l )
+max=$( ls $temp_dir/align-*.txt | wc -l )
 count=1
 
-while [ $count -le $max ]
-do
+while [ $count -le $max ]; do
     ######## Parse through each file, in order 
     while IFS=$'\n' read -r line; do
 
         start=$( echo $line | tr -s ' ' | cut -d ' ' -f 1 )
         ######## If the line contains sequence information
-        if (( $(echo "$start == s" | bc -l ) ))
-        then
+        if (( $(echo "$start == s" | bc -l ) )); then
             ######## If this is the first file, then also extract sequence name
             if (( $(echo "$count == 1" | bc -l) )); then
+                
                 id=$( echo $line | tr -s ' ' | cut -d ' ' -f 2 | tr '.' '/' )
                 seq=$(  echo $line | tr -s ' ' | cut -d ' ' -f 7 )
                 
                 if [ ! -z "$seq" ]; then
                     ######## Ensures all the sequences start in the same position in the STK file
-                    printf "%-40s\n" $id >> data/maf/mafOut-0-seq
-                    echo $seq >> data/maf/mafOut-$count-seq
+                    printf "%-40s\n" $id >> $temp_dir/align-0-seq
+                    echo $seq >> $temp_dir/align-$count-seq
+                
                 fi    
 
             else
                 ######## Only extract sequence information in subsequent files
                 seq=$( echo $line | tr -s ' ' | cut -d ' ' -f 7 )
-                if [ ! -z "$seq" ]; then
-                    echo $seq >> data/maf/mafOut-$count-seq
-                fi
+                
+                if [ ! -z "$seq" ]; then echo $seq >> $temp_dir/align-$count-seq; fi
+        
             fi
-        else
-            :
         fi
 
-    done < data/maf/mafOut-$count.txt
+    done < $temp_dir/align-$count.txt
 
     (( count++ ))  
+
 done
 
 
 ######## Format STK file
 if [ ! -d data/STK ]; then mkdir data/STK; fi
-echo '# STOCKHOLM 1.0' > data/STK/$rna_id.stk
-echo "#=GF ID $rna_id" >> data/STK/$rna_id.stk
+echo '# STOCKHOLM 1.0' > data/STK/$file_id.stk
+echo "#=GF ID $file_id" >> data/STK/$file_id.stk
 
 # Concatenate sequences into a single file
 files=()
-while IFS= read -r file; do
-    files+=("$file")
-done < <(ls data/maf/mafOut-*-seq | sort -V)
 
-paste -d'\0' "${files[@]}" > data/alignment
+while IFS= read -r file; do
+
+    files+=("$file")
+
+done < (ls $temp_dir/align-*-seq | sort -V)
+
+
+paste -d'\0' "${files[@]}" > $temp_dir/alignment
 
 # Find the length of the sequence of the full sequence to remove partial alignments
-human_len=$( grep "hg38" data/alignment | tr -s ' ' | cut -d ' ' -f 2 | wc -m )
+human_len=$( grep "hg38" $temp_dir/alignment| tr -s ' ' | cut -d ' ' -f 2 | wc -m )
 
 while IFS=$'\n' read -r line; do     
 
     seq_len=$( echo $line | tr -s ' ' | cut -d ' ' -f 2 | wc -m )
     
-    if [[ $seq_len -eq $human_len ]]; then                          # Only include full sequences          
-        echo $line >> data/STK/$rna_id.stk
-    fi
+    if [[ $seq_len -eq $human_len ]]; then echo $line >> data/STK/$file_id.stk; fi  # Only include full sequences
 
-done < data/alignment
+done < $temp_dir/alignment
 
-
-rm -rf data/maf/mafOut-*.txt
-rm -rf data/maf/mafOut-*-seq
-rm -rf data/alignment
+rm -rf $temp_dir
 
 }
