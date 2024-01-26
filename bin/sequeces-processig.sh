@@ -31,8 +31,8 @@ else
 fi
 
 ## Convert input from FASTA to CSV file for easier parsability
-fasta_formatter -i "$lncrna_fasta" -o "data/raw/rnacentral-lncrna-seq.csv" -t              # downloaded fasta file from RNAcentral with: lncRNA sequences
-fasta_formatter -i "$short_ncrna_fasta" -o "data/raw/rnacentral-short-ncrna-seq.csv" -t    #                                             short-ncRNA sequences
+rnacentral_lncrna_seqs=$(fasta_formatter -i "$lncrna_fasta" -o "data/raw/rnacentral-lncrna-seq.csv" -t)             # downloaded fasta file from RNAcentral with: lncRNA sequences
+rnacentral_short_ncrna_seqs=$(fasta_formatter -i "$short_ncrna_fasta" -o "data/raw/rnacentral-short-ncrna-seq.csv" -t )   #                                             short-ncRNA sequences
 fasta_formatter -i "$pre_mirna_fasta" -o "data/raw/rnacentral-pre-mirna-seq.csv" -t        #                                             precursor miRNA sequences
 
 ## Variables
@@ -74,7 +74,7 @@ negative_control='data/coords-for-negative-control.csv'
 ### Sequence length limits
 lower_limit='75'
 upper_limit='3000'
-lower_limit_short='20' # CHECK
+lower_limit_short='10' # CHECK
 
 ###########################################################################################################################
 
@@ -83,19 +83,6 @@ lower_limit_short='20' # CHECK
 ###########################################################################################################################
 
 #### Function declaration
-
-populate_array() {                                ## Populate arrays with short and lncrna ids for searching within all ncrna RNAcentral database
-    
-    local file=$1
-    local name=$2
-    local -n array_ref="IDs_$name"
-
-    while IFS=$'\t' read -r ID_full _; do         # ID with description (rnacentral) 
-       IFS=' ' read -r ID _     <<< "$ID_full"
-       array_ref+=("$ID")
-    done < "$file"
-}
-
 
 set_variables() {                                  ## Set variables to filter out ncRNA sequences from the RNAcentral database
     
@@ -117,34 +104,25 @@ set_variables() {                                  ## Set variables to filter ou
 }
                 
 
-## Arrays for searching short and lncrna ids within all ncrna RNAcentral database  
-
+# Extract ID column to array for searching short and lncrna ids within all ncrna RNAcentral database 
 declare -a "IDs_ncrna=()"  
+mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
+
 declare -a "IDs_lncrna=()"
+mapfile -t IDs_lncrna < <(cut -f 1 -d $'\t' "$rnacentral_lncrna_seqs" | awk '{print $1}')
+
 declare -a "IDs_short_ncrna=()"
+mapfile -t IDs_short_ncrna < <(cut -f 1 -d $'\t' "$rnacentral_short_ncrna_seqs" | awk '{print $1}')
+
 declare -a "IDs_pre_mirna=()"
+mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | awk '{print $1}')
 
-# Populate lncRNA and short-ncRNA arrays
-populate_array "$rnacentral_lncrna_seqs" "lncrna"
-populate_array "$rnacentral_short_ncrna_seqs" "short_ncrna"
-populate_array "$rnacentral_pre_mirna_seqs" "pre_mirna"
-
-# Populate ncRNA array
-while IFS=$'\t' read -r _ _ _ ID _; do 
-    if [[ "$ID" != "${IDs_ncrna[@]}" ]]; then
-        IDs_ncrna+=("$ID")
-    else  
-        :
-    fi
-done < "$rnacentral_coords"
-   
-## D: ADD CHECKS FOR ARRAYS!    
-
+## D: ADD CHECKS FOR ARRAYS!  
 
 ## LNCRNA - Extracting 1000 random sequences from RNAcentral database
 
-lncrna_count=0
 declare -a "selected_ids=()"                            # Keeps track of selected random IDs
+lncrna_count=0
 
 while [ "$lncrna_count" -le 1000 ]; do
     
@@ -177,13 +155,14 @@ while [ "$lncrna_count" -le 1000 ]; do
                         start_one=$((   $seq_start + $relative_start_one + 1 ))                                  # +1 to account for the first relative start pos being 0
                         start_two=$((   $seq_start + $relative_start_two + 1 ))                                         
                         start_last=$(( $seq_start + $relative_start_last + 1 )) 
+                        end_two=$((                    $start_one + $len_one ))
                         end_two=$((                    $start_two + $len_two ))
                         end_last=$((                 $start_last + $len_last ))
                         
                         selected_ids+=("$random_id")
                         lncrna_count=$(echo "${#selected_ids[@]}")
             
-                        echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq"     >> "$lncrna_exon_one"
+                        echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq" >> "$lncrna_exon_one"
                         echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq" >> "$lncrna_exon_two"  
 
                         if [ "$start_one" -gt "$end_last" ]; then                                                       # Reverse transcripts can alter order of start/end positions
@@ -207,12 +186,11 @@ done
 
 declare -a "selected_ids=()"
 short_count=0
-short_total=$(echo "${#IDs_short_ncrna[@]}")
-
+short_total="${#IDs_short_ncrna[@]}"
 
 while [ "$short_count" -le 1000 ]; do
     
-    if [[ "$short_count" -le "short_total"]]; then
+    if [ "$short_count" -le "$short_total" ]; then
 
         random_id="${IDs_short_ncrna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                                  # Select a random ID from the lncrna list
 
@@ -242,7 +220,7 @@ while [ "$short_count" -le 1000 ]; do
            
             start=$((zero_start+=1))                                                                    # add 1 to change coordinate from 0-start
             selected_ids+=("$random_id")
-            short_count=$(echo "${#selected_ids[@]}") 
+            short_count="${#selected_ids[@]}"
                                                              
             echo RNA$short_count,Yes,"$chr","$start","$end","$seq" >> "$short_ncrna"
                 
@@ -257,6 +235,7 @@ while [ "$short_count" -le 1000 ]; do
             fi
         fi 
     fi
+
 done
 
 
@@ -371,11 +350,13 @@ done
 csv_to_fasta() {                     
     
     {
-        while IFS=',' read -r id _ _ _ _ seq
-        do
+    read 
+    while IFS=',' read -r id _ _ _ _ seq; do
+        
             echo -e ">$id\n$seq" >> data/$name-seq.fa
         
         done
+
     } < data/$name-dataset.csv   
 }   
 
