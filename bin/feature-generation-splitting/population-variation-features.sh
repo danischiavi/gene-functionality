@@ -247,7 +247,7 @@ rm -rf data/snps
 
 ############################################################################################################################
 
-mkdir -p data/VCF-gnomad 
+mkdir -p data/VCF-gnomad/$name 
 
 awk -F',' 'NR > 1 {print $3":"$4"-"$5}' "$initial_data" > data/coordinates
 
@@ -255,55 +255,51 @@ awk -F',' 'NR > 1 {print $3":"$4"-"$5}' "$initial_data" > data/coordinates
 max="$last_rna_id"
 var="$first_rna_id"
 
-{
-    read
-    while IFS= read -r line
-    do
-        tabix_input="$line"
 
-        start=$(echo "$line" | awk -F'[:-]' '{print $2}')
-        end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density
-        len=$(( $end-$start ))  
-
-        rna_id="RNA$var-gnomad"
-
-        chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
-        gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites.$chr.vcf.bgz          # make it a variable with user input
-
-        echo Extracting $rna_id.vcf >> tabix.log ;
-        echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
-        $tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;
-        #do
-        echo >> tabix.log 
-#       done
-
-        awk -F';' '{for(i=1;i<=NF;i++) if($i ~ /^AF=/) {split($i, a, "="); print a[2]}}' $rna_id.vcf > data/snps-gnomad
+while IFS= read -r line; do
         
-        SNPs_count=$( wc -l < data/snps-gnomad)
-        MAF_sum=$(awk -F':' '{sum += $1} END {print sum}' data/snps-gnomad)
+    tabix_input="$line"
 
-        if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
-    
-            SNPs_count='NA'
-            SNPs_density='NA'
-            MAF_average='NA'
-    
-        else
+    start=$(echo "$line" | awk -F'[:-]' '{print $2}')
+    end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density        len=$(( $end-$start ))  
 
-            SNPs_density=$(echo "scale=4; $SNPs_count/$len" | bc )   
-	        MAF_average=$(echo "scale=5; $MAF_sum/$SNPs_count" | bc )
+    rna_id="RNA$var-gnomad"
+
+    chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
+    gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites.$chr.vcf.bgz               # make it a variable with user input
+
+    echo Extracting $rna_id.vcf >> tabix.log ;
+    echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
+    $tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;
+    #do
+    echo >> tabix.log 
+#      done
+
+    awk -F';' '{for(i=1;i<=NF;i++) if($i ~ /^AF=/) {split($i, a, "="); print a[2]}}' $rna_id.vcf > data/snps-gnomad
+        
+    SNPs_count=$( wc -l < data/snps-gnomad)
+    MAF_sum=$(awk -F':' '{sum += $1} END {print sum}' data/snps-gnomad)
+
+    if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
     
-        fi
+        SNPs_count='NA'
+        SNPs_density='NA'
+        MAF_average='NA'
+    
+    else
+
+        SNPs_density=$(echo "scale=4; $SNPs_count/$len" | bc )   
+	    MAF_average=$(echo "scale=5; $MAF_sum/$SNPs_count" | bc )
+    
+    fi
    
-        echo "$SNPs_count,$SNPs_density,$MAF_average" >> gnomad-$name.csv 
+    echo "$SNPs_count,$SNPs_density,$MAF_average" >> gnomad-$name.csv 
     
-        (( var++ )) 
+    (( var++ )) 
 
-        mv "$rna_id.vcf" "data/VCF-gnomad/$rna_id.vcf"
+    mv $rna_id.vcf data/VCF-gnomad/$name/
     
-    done
-   
-} < data/coordinates
+done < data/coordinates
 
 
 ######## Zip VCF files for further analyses
