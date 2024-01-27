@@ -325,7 +325,7 @@ rm -rf data/cpc2-output.txt
 # Obtain MSA files from 241-way cactus alignment
 
 bigBedToBed_exe='bin/bigBedToBed'       # to extract MSA of regions from UCSC server  
-241way_url='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf'
+cactus_align_url='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf'
 input_file='data/initial_data_sample'
 
 {
@@ -333,32 +333,34 @@ input_file='data/initial_data_sample'
     while IFS=, read -r rna_id _ chr start end _; do
 
         # Obtain MSA files from 241-way cactus alignment
-        maf_file='data/zoonomia-maf/$rna_id.maf'
-        $bigBedToBed_exe $241way_url \
+        
+        $bigBedToBed_exe $cactus_align_url \
         stdout -chrom=$chr -start=$start -end=$end | cut -f 4 | tr ';' \        # format bed output to maf
-        '\n' > $maf_file
+        '\n' > data/zoonomia-maf/$rna_id.maf
+
+        maf_file=data/zoonomia-maf/$rna_id.maf
 
     if [ ! -z $maf_file ]; then
         
         ######## Run RNAcode
         RNAcode_output='data/rnacode-output'
 	    #echo "$RNAcode_exe $file -o $RNAcode_output 2>>errors.log &> /dev/null" >>errors.log
-	    $RNAcode_exe $maf_file -o $RNAcode_output 2>>errors.log &> /dev/null
+	    $RNAcode_exe $maf_file -o data/rnacode-output 2>>errors.log &> /dev/null
             
         # Takes the largest score, but records zero if no significant hits found.
         rnacode=$( grep -v "No significant coding regions found.\|#\|=" $RNAcode_output | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
         [ -z $rnacode ] && rnacode=NA
     
         ####### Convert MSA.maf files to STK format for RNAalifold and R-scape
-        bin/maf_to_stockholm  $maf_file $rna_id      # is it better to declare function have it on a different script??  
-        STK_input='data/STK/$rna_id.stk'
+        maf_to_stockholm  $maf_file $rna_id      # is it better to declare function have it on a different script??  
+        STK_input=data/STK/"$rna_id".stk
 
         ######## Generate secondary structure consensus sequence and associated MFE value
-        RNAalifold_output='data/RNAalifold/"$rna_id"alifold'
+        RNAalifold_output=data/RNAalifold/"$rna_id"-RNAalifold
 
         echo "$RNAalifold_exe -f S --noPS --aln $STK_input >$rna_id.rnaalifold 2>>errors.log" >>errors.log
         #timeout 60m
-	    $RNAalifold_exe -f S --noPS --aln $STK_input > $RNAalifold_output 2>>errors.log
+	    $RNAalifold_exe -f S --noPS --aln $STK_input > "$RNAalifold_output" 2>>errors.log
         rna_score=$( cat $RNAalifold_output | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
 
 	    # Remove gap-only columns:
@@ -371,11 +373,11 @@ input_file='data/initial_data_sample'
         exit_status=$?
 	    
         ######## Run R-scape only if previous analyses didn't time out
-        Rscape_output='data/rscape/"$rna_id".cov'
+        Rscape_output=data/rscape/"$rna_id".cov
         if [ "$exit_status" -ne "124" ]; then
         
 		    echo "$rscape_exe -E 100 -s $STK_input >/dev/null 2>>errors.log" >>errors.log
-            $rscape_exe -E 100 -s $STK_input > $Rscape_output /dev/null 2>>errors.log
+            $rscape_exe -E 100 $STK_input > "$Rscape_output" /dev/null 2>>errors.log # deleted -s option since structure is required 
        
         else
 
