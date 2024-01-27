@@ -105,9 +105,9 @@ do
     total_blastn=$( grep -w "RNA$var" data/blastn-output.csv | wc -l)  
     total_mmseqs=$( grep -w "RNA$var" data/mmseqs-output | wc -l)  
 
-    if [ -z "$total_blastn" ]; then total_blastn='NA'; else :; fi 
-    if [ -z "$total_mmseqs" ]; then total_mmseqs='NA'; else :; fi 
-    if [ -z "$nhmmer_hits" ]; then nhmmer_hits='NA'; else :; fi
+    if [ -z "$total_blastn" ]; then total_blastn='NA'; fi 
+    if [ -z "$total_mmseqs" ]; then total_mmseqs='NA'; fi 
+    if [ -z "$nhmmer_hits" ]; then nhmmer_hits='NA'; fi
     
     echo "$total_blastn, $total_mmseqs, $nhmmer_hits" >> data/copy-number-$name.csv
     (( var++ ))
@@ -126,7 +126,7 @@ do
     nhmmer --tblout data/nhmmer-output -E 0.01 --noali data/nhmmer-input.fasta $T2T_genome > /dev/null 2>&1 # -E <x> : report sequences <= this E-value threshold in output; don't output alignments
     nhmmer_hits_T2T=$( grep -v "#" data/nhmmer-output | wc -l )
     
-    if [ -z "$nhmmer_hits_T2T" ]; then nhmmer_hits_T2T='NA'; else :; fi
+    if [ -z "$nhmmer_hits_T2T" ]; then nhmmer_hits_T2T='NA'; fi
 
     echo "$nhmmer_hits_T2T" >> data/T2T-copy-number-$name.csv
 
