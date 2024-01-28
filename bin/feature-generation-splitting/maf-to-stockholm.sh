@@ -7,6 +7,7 @@ maf_to_stockholm() {
 
     mkdir -p data/maf-to-stk
     local temp_dir='data/maf-to-stk'
+   
 
     
     ######## Extract all the multiz100way alignment information 
@@ -29,19 +30,19 @@ maf_to_stockholm() {
                 ######## If this is the first file, then also extract sequence name
                 if (( $(echo "$count == 1" | bc -l) )); then
                 
-                    id=$( echo "$line" | tr -s ' ' | cut -d ' ' -f 2 | tr '.' '/' )
-                    seq=$(  echo "$line" | tr -s ' ' | cut -d ' ' -f 7 )
+                    id=$(awk '{print $2"/"$3"-"($3 + $4)}' <<< "$line")
+                    seq=$(awk '{print $7}' <<< "$line")
                 
                     if [ ! -z "$seq" ]; then
                         ######## Ensures all the sequences start in the same position in the STK file
-                        printf "%-40s\n" $id >> $temp_dir/align-0-seq
+                        printf "%-90s\n" $id >> $temp_dir/align-0-seq
                         echo $seq >> $temp_dir/align-$count-seq
                 
                     fi    
 
                 else
                 ######## Only extract sequence information in subsequent files
-                    seq=$( echo $line | tr -s ' ' | cut -d ' ' -f 7 )
+                    seq=$(awk '{print $7}' <<< "$line")
                 
                     if [ ! -z "$seq" ]; then echo $seq >> $temp_dir/align-$count-seq; fi
         
@@ -56,9 +57,13 @@ maf_to_stockholm() {
 
 
     ######## Format STK file
-    if [ ! -d data/STK ]; then mkdir data/STK; fi
-    echo '# STOCKHOLM 1.0' > data/STK/$file_id.stk
-    echo "#=GF ID $file_id" >> data/STK/$file_id.stk
+
+    if [ ! -d data/STK/$name ]; then mkdir data/STK/$name; fi
+
+    local stk_file=data/STK/$name/$file_id.stk
+    
+    echo '# STOCKHOLM 1.0' > $stk_file
+    echo "#=GF ID $file_id" >> $stk_file
 
     # Concatenate sequences into a single file
     files=()
@@ -79,9 +84,11 @@ maf_to_stockholm() {
 
         seq_len=$( echo "$line" | tr -s ' ' | cut -d ' ' -f 2 | wc -m )
     
-        if [[ $seq_len -eq $human_len ]]; then echo $line >> data/STK/$file_id.stk; fi  # Only include full sequences
+        if [[ $seq_len -eq $human_len ]]; then echo $line >> $stk_file; fi  # Only include full sequences
 
     done < $temp_dir/alignment
+
+    echo "//" >> $stk_file
 
     rm -rf $temp_dir
 
