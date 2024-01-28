@@ -321,31 +321,37 @@ rm -rf data/cpc2-output.txt
  # RNAalifold scores, MFE, RNAcode score
 
 ###########################################################################################################################
+######## Reformats chromosome coordinates for mafFetch
+rm -rf data/coordinates
+awk -F',' 'NR > 1 {print $3,$4,$5}' $initial_data > data/coordinates
+mkdir data/rscape
+mkdir data/maf/$name
 
-# Obtain MSA files from 241-way cactus alignment
+var="$first_rna_id"
+#rm -rf *.stk
 
-bigBedToBed_exe='bin/bigBedToBed'       # to extract MSA of regions from UCSC server  
-cactus_align_url='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf'
-input_file='data/initial_data_sample'
+mafFetch_input=data/maf/mafFetch-input          # Temporary file for mafFetch input 
 
-{
-    read  
-    while IFS=, read -r rna_id _ chr start end _; do
+while IFS=$'\t' read -r line; do
 
-        # Obtain MSA files from 241-way cactus alignment
+    rna_id=RNA$var
+    maf_file=data/maf/$name/"$rna_id".maf
+
+    # Obtain MSA files from 100way alignment
+    if [ ! -f data/maf/$name/"$rna_id".maf ]; then
         
-        $bigBedToBed_exe $cactus_align_url \
-        stdout -chrom=$chr -start=$start -end=$end | cut -f 4 | tr ';' \        # format bed output to maf
-        '\n' > data/zoonomia-maf/$rna_id.maf
-
-        maf_file=data/zoonomia-maf/$rna_id.maf
+        echo "$line" > "$mafFetch_input"
+        #echo "$mafFetch_exe hg38 multiz100way data/maf/mafFetch-input mafOut 2>>errors.log ;" >> errors.log
+	    $mafFetch_exe hg38 multiz100way "$mafFetch_input" "$maf_file" 2>>errors.log ;
+	    #do sleep 4 ; done
+    fi
 
     if [ ! -z $maf_file ]; then
         
         ######## Run RNAcode
-        RNAcode_output='data/rnacode-output'
+        RNAcode_output=data/rnacode-output
 	    #echo "$RNAcode_exe $file -o $RNAcode_output 2>>errors.log &> /dev/null" >>errors.log
-	    $RNAcode_exe $maf_file -o data/rnacode-output 2>>errors.log &> /dev/null
+	    $RNAcode_exe $maf_file -o $RNAcode_output 2>>errors.log &> /dev/null
             
         # Takes the largest score, but records zero if no significant hits found.
         rnacode=$( grep -v "No significant coding regions found.\|#\|=" $RNAcode_output | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
@@ -353,7 +359,7 @@ input_file='data/initial_data_sample'
     
         ####### Convert MSA.maf files to STK format for RNAalifold and R-scape
         maf_to_stockholm  $maf_file $rna_id      # is it better to declare function have it on a different script??  
-        STK_input=data/STK/"$rna_id".stk
+        STK_input=data/STK/$name/"$rna_id".stk
 
         ######## Generate secondary structure consensus sequence and associated MFE value
         RNAalifold_output=data/RNAalifold/"$rna_id"-RNAalifold
@@ -391,10 +397,10 @@ input_file='data/initial_data_sample'
         touch $Rscape_output
 
     fi
-    
-    done 
 
-} < $initial_data
+    (( var++ ))
+    
+done < data/coordinates 
 
 zip -r maf maf &> /dev/null
 rm -rf maf/
