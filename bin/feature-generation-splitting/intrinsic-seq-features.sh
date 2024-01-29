@@ -10,12 +10,14 @@
 
 ###########################################################################################################################
 
-echo GC_percentage > data/GC-dataset-$name.csv            # Global variable defined in runall.sh for dataset name  
+initial_data=$1
+output_file="${initial_data/dataset.csv/GC.csv}"            # Define name of output file
+echo GC_percentage > $output_file              
 
 {
-    read                                                    #skips .csv header 
-    while IFS=, read -r _ _ _ _ _ seq                       #6th field .csv: sequence
-    do
+    read                                                    # Skips .csv header 
+    while IFS=, read -r _ _ _ _ _ seq; do                   # 6th field .csv: sequence
+    
         G_cont=$( echo "$seq" | grep -o "G\|g" | wc -l )
         C_cont=$( echo "$seq" | grep -o "C\|c" | wc -l )
         A_cont=$( echo "$seq" | grep -o "A\|a" | wc -l )
@@ -24,16 +26,19 @@ echo GC_percentage > data/GC-dataset-$name.csv            # Global variable defi
         GC_count=$(( $G_cont + $C_cont ))
         total=$(( $GC_count + $A_cont + $T_cont ))
 
-        if (( $( echo "$GC_count == 0" | bc -l ) ))
-        then
+        if (( $( echo "$GC_count == 0" | bc -l ) )); then
+        
             GC=0
             percentage=NA
+
         else
-            GC=$( echo "scale=2; $GC_count/$total" | bc )  #D:Check standard digits?
+
+            GC=$( echo "scale=2; $GC_count/$total" | bc )  
             percentage=$( echo "$GC*100" | bc )
         fi
+        
+        echo $percentage >> $output_file
 
-        echo $percentage >> data/GC-dataset-$name.csv 
     done
 
-} < "$initial_data"                                        # Global variable defined in runall.sh for dataset reference
+} < "$initial_data"                                         
