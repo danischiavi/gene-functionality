@@ -124,7 +124,7 @@ mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | aw
 declare -a "selected_ids=()"                            # Keeps track of selected random IDs
 lncrna_count=0
 
-while [ "$lncrna_count" -le 1000 ]; do
+while [ "$lncrna_count" -lt 1000 ]; do
     
     random_id="${IDs_lncrna[RANDOM % ${#IDs_lncrna[@]}]}" # Select a random ID from the lncrna list
                                                      
@@ -148,22 +148,31 @@ while [ "$lncrna_count" -le 1000 ]; do
                     then
                         
                         seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                     # 0-start. Function in progress for this (see ./bin/draft)
-                        relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to Start (bed format) for exons     
-                        relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')     
-                        relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  
-                    
-                        start_one=$((   $seq_start + $relative_start_one + 1 ))                                  # +1 to account for the first relative start pos being 0
-                        start_two=$((   $seq_start + $relative_start_two + 1 ))                                         
-                        start_last=$(( $seq_start + $relative_start_last + 1 )) 
-                        end_two=$((                    $start_one + $len_one ))
-                        end_two=$((                    $start_two + $len_two ))
-                        end_last=$((                 $start_last + $len_last ))
+                        
+                        relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons     
+                        relative_start_one=$((relative_start_one + 1))                                           # +1 to account for the first relative start pos being 0
+                        relative_end_one=$((relative_start_one + len_one))
+                        seq_one=$( echo "$seq" | cut -c $relative_start_one-$relative_end_one)                  # Sequence of exon 1 extracted from RNAcentral (fasta file converted to csv)
+
+                        relative_start_two=$((relative_end_one + 1))                                             # Field 12 are the coordinates relative to seq_start but considering the introns,     # which are not present in the downloaded RNAcentral lncrna sequence -> to extract exon seq   # use values relative to exon 1                                          
+                        relative_end_two=$((relative_start_two + len_two))
+                        seq_two=$( echo "$seq" | cut -c $relative_start_two-$relative_end_two)
+                        
+                        relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
+                        relative_start_last=$((relative_start_last + 1))
+
+                        start_one=$((   $seq_start + $relative_start_one ))                                  
+                        start_two=$((   $seq_start + $relative_start_two ))                                         
+                        start_last=$(( $seq_start + $relative_start_last )) 
+                        end_two=$((                $start_one + $len_one ))
+                        end_two=$((                $start_two + $len_two ))
+                        end_last=$((             $start_last + $len_last ))
                         
                         selected_ids+=("$random_id")
                         lncrna_count=$(echo "${#selected_ids[@]}")
             
-                        echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq" >> "$lncrna_exon_one"
-                        echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq" >> "$lncrna_exon_two"  
+                        echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq_one" >> "$lncrna_exon_one"
+                        echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq_two" >> "$lncrna_exon_two"  
 
                         if [ "$start_one" -gt "$end_last" ]; then                                                       # Reverse transcripts can alter order of start/end positions
                                                                              
@@ -172,9 +181,7 @@ while [ "$lncrna_count" -le 1000 ]; do
                         else
 
                             echo $chr,$start_one,$end_last,$len_one,$len_two >> "$negative_control"
-                        fi
-
-                        
+                        fi   
                     fi
                 fi
             fi
@@ -339,7 +346,7 @@ while [ "$protein_count" -lt 1000 ]; do                             # D: count i
     fi
 done 
 
-
+rm -r data/exons
 
 ###########################################################################################################################
 
@@ -349,15 +356,20 @@ done
 
 csv_to_fasta() {                     
     
+    local file=$1
     {
     read 
     while IFS=',' read -r id _ _ _ _ seq; do
+            output_file="${file/dataset.csv/seq.fa}"
+            echo -e ">$id\n$seq" >> $output_file
         
-            echo -e ">$id\n$seq" >> data/$name-seq.fa
-        
-        done
+    done
 
-    } < data/$name-dataset.csv   
+    } < $file   
 }   
 
-for name in "${names[@]}"; do csv_to_fasta "$name"; done
+
+for name in "${names[@]}"; do 
+    file=data/$name-dataset.csv
+    csv_to_fasta "$file"
+done
