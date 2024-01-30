@@ -90,3 +90,50 @@ rule csv_to_fasta:
             echo -e ">$id\n$seq" >> {output.fasta}
         done < {input.csv}
         """
+
+
+
+########################
+
+# TO EXTRACT THE FEATURES 
+
+#GC content 
+
+rule all_GC:
+    input:
+        expand("data/{sample}-GC.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+
+rule run_intrinsic_seq_features:
+    input:
+        "data/{sample}-dataset.csv"
+    output:
+        "data/{sample}-GC.csv"
+    shell:
+        "bin/intrinsic-seq-features.sh {input} > {output}"
+
+
+rule all_conservation:
+    input:
+        expand("data/conservation/{sample}-conservation.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+
+rule run_seq_conservation_features:
+    input:
+        "data/{sample}-dataset.csv"
+    output:
+        "data/conservation/{sample}-conservation.csv"
+    shell:
+        "bin/seq-conservation-features.sh {input} > {output}"
+
+
+
+rule all_transcriptome:
+    input:
+        expand("data/transcriptome/{sample}-transcriptome.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+
+rule run_transcriptome:
+    input:
+        "data/{sample}-dataset.csv"
+    output:
+        "data/transcriptome/{sample}-transcriptome.csv"
+    shell:
+        "bin/transcriptome-expression-features.sh {input} > {output}"
