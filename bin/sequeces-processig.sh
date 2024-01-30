@@ -164,7 +164,7 @@ while [ "$lncrna_count" -lt 1000 ]; do
                         start_one=$((   $seq_start + $relative_start_one ))                                  
                         start_two=$((   $seq_start + $relative_start_two ))                                         
                         start_last=$(( $seq_start + $relative_start_last )) 
-                        end_two=$((                $start_one + $len_one ))
+                        end_one=$((                $start_one + $len_one ))
                         end_two=$((                $start_two + $len_two ))
                         end_last=$((             $start_last + $len_last ))
                         
