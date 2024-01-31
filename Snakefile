@@ -137,3 +137,38 @@ rule run_transcriptome:
         "data/transcriptome/{sample}-transcriptome.csv"
     shell:
         "bin/transcriptome-expression-features.sh {input} > {output}"
+
+
+rule all_genomic_repeat:
+    input:
+        expand("data/repeats/{sample}-copy-number.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"]),
+        expand("data/repeats/{sample}-dfam-distance.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+
+rule run_genomic_repeat:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa"
+    output:
+        "data/repeats/{sample}-copy-number.csv",
+        "data/repeats/{sample}-dfam-distance.csv"
+    shell:
+        "bin/genomic-repeat-associated-features.sh {input} > {output}"
+
+
+
+
+
+rule all_population_variation:
+    input:
+        expand("data/population/{sample}-1kGP-variation.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"]),
+        expand("data/population/{sample}-gnomAD-variation.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+
+rule run_populatio_variation:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa"
+    output:
+        "data/population/{sample}-1kGP-variation.csv",
+        "data/population/{sample}-gnomAD-variation.csv"
+    shell:
+        "bin/population-variation-features.sh {input} > {output}"
