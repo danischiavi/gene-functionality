@@ -12,149 +12,36 @@
 
 ############################################################################################################################
 
-####Checks 
-
-## Interaction database for IntaRNA
-
-if [ -f $additional_folder/curated-interaction-database.fa ] 
-then
-    interaction_database=$additional_folder/curated-interaction-database.fa
-else
-    until [ -f $interaction_database ] ; do read -p "Please enter custom name of RNA:RNA interaction database (fa): " i ; interaction_database=$additional_folder/$i ; echo ; done
-fi
-
-## IntaRNA
-
-if find $additional_folder/ -executable -type f | grep -q IntaRNA
-then
-    IntaRNA_exe=$additional_folder/IntaRNA
-elif command -v IntaRNA &> /dev/null
-then
-    IntaRNA_exe=IntaRNA
-else
-    echo Please check that IntaRNA is installed.
-    exit 1
-fi
-
-intaRNA_error=$( $IntaRNA_exe -h 2>&1 )  # Need to find out if Boost library needs to be defined separately for IntaRNA to run
-
-if [ ! -z "$error" ] && [[ "$error" != "IntaRNA predictors RNA-RNA interactions"* ]]
-then
-    read -p "Enter path for Boost C++ lib folder for IntaRNA: " lib_directory
-    echo
-    if [ -d $lib_directory/ ] ; then : ; else echo Please check that the Boost C++ lib directory is correct. ; exit 1 ; fi
-else
-    :
-fi
-
-## mafFetch
-
-if find $additional_folder/ -executable -type f | grep -q mafFetch
-then
-    mafFetch_exe=$additional_folder/mafFetch
-elif command -v mafFetch &> /dev/null
-then
-    mafFetch_exe=mafFetch
-else
-    echo Please check that mafFetch is installed.
-    exit 1
-fi
-
-## RNAcode
-
-if find $additional_folder/ -executable -type f | grep -q RNAcode
-then
-    RNAcode_exe=$additional_folder/RNAcode
-elif command -v RNAcode &> /dev/null
-then
-    RNAcode_exe=RNAcode
-else
-    echo Please check that RNAcode is installed.
-    exit 1
-fi
-
-## RNAalifold
-
-if find $additional_folder/ -executable -type f | grep -q RNAalifold
-then
-    RNAalifold_exe=$additional_folder/RNAalifold
-elif command -v RNAalifold &> /dev/null
-then
-    RNAalifold_exe=RNAalifold
-else
-    echo Please check that RNAalifold is installed.
-    exit 1
-fi
-
-## RNAfold
-
-if find $additional_folder/ -executable -type f | grep -q RNAfold
-then
-    RNAfold_exe=$additional_folder/RNAfold
-elif command -v RNAfold &> /dev/null
-then
-    RNAfold_exe=RNAfold
-else
-    echo Please check that RNAfold is installed.
-    exit 1
-fi
-
-## RNAplfold
-
-if command -v RNAplfold &> /dev/null
-then
-    :
-else
-    echo Please check that RNAplfold is installed and exported to $PATH.
-    exit 1
-fi
-
-## R-scape
-
-if find $additional_folder/ -executable -type f | grep -q 'R-scape'
-then
-    rscape_exe=$additional_folder/R-scape
-elif command -v R-scape &> /dev/null
-then
-    rscape_exe=R-scape
-else
-    echo Please check that R-scape is installed.
-    exit 1
-fi
-
-## access_py.py
-
-if [ -f $additional_folder/access_py.py ]
-then
-    :
-else
-    echo Please check that access_py.py is available in $additional_folder.
-fi
-
-## CPC2
-
-if [ -f $additional_folder/CPC2.py ]
-then
-    cpc2_directory=$additional_folder/CPC2.py
-else
-    read -p "Enter path to installed CPC2 bin: " cpc2_directory
-    echo
-    if [ -d $cpc2_directory/ ] ; then : ; else echo Please check that CPC2 is installed. ; exit 1 ; fi
-fi
 
 
 ############################################################################################################################
+initial_data=$1
+initial_fasta=$2
+
+first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')
+last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA') 
 
 #### File declaration
-echo InteractionMIN_IntaRNA,InteractionAVE_IntaRNA,InteractionMIN_RNAup,InteractionAVE_RNAup > data/interaction-intermediate-$name.csv
-echo MFE > data/MFE-$name.csv
-echo Accessibility > data/access-$name.csv
-echo Ficket_score > data/CPC2-"$name".csv
-echo RNAcode_score,RNAalifold_score > data/rnacode-$name.csv
-echo Max_covariance,Min_covariance_Eval > data/rscape-$name.csv
+mkdir -p data/specific && output_directory=data/specific
+
+output_file_interaction="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')interaction.csv"                  # Define name and directory for output file
+output_file_MFE="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')MFE.csv" 
+output_file_accesibility="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')accesibility.csv" 
+output_file_fickett="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')fickett.csv" 
+output_file_rnacode="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')RNAcode.csv" 
+output_file_rscape="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')covariance.csv" 
+output_file_coding_potential="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')coding-potential.csv" 
+output_file_structure="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')structure.csv" 
+
+echo InteractionMIN_IntaRNA,InteractionAVE_IntaRNA,InteractionMIN_RNAup,InteractionAVE_RNAup > "$output_file_interaction"
+echo MFE > "$output_file_MFE"
+echo Accessibility > "$output_file_accesibility"
+echo Ficket_score > "$output_file_fickett"
+echo RNAcode_score,RNAalifold_score > "$output_file_rnacode"
+echo Max_covariance,Min_covariance_Eval > "$output_file_rscape"
 
 #### Create folder for generated r-scape output
-rm -rf data/rscapedata && mkdir -p data/rscapedata
+rm -rf "$output_directory"/rscapedata && mkdir -p "$output_directory"/rscapedata
 
 ######## If multiz100way files already downloaded, use them instead of re-downloading 
 if [ -f maf.zip ] 
@@ -163,6 +50,16 @@ then
 else 
     mkdir -p data/maf  
 fi
+
+
+#### Variables
+IntaRNA_exe=IntaRNA
+interaction_database=data/raw/curated-interaction-database.fa
+
+RNAfold_exe=RNAfold
+
+access_file=bin/access_py.py
+cpc2_file=bin/CPC2_standalone-1.0.1/bin/CPC2.py
 
 ############################################################################################################################
 
@@ -173,38 +70,42 @@ fi
 ######## Need to clear any previously set lib path, as otherwise the defined lib path will be appended onto the previous
 [ -z "$lib_directory" ] || unset LD_LIBRARY_PATH
 
-var=$first_rna_id                                                                                             # Global variables for given id number to first and last RNA sequence of the dataset
+var=$first_rna_id                                                                                             
 last_seq=$last_rna_id               
 
-while [ $var -le $last_seq ]
-do
-    echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > data/intaRNA-input
-    
+# Temporary files
+intaRNA_input="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')intaRNA-input"
+intaRNA_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')intaRNA-output"
+kcal_mol="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')kcal-mol"
+RNAup_input="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')RNAup-input"
+RNAup_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')RNAup-output"
+kcal_mol_RNAup="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')kcal-mol-RNAup"
+
+while [ $var -le $last_seq ]; do
+
+    echo "$( grep -w -A 1 ">RNA$var" $initial_fasta )" > "$intaRNA_input"
     
     #if [ -z "$lib_directory" ]                                                                               # If Boost library didn't have to specified, run as normal.
     #then
-    $IntaRNA_exe -t $interaction_database -m data/intaRNA-input > data/intaRNA-output 2>>errors.log           #swap -m for -q (its how IntaRNA works in my session...)
+    $IntaRNA_exe -t "$interaction_database" -m "$intaRNA_input" > "$intaRNA_output" 2>>errors.log           
     #else
     #    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib_directory $IntaRNA_exe -m $intaRNA_input -t $interaction_database > data/intaRNA-results 2>>errors.log
     #fi 
     
     ######## Grab all recorded interactions
-    grep "energy" data/intaRNA-output | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > data/kcal_mol        #It was: grep "interaction energy" intaRNA-results | cut -d '=' -f 2 | tr -d "kcal/mol" | tr -d ' ' > kcal_mol --> but for me output -> energy: -5.20598 kcal/mol
-
-                                                                                                              # Min interaction energy
-    count=$(wc -l < data/kcal_mol )                                                                           # Number of interaction energies recorded
-    min=$( head -n 1 data/kcal_mol) 
-    sum=0                                                                                                     # Sum of all energies calculated, prior to averaging
+  
+    grep "energy" "$intaRNA_output" | cut -d ':' -f 2 | tr -d "kcal/mol" | tr -d ' ' > "$kcal_mol"        
+                                                                                                      
+    count=$(wc -l < "$kcal_mol" )                                                                        # Number of interaction energies recorded
+    min=$( head -n 1 "$kcal_mol")                                                                        # Min interaction energy
+    sum=0                                                                                                # Sum of all energies calculated, prior to averaging
 
     while read -r number; do 
-        ######## If the interaction energy is smaller than the recorded min, update the min
-        if (( $(echo "$number < $min" | bc -l) )); then
-            min=$number 
-        fi
-
+        
+        if (( $(echo "$number < $min" | bc -l) )); then min="$number"; fi                                   # If the interaction energy is smaller than the recorded min, update the min
         sum=$(echo "scale=3; $sum+$number" | bc)
     
-    done < data/kcal_mol
+    done < "$kcal_mol"
 
     ######## If no interactions were recorded, set minimum and average as NA 
     if [[ "$count" == 0 ]]; then
@@ -217,30 +118,27 @@ do
     #### RNAup
 
     # RNA input: sequence following by the curated sequences
-    cat data/intaRNA-input data/raw/curated-interaction-database.fa > data/RNAup-input
+    cat "$intaRNA_input" "$interaction_database" > "$RNAup_input"
 
     # Run
-    RNAup --interaction_first --no_output_file -b --noLP -c 'S' < data/RNAup-input > data/RNAup.out
+    RNAup --interaction_first --no_output_file -b --noLP -c 'S' < "$RNAup_input" > "$RNAup_output"
     # −b, −−include_both : Include the probability of unpaired regions in both (b) RNAs.
     # −−interaction_first : Activate interaction mode using first sequence only.
     # ? −−noLP : Produce structures without lonely pairs (helices of length 1).
-    rm -rf *.out  #no_output_files option is not working.. 
+    #rm -rf *.out  #no_output_files option is not working.. 
 
     # Extract min and ave energy from output
-    grep '(&)' data/RNAup.out | awk -F'=' '{print $1}' | awk -F' ' '{print $NF}' | tr -d '(' > data/kcal_mol-RNAup 
-    count_RNAup=$( wc -l < data/kcal_mol-RNAup )
-    min_RNAup=$(head -n 1 data/kcal_mol-RNAup)
+    grep '(&)' "$RNAup_output" | awk -F'=' '{print $1}' | awk -F' ' '{print $NF}' | tr -d '(' > "$kcal_mol_RNAup" 
+    count_RNAup=$( wc -l < "$kcal_mol_RNAup" )
+    min_RNAup=$(head -n 1 "$kcal_mol_RNAup")
     sum_RNAup=0
 
     while read -r number; do
         ######## If the interaction energy is smaller than the recorded min, update the min
-        if (( $(echo "$number < $min_RNAup" | bc -l) )); then
-            min_RNAup=$number
-        fi
-        
+        if (( $(echo "$number < $min_RNAup" | bc -l) )); then min_RNAup=$number; fi
         sum_RNAup=$(echo "scale=3; $sum_RNAup+$number" | bc)
         
-    done < data/kcal_mol-RNAup
+    done < "$kcal_mol_RNAup"
 
     ######## If no interactions were recorded, set minimum and average as NA 
     if [[ "$count_RNAup" == 0 ]]; then
@@ -250,21 +148,20 @@ do
         ave_RNAup=$(echo "scale=3; $sum_RNAup/$count_RNAup" | bc )
     fi
 
-
-    echo RNA$var,$min,$ave,$min_RNAup,$ave_RNAup >> data/interaction-intermediate-$name.csv
+    echo "$min,$ave,$min_RNAup,$ave_RNAup" >> "$output_file_interaction"
 
     (( var++ ))
    
 done
 
-rm -rf data/intaRNA-results
-rm -rf data/kcal_mol
-rm -rf data/kcal_mol-RNAup
-rm -rf data/intaRNA-input
+rm -rf "$intaRNA_input"
+rm -rf "$intaRNA_output"
+rm -rf "$kcal_mol"
+rm -rf "$RNAup_input"
 rm -rf data/intaRNA-output
-rm -rf data/RNAup-input
-rm -rf data/RNAup-output
-rm -rf data/RNAup.out
+rm -rf "$RNAup_output"
+rm -rf "$kcal_mol_RNAup"
+
 
 ############################################################################################################################
 
@@ -272,34 +169,45 @@ rm -rf data/RNAup.out
 
 ############################################################################################################################
 
+## Temporary file
+RNAfold_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')RNAfold-output"
+
 #### MFE calculation
-$RNAfold_exe < $initial_fasta >> data/rnafold-output 2>>errors.log
+$RNAfold_exe < $initial_fasta >> "$RNAfold_output" 2>>errors.log
 
-# Extract the data from output file
-grep "(" data/rnafold-output | rev | cut -d "(" -f 1 | rev | tr -d ")" | tr -d " " >> data/MFE.csv
-awk '!NF{$0="0"}1' data/MFE.csv >> data/MFE-$name.csv                                               # Replace empty lines with zero
-rm -rf *.ps
-rm -rf data/MFE.csv 
-rm -rf data/rnafold-output
+# Extract the data from output file & replace empty lines with zero                                
+grep "(" "$RNAfold_output" | rev | cut -d "(" -f 1 | rev | tr -d ")" | tr -d " " | awk '!NF{$0="0"}1' >> "$output_file_MFE"      
 
+rm -rf *.ps 
+rm -rf "$RNAfold_output"
 
+   
 #### Accessibility calculation
-for sequence in $( grep -v ">" $initial_fasta )
-do 
-    access=$( timeout 60m python3 bin/access_py.py -s $sequence 2>>errors.log ) 
+for sequence in $( grep -v ">" $initial_fasta ); do
+
+    access=$( timeout 60m python3 "$access_file" -s $sequence 2>>errors.log ) 
     exit_status=$?
-    if [ -z "$access" ]; then                                                                       # If no value calculated, record NA
-        echo 'NA' >> data/access-$name.csv
-    elif [[ "$access" == "THIS happened"* ]]; then                                                  # If error occurred, record NA
-        echo 'NA' >> data/access-$name.csv
-    elif [ "$exit_status" -eq "124" ]; then                                                         # If calculation timed out, record NA
-        echo 'NA' >> data/access-$name.csv
+
+    if [ -z "$access" ]; then                           # If no value calculated, record NA
+                                                                
+        echo 'NA' >> "$output_file_accesibility"
+
+    elif [[ "$access" == "THIS happened"* ]]; then      # If error occurred, record NA
+                                                     
+        echo 'NA' >> "$output_file_accesibility"
+
+    elif [ "$exit_status" -eq "124" ]; then             # If calculation timed out, record NA
+                                                          
+        echo 'NA' >> "$output_file_accesibility"
+
     else
-        echo "$access" >> data/access-$name.csv
+        echo "$access" >> "$output_file_accesibility"
+
     fi
+
 done
 
-sed -i 's/nan/NA/g' data/access-$name.csv                                                           # make NA readable by R
+sed -i 's/nan/NA/g' "$output_file_accesibility"         # make NA readable by R
 
 
 ############################################################################################################################
@@ -308,34 +216,44 @@ sed -i 's/nan/NA/g' data/access-$name.csv                                       
 
 ############################################################################################################################
 
-## (python script so cannot be added to $PATH)
+## Temporary files
+cpc2_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')cpc2-output"
 
-python3 bin/CPC2_standalone-1.0.1/bin/CPC2.py -i $initial_fasta -o data/cpc2-output >/dev/null 2>>errors.log        
+## (python script so cannot be added to $PATH)
+python3 "$cpc2_file" -i "$initial_fasta" -o "$cpc2_output" >/dev/null 2>>errors.log        
 
 # Extract data
-awk 'NR > 1 {printf "%.2f\n", $4}' data/cpc2-output.txt >> data/CPC2-"$name".csv                                    # Ficket score in field 4 of output file, extract value with 2 decimals
-rm -rf data/cpc2-output.txt
+awk 'NR > 1 {printf "%.2f\n", $4}' "$cpc2_output" >> "$output_file_fickett"                             # Ficket score in field 4 of output file
+
+rm -rf "$cpc2_output"
 
 ############################################################################################################################
 
  # RNAalifold scores, MFE, RNAcode score
 
 ###########################################################################################################################
+
+#### Directories and temporary files
+
+mkdir -p "$output_directory"/rscape/$(basename "${initial_data%.*}" | sed 's/dataset-//')
+
+maf_directory="$output_directory"/maf/$(basename "${initial_data%.*}" | sed 's/dataset-//')
+mkdir -p "$maf_directory"
+
+mafFetch_input="$maf_directory"/mafFetch-input
+
 ######## Reformats chromosome coordinates for mafFetch
-rm -rf data/coordinates
-awk -F',' 'NR > 1 {print $3,$4,$5}' $initial_data > data/coordinates
-mkdir data/rscape
-mkdir data/maf/$name
+mafFetch_coordinates="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')coordinates"
+awk -F',' 'NR > 1 {print $3,$4,$5}' "$initial_data" > "$coordinates"
+
 
 var="$first_rna_id"
 #rm -rf *.stk
 
-mafFetch_input=data/maf/mafFetch-input          # Temporary file for mafFetch input 
-
 while IFS=$'\t' read -r line; do
 
-    rna_id=RNA$var
-    maf_file=data/maf/$name/"$rna_id".maf
+    rna_id=RNA"$var"
+    maf_file="$maf_directory"/"$rna_id".maf
 
     # Obtain MSA files from 100way alignment
     if [ ! -f data/maf/$name/"$rna_id".maf ]; then
@@ -400,7 +318,7 @@ while IFS=$'\t' read -r line; do
 
     (( var++ ))
     
-done < data/coordinates 
+done < "$mafFetch_coordinates"
 
 zip -r maf maf &> /dev/null
 rm -rf maf/
