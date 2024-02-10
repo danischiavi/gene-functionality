@@ -68,8 +68,11 @@ lncrna_exon_two='data/functional-lncrna-exon2-dataset.csv'
 short_ncrna='data/functional-short-ncrna-dataset.csv'
 protein_exon_two='data/protein-exon2-dataset.csv'
 protein_exon_three='data/protein-exon3-dataset.csv'
-negative_control='data/coords-for-negative-control.csv'
+coding_negative_control='data/protein-coords-negative-control.csv'
+lncrna_negative_control='data/lncrna-coords-negative-control.csv'
+short_negative_control='data/short-ncrna-coords-negative-control.csv'
 
+sample_size=1000 
 
 ### Sequence length limits
 lower_limit='75'
@@ -84,7 +87,7 @@ lower_limit_short='10' # CHECK
 
 #### Function declaration
 
-set_variables() {                                  ## Set variables to filter out ncRNA sequences from the RNAcentral database
+set_variables() {                                        ## Set variables to filter out ncRNA sequences from the RNAcentral database
     
     local id=$1
     local seq_csv=$2
@@ -92,7 +95,7 @@ set_variables() {                                  ## Set variables to filter ou
     seq=$(  grep -m 1 "$id" "$seq_csv" | cut -f 2 )
     meta=$( grep -m 1 "$id" "$rnacentral_coords" )
     chr=$(  echo "$meta" | cut -f 1 )
-    status='pass'                                  # Set status to filter out sequences which are redifine as 'not-pass'
+    status='pass'                                        # Set status to filter out sequences which are redifine as 'not-pass'
         
     if [ -z "$seq" ]; then                               # Remove if no sequence available
         status='not-pass'
@@ -119,12 +122,12 @@ mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | aw
 
 ## D: ADD CHECKS FOR ARRAYS!  
 
-## LNCRNA - Extracting 1000 random sequences from RNAcentral database
+## LNCRNA - Extracting random sequences from RNAcentral database
 
 declare -a "selected_ids=()"                            # Keeps track of selected random IDs
 lncrna_count=0
 
-while [ "$lncrna_count" -lt 1000 ]; do
+while [ "$lncrna_count" -lt "$sample_size" ]; do
     
     random_id="${IDs_lncrna[RANDOM % ${#IDs_lncrna[@]}]}" # Select a random ID from the lncrna list
                                                      
@@ -176,11 +179,11 @@ while [ "$lncrna_count" -lt 1000 ]; do
 
                         if [ "$start_one" -gt "$end_last" ]; then                                                       # Reverse transcripts can alter order of start/end positions
                                                                              
-                            echo $chr,$end_last,$start_one,$len_one,$len_two >> "$negative_control"                   # To generate negative control sequences that are the same length as exons two and three
+                            echo $chr,$end_last,$start_one,$len_one,$len_two >> "$lncrna_negative_control"                   # To generate negative control sequences that are the same length as exons two and three
                         
                         else
 
-                            echo $chr,$start_one,$end_last,$len_one,$len_two >> "$negative_control"
+                            echo $chr,$start_one,$end_last,$len_one,$len_two >> "$lncrna_negative_control"
                         fi   
                     fi
                 fi
@@ -189,13 +192,13 @@ while [ "$lncrna_count" -lt 1000 ]; do
     fi
 done
 
-## SHORT-NCRNA - Extracting 1000 random sequences from RNAcentral database
+## SHORT-NCRNA - Extracting random sequences from RNAcentral database
 
 declare -a "selected_ids=()"
 short_count=0
 short_total="${#IDs_short_ncrna[@]}"
 
-while [ "$short_count" -le 1000 ]; do
+while [ "$short_count" -lt "$sample_size" ]; do
     
     if [ "$short_count" -le "$short_total" ]; then
 
@@ -233,11 +236,11 @@ while [ "$short_count" -le 1000 ]; do
                 
             if [ "$start" -gt "$end" ]; then                                                            # Reverse transcripts can alter order of start/end positions
                 
-                echo $chr,$end,$start,$len,'NA' >> "$negative_control"
+                echo $chr,$end,$start,$len,'NA' >> "$short_negative_control"
 
             else
 
-                echo $chr,$start,$end,$len,'NA' >> "$negative_control"
+                echo $chr,$start,$end,$len,'NA' >> "$short_negative_control"
 
             fi
         fi 
@@ -316,9 +319,9 @@ gff2Info() {                                                                    
                 if [ "$start_one" -gt "$end_final" ]                                                            # Reverse transcripts can alter order of start/end positions
                 then
 		            # To generate negative control sequences that are the same length as exons two and three
-                    echo chr$chr,$end_final,$start_one,$len_two,$len_three >> "$negative_control"
+                    echo chr$chr,$end_final,$start_one,$len_two,$len_three >> "$coding_negative_control"
                 else
-                    echo chr$chr,$start_one,$end_final,$len_two,$len_three >> "$negative_control"
+                    echo chr$chr,$start_one,$end_final,$len_two,$len_three >> "$coding_negative_control"
                 fi
             fi 
 	    fi
@@ -327,12 +330,12 @@ gff2Info() {                                                                    
 
 ###############################
 
-# Apply to each of 1000 random sequences
+# Apply to each random sequences
 
 declare -a "selected_ids=()"
 protein_count=0
 
-while [ "$protein_count" -lt 1000 ]; do                             # D: count in the gff2Info function --> it would be better to have it here --> TO THINK
+while [ "$protein_count" -lt "$sample_size" ]; do                             # D: count in the gff2Info function --> it would be better to have it here --> TO THINK
 
     random_id=$(shuf -n 1 "$RefSeq_protein_coding")
 
@@ -346,7 +349,7 @@ while [ "$protein_count" -lt 1000 ]; do                             # D: count i
     fi
 done 
 
-rm -r data/exons
+rm -rf data/exons
 
 ###########################################################################################################################
 

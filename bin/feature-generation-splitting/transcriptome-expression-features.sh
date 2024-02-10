@@ -17,8 +17,9 @@
 ############################################################################################################################
 
 initial_data=$1
-mkdir -p data/transcriptome
+
 output_directory=data/transcriptome
+mkdir -p "$output_directory"
 
 # Variables
 encode_folder=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data
@@ -85,7 +86,8 @@ run_encode() {
 
 ############################################################################################################################
 
-run_encode 'tissue'
-run_encode 'primary-cell'
+if [ ! -e ${output_directory}/*-tissue.csv ]; then run_encode 'tissue'; fi
+
+if [ ! -e ${output_directory}/*-primary-cell.csv ]; then run_encode 'primary-cell'; fi
 
 paste -d',' ${output_directory}/*-tissue.csv ${output_directory}/*-primary-cell.csv > "${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')transcriptome.csv"  

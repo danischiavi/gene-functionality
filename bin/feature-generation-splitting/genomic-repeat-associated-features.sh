@@ -29,8 +29,8 @@ output_directory=data/repeats
 output_file_copy="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')copy-number.csv"                  # Define name and directory for output file
 output_file_distance="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dfam-distance.csv" 
  
-echo Genome_copy_number, T2T_copy_number > $output_file_copy
-echo Chromosome,Start,End,Dfam_min,Dfam_sum > $output_file_distance
+echo "Genome_copy_number, T2T_copy_number" > "$output_file_copy"
+echo "Chromosome,Start,End,Dfam_min,Dfam_sum" > "$output_file_distance"
 
 ##### Variables
 
@@ -141,15 +141,16 @@ while IFS=$'\t' read -r chr start end downstream upstream; do
 done < "$combined_output"
 
 #### Remove unnessesary files
-#rm -rf $downstream_output
-#rm -rf $upstream_output
-#rm -rf $combined_output
-#rm -rf $initial_data_temporary
-#rm -rf $initial_data_sorted
+rm -rf "$mmseqs_output"
+rm -rf "$mmseqs_output_T2T"
+rm -rf "$downstream_output"
+rm -rf "$upstream_output"
+rm -rf "$combined_output"
+rm -rf "$initial_data_temporary"
+rm -rf "$initial_data_sorted"
 
-
-# rm -rf ""$output_directory"/tmp"
-
+rm -rf "$output_directory"/tmp
+rm -rf "$output_directory"/tmp-t2t
 
 
 
