@@ -8,8 +8,6 @@ maf_to_stockholm() {
     mkdir -p data/maf-to-stk
     local temp_dir='data/maf-to-stk'
    
-
-    
     ######## Extract all the multiz100way alignment information 
     grep -v "#\|score" $input_file > $temp_dir/aligns.txt
 
