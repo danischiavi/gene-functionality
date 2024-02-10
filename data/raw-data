@@ -1,16 +1,4 @@
 
-# Download text file for all protein-coding genes from HGNC
-wget ftp://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/locus_types/gene_with_protein_product.txt
-
-# Pipes one and two removes sequences encoded in the Y and Mt chromosomes or are no longer approved genes.
-# Pipes three to five extracts the columns associated with RefSeq IDs, and removes sequences associated with more than one ID.
-
-grep -v "mitochondrially encoded\|Entry Withdrawn\|Yq" data/raw/gene_with_protein_product.txt | grep "Approved" | cut -f 24 | grep -v "|" | grep . > data/raw/hgnc-protein-coding-RefSeq.txt
-
-
-
-#### Protein-Coding-RNA
-
 # Download and unzip GFF file for human genome
 wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.gff.gz   
 gunzip GRCh38_latest_genomic.gff.gz
@@ -27,6 +15,18 @@ grep "NC_" data/raw/GRCh38_interim.csv > data/raw/GRCh38.p14_genome.csv
 rm data/raw/GRCh38_interim.csv
 
 
+
+#### Protein-Coding-RNA
+
+# Download text file for all protein-coding genes from HGNC
+wget ftp://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/locus_types/gene_with_protein_product.txt
+
+# Pipes one and two removes sequences encoded in the Y and Mt chromosomes or are no longer approved genes.
+# Pipes three to five extracts the columns associated with RefSeq IDs, and removes sequences associated with more than one ID.
+
+grep -v "mitochondrially encoded\|Entry Withdrawn\|Yq" data/raw/gene_with_protein_product.txt | grep "Approved" | cut -f 24 | grep -v "|" | grep . > data/raw/hgnc-protein-coding-RefSeq.txt
+
+
 #### Non-Coding-RNA
 
 ## Chromosome coordinates for each RNAcentral ncRNA
@@ -40,7 +40,9 @@ gunzip -c data/raw/homo_sapiens.GRCh38.bed.gz > data/raw/rnacentral_GRCh38_coord
 # Include HGNC database, exclude precursor miRNA/primary transcript, exclude rRNA, exclude lncRNA
 # RNAcentral Query: Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND NOT so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Pre_miRNA" AND NOT so_rna_type_name:"RRNA" AND NOT so_rna_type_name:"MiRNA" AND length:[75 TO 3000]) AND entry_type:"Sequence"
 #URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20NOT%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Pre_miRNA%22%20AND%20NOT%20so_rna_type_name:%22RRNA%22%20AND%20NOT%20so_rna_type_name:%22MiRNA%22
-gunzip data/raw/short-ncrna-rnacentral.fasta.gz
+# Query with not length limit: Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND NOT so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Pre_miRNA" AND NOT so_rna_type_name:"RRNA" AND NOT so_rna_type_name:"MiRNA" AND length:[33 TO 19263]) AND entry_type:"Sequence"
+#URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20NOT%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Pre_miRNA%22%20AND%20NOT%20so_rna_type_name:%22RRNA%22%20AND%20NOT%20so_rna_type_name:%22MiRNA%22%20AND%20length:%5B33%20TO%2019263%5D
+gunzip data/raw/rnacentral-short-ncrna.fasta.gz
 
 # Precursor miRNA: include HGNC database, include precursor miRNA/primary transcript only
 # RNAcentral Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"Pre_miRNA" AND length:[75 TO 180]) AND entry_type:"Sequence"
@@ -54,7 +56,32 @@ gunzip data/raw/pre-miRNA-rnacentral.fasta.gz
 gunzip data/raw/lncrna-rnacentral.fasta.gz
 
 
+#### GENOMIC REPEATS DATA
+#Database for blastn
+makeblastdb -in data/raw/GRCh38_p14_genomic.fna -dbtype nucl -parse_seqids -out data/raw/blastn/human_genome 
+
+#Database for mmseqs
+mkdir -p data/raw/mmseqs
 mmseqs createdb data/raw/GRCh38_p14_genomic.fna data/raw/mmseqs/human_genome
+
+#Database for mmseqs with T2T assembly
+https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_009914755.1/ 
+cd data/raw/
+wget https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/GCF_009914755.1/download?include_annotation_type=GENOME_FASTA
+# CAREFUL unzips in a folder called ncbi_dataset!
+unzip download?include_annotation_type=GENOME_FASTA 
+cd ../..
+mv data/raw/ncbi_dataset data/raw/T2T_assembly
+mkdir -p data/raw/mmseqs/T2T
+mmseqs createdb "data/raw/T2T_assembly/data/GCF_009914755.1/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna" "data/raw/mmseqs/T2T/human_genome"
+
+
+# Chain to map coordinates from hg38 to chm13 (i think i dont need it)
+https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/
+wget https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/hg38-chm13v2.over.chain.gz
+
+
+
 
 ####Dfam database
 #data/raw
@@ -64,24 +91,9 @@ gunzip data/raw/hg38.nrph.hits.gz
 # Pipe one removes the header
 # Pipe two obtains Chr, Start and End columns
 # Pipe three removes alternate chromosome, incomplete scaffolds and chromosomes Y/Mt
-grep -v "#seq_name" data/raw/hg38.nrph.hits | cut -f 1,10,11 | grep -v "_random\|chrY\|chrM" > data/raw/dfam-hg38-nrph.bed
 
 
-
-while IFS=$'\t' read -r chr start end
-do 
-    if [ "$start" -gt "$end" ]
-    then 
-        echo -e "$chr\t$end\t$start" >> data/dfam-hg38.bed ; 
-    else 
-        echo -e "$chr\t$start\t$end" >> data/dfam-hg38.bed 
-    fi 
-done < data/raw/dfam-hg38-nrph.bed
-
-sort -k1,1 -k2,2n dfam-hg38.bed > dfam-hg38-sorted.bed
-
-#Simpler & faster with a perl one-liner e.g.:
-cat hg38_dfam.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1V -k2,2n > dfam-hg38-sorted.bed
+cat data/raw/hg38.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1V -k2,2n > data/raw/dfam-hg38-sorted.bed
 
 
 
@@ -110,16 +122,6 @@ gsutil cp gs://gcp-public-data--gnomad/release/4.0/vcf/genomes/gnomad.genomes.v4
 
 
 
-# T2T
-https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_009914755.1/ 
-cd data/raw/
-wget https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/GCF_009914755.1/download?include_annotation_type=GENOME_FASTA
-unzip download?include_annotation_type=GENOME_FASTA 
-cd ../..
-
-# Chain to map coordinates from hg38 to chm13 (i think i dont need it)
-https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/
-wget https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOver/hg38-chm13v2.over.chain.gz
 
 
 
@@ -132,3 +134,23 @@ for file in *.bam; do
         echo "$file,$total" >> total-read-count.txt
     fi
 done
+
+
+# Uniprot database for protein coding annotations 
+10-Feb-2024
+cd data/raw 
+wget https://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliSwissprot.bb
+cd ../..
+./bin/bigBedToBed data/raw/unipAliSwissprot.bb data/raw/unipAliSwissprot.bed
+rm -rf data/raw/unipAliSwissprot.bb
+
+wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_45/gencode.v45.annotation.gtf.gz
+gunzip gencode.v45.annotation.gtf.gz 
+
+# Converting GENCODE GTF to bed file:
+# Pipe two filters sequences so only known ncRNAs are included.
+# Pipes three and four reformat the data into a bed file format.
+
+cat gencode.v45.annotation.gtf | grep "Mt_rRNA\|Mt_tRNA\|miRNA\|misc_RNA\|rRNA\|scRNA\|snRNA\|snoRNA\|ribozyme\|sRNA\|scaRNA\|lncRNA" | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > gencode-ncrna-annotation.bed
+
+

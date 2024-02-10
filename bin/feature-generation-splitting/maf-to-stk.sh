@@ -51,7 +51,7 @@ done
 len_hg38=$(awk -v partial_id="hg38" '{ if ($1 ~ "^" partial_id) { print length($2) } }' "$output_file".tmp)
 
 echo -e "# STOCKHOLM 1.0 \n#=GF ID\t$id" > "$output_file"
-awk -v len="$len_hg38" 'length($2) == len' "$output_file".tmp > "$output_file"
+awk -v len="$len_hg38" 'length($2) == len' "$output_file".tmp >> "$output_file"
 echo "//" >> "$output_file" 
 
 rm -rf "$output_file".tmp
