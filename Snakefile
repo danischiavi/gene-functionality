@@ -34,12 +34,12 @@ rule fasta_to_csv:
         lncrna="data/raw/rnacentral-lncrna.fasta",
         short_ncrna="data/raw/rnacentral-short-ncrna.fasta",
         pre_mirna="data/raw/rnacentral-pre-mirna.fasta" 
+    
     output: 
         lncrna_csv="data/raw/rnacentral-lncrna-seq.csv", 
         short_ncrna_csv="data/raw/rnacentral-short-ncrna-seq.csv",
-        pre_mirna_csv="data/raw/rnacentral-pre-mirna-seq.csv"
-    conda: 
-        "path to the env file" 
+        pre_mirna_csv="data/raw/rnacentral-pre-mirna-seq.csv" 
+        
     shell: 
         "fasta_formatter -i {input} -o {output} -t" 
 
@@ -97,7 +97,7 @@ rule csv_to_fasta:
 
 # TO EXTRACT THE FEATURES 
 
-#GC content 
+## GC content 
 
 rule all_GC:
     input:
@@ -112,6 +112,8 @@ rule run_intrinsic_seq_features:
         "bin/intrinsic-seq-features.sh {input} > {output}"
 
 
+## Conservation 
+
 rule all_conservation:
     input:
         expand("data/conservation/{sample}-conservation.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
@@ -125,6 +127,7 @@ rule run_seq_conservation_features:
         "bin/seq-conservation-features.sh {input} > {output}"
 
 
+## Transcriptome
 
 rule all_transcriptome:
     input:
@@ -138,6 +141,8 @@ rule run_transcriptome:
     shell:
         "bin/transcriptome-expression-features.sh {input} > {output}"
 
+
+## Genomic repeats 
 
 rule all_genomic_repeat:
     input:
@@ -155,8 +160,7 @@ rule run_genomic_repeat:
         "bin/genomic-repeat-associated-features.sh {input} > {output}"
 
 
-
-
+## Population variation
 
 rule all_population_variation:
     input:
@@ -172,3 +176,24 @@ rule run_populatio_variation:
         "data/population/{sample}-gnomAD-variation.csv"
     shell:
         "bin/population-variation-features.sh {input} > {output}"
+
+
+## protein and RNA specific 
+
+rule all_protein_and_rna_specific_features:
+    input:
+        expand("data/specific/{sample}-interaction.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"]),
+        expand("data/specific/{sample}-structure.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"]),
+        expand("data/specific/{sample}-coding-potential.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+
+
+rule run_protein_and_rna_specific_features:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa"
+    output:
+        "data/specific/{sample}-interaction.csv",
+        "data/specific/{sample}-structure.csv",
+        "data/specific/{sample}-coding-potential.csv"
+    shell:
+        "bin/protein-and-rna-specific-features.sh {input} > {output}"
