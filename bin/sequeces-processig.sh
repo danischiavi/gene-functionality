@@ -236,11 +236,11 @@ while [ "$short_count" -lt "$sample_size" ]; do
                 
             if [ "$start" -gt "$end" ]; then                                                            # Reverse transcripts can alter order of start/end positions
                 
-                echo $chr,$end,$start,$len,'NA' >> "$short_negative_control"
+                echo $chr,$end,$start,$len >> "$short_negative_control"
 
             else
 
-                echo $chr,$start,$end,$len,'NA' >> "$short_negative_control"
+                echo $chr,$start,$end,$len >> "$short_negative_control"
 
             fi
         fi 

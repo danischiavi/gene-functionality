@@ -21,15 +21,19 @@ last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA')
 mkdir -p data/specific && output_directory=data/specific
 file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')"
 
+# Final output files
 output_file_interaction="$file_name"interaction.csv                  # Define name and directory for output file
+output_file_coding_potential="$file_name"coding-potential.csv 
+output_file_structure="$file_name"structure.csv 
+
+# Temporary output files
 output_file_MFE="$file_name"MFE.csv 
 output_file_accesibility="$file_name"accesibility.csv 
 output_file_fickett="$file_name"fickett.csv 
 output_file_rnacoding="$file_name"RNAcoding.csv 
 output_file_Rscape="$file_name"covariance.csv
 
-output_file_coding_potential="$file_name"coding-potential.csv 
-output_file_structure="$file_name"structure.csv 
+
 
 #### Variables ####
 RNAup_exe=RNAup
@@ -55,7 +59,7 @@ esl_reformat_exe=esl-reformat
 
 if [ ! -e "$output_file_interaction" ]; then
 
-    echo InteractionMIN_RNAup,InteractionAVE_RNAup > "$output_file_interaction"
+    echo "Interaction_min","Interaction_ave" > "$output_file_interaction"
     var=$first_rna_id                                                                                             
     last_seq=$last_rna_id               
 
@@ -118,7 +122,7 @@ rm -rf "$kcal_mol_RNAup"
 if [ ! -e "$output_file_MFE" ]; then
     
     ## Temporary file
-    echo MFE > "$output_file_MFE"
+    echo "MFE" > "$output_file_MFE"
     RNAfold_output="$file_name"RNAfold-output
 
     #### MFE calculation
@@ -169,13 +173,13 @@ fi
 
 ############################################################################################################################
 
-# Coding Potential - Ficket Score
+# Coding Potential - Fickett Score
 
 ############################################################################################################################
 if [ ! -e "$output_file_fickett" ]; then
 
     ## Temporary files
-    echo Ficket_score > "$output_file_fickett"
+    echo "Fickett_score" > "$output_file_fickett"
     cpc2_output="$file_name"cpc2-output
 
     ## (python script so cannot be added to $PATH)

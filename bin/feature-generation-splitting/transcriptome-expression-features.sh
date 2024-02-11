@@ -72,11 +72,11 @@ run_encode() {
                                                                   # Record MRD as zero rather than blank
             if [ -z "$count_max" ] ; then count_max=NA ; max_depth=NA ; fi                       # But if no transcription whatsoever, set everything to NA 
 
-            echo $count_max,$max_depth >> $output_file
+            echo "$count_max,$max_depth" >> "$output_file"
 
         done 
 
-    } < $initial_data
+    } < "$initial_data"
 
 }
 

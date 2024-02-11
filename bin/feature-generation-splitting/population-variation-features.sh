@@ -19,8 +19,13 @@ initial_fasta=$2
 first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')
 last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA') 
 
-mkdir -p data/population
 output_directory=data/population
+mkdir -p "$output_directory"
+
+# Final output file
+output_file_variation="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')variation.csv"   
+
+# Temporary output file
 output_file_1kGP="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')1kGP-variation.csv"                  # Define name and directory for output file
 output_file_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')gnomAD-variation.csv" 
  
@@ -30,12 +35,6 @@ chain_file=data/raw/hg38ToHg19.over.chain
 onekGP_directory=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/1000genomes
 tabix_exe=tabix
 vcftools_exe=vcftools 
-
-#### File creation 
-echo 1000G_SNPs,1000G_SNPsDensity,aveMAF > "$output_file_1kGP"
-echo gnomAD_SNP_count,gnomAD_SNP_density,gnomAD_avg_MAF > "$output_file_gnomAD"
-
-
 
 ###########################################################################################################################
 
@@ -174,21 +173,27 @@ VCF2summary() {
 
 
 ## Call function for each sequence
-{
-    read
-    while IFS=, read -r id _ _ start end seq; do                              
+if [ ! -e "$output_file_1kGP" ]; then
     
-        len=$(( $end-$start ))                                              # to calculate SNP density
-        input_vcf="$VCF_directory_1kGP"/"$id".vcf
-        echo "[$id][$start][$end][$len]["$id".vcf]"  >> tabix.log  
+    echo "1kGP_SNPs,1kGP_SNPSNP_density,1kGP_aveMAF" > "$output_file_1kGP"
 
-        VCF2summary "$input_vcf" "$len"                                     
-
-        echo "$SNPs_count,$SNPs_density,$MAF_average" >> "$output_file_1kGP"
+    {
+        read
+        while IFS=, read -r id _ _ start end seq; do                              
     
-    done
+            len=$(( $end-$start ))                                              # to calculate SNP density
+            input_vcf="$VCF_directory_1kGP"/"$id".vcf
+            echo "[$id][$start][$end][$len]["$id".vcf]"  >> tabix.log  
+
+            VCF2summary "$input_vcf" "$len"                                     
+
+            echo "$SNPs_count,$SNPs_density,$MAF_average" >> "$output_file_1kGP"
+    
+        done
    
-} < $initial_data   
+    } < $initial_data   
+
+fi
 
 rm -rf data/hg19-coordinates.bed
 rm -rf data/hg38-coordinates.bed
@@ -201,63 +206,74 @@ rm -rf data/snps
 
 ############################################################################################################################
 
-VCF_directory_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')gnomAD-VCF" 
+if [ ! -e "$output_file_gnomAD" ]; then
+    
+    echo "gnomAD_SNPs,gnomAD_SNP_density,gnomAD_aveMAF" > "$output_file_gnomAD"
 
-coordinates="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')-tabix-coordinates"
+    VCF_directory_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')gnomAD-VCF" 
 
-awk -F',' 'NR > 1 {print $3":"$4"-"$5}' "$initial_data" > "$coordinates"
+    coordinates="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')-tabix-coordinates"
 
-### Variables 
-max="$last_rna_id"
-var="$first_rna_id"
+    awk -F',' 'NR > 1 {print $3":"$4"-"$5}' "$initial_data" > "$coordinates"
+
+    ### Variables 
+    max="$last_rna_id"
+    var="$first_rna_id"
 
 
-while IFS= read -r line; do
+    while IFS= read -r line; do
         
-    tabix_input="$line"
+        tabix_input="$line"
 
-    start=$(echo "$line" | awk -F'[:-]' '{print $2}')
-    end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density        len=$(( $end-$start ))  
+        start=$(echo "$line" | awk -F'[:-]' '{print $2}')
+        end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density        len=$(( $end-$start ))  
 
-    rna_id=RNA"$var"-gnomad
+        rna_id=RNA"$var"-gnomad
 
-    chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
-    gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites."$chr".vcf.bgz               # make it a variable with user input
+        chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
+        gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites."$chr".vcf.bgz               # make it a variable with user input
 
-    echo Extracting :"$rna_id".vcf >> tabix.log ;
-    echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
-    $tabix_exe -f -h "$gnomad_database" "$tabix_input" > "$rna_id".vcf 2>>tabix.log ;
-    #do
-    echo >> tabix.log 
-#      done
+        echo Extracting :"$rna_id".vcf >> tabix.log ;
+        echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
+        $tabix_exe -f -h "$gnomad_database" "$tabix_input" > "$rna_id".vcf 2>>tabix.log ;
+        #do
+        echo >> tabix.log 
+#       done
 
-    snps_file_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')snps-gnomAD"
-    awk -F';' '{for(i=1;i<=NF;i++) if($i ~ /^AF=/) {split($i, a, "="); print a[2]}}' "$rna_id".vcf > "$snps_file_gnomAD"
+        snps_file_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')snps-gnomAD"
+        awk -F';' '{for(i=1;i<=NF;i++) if($i ~ /^AF=/) {split($i, a, "="); print a[2]}}' "$rna_id".vcf > "$snps_file_gnomAD"
         
-    SNPs_count=$( wc -l < "$snps_file_gnomAD")
-    MAF_sum=$(awk -F':' '{sum += $1} END {print sum}' "$snps_file_gnomAD")
+        SNPs_count=$( wc -l < "$snps_file_gnomAD")
+        MAF_sum=$(awk -F':' '{sum += $1} END {print sum}' "$snps_file_gnomAD")
 
-    if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
+        if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
     
-        SNPs_count='NA'
-        SNPs_density='NA'
-        MAF_average='NA'
+            SNPs_count='NA'
+            SNPs_density='NA'
+            MAF_average='NA'
     
-    else
+        else
 
-        SNPs_density=$(echo "scale=4; $SNPs_count/$len" | bc )   
-	    MAF_average=$(echo "scale=5; $MAF_sum/$SNPs_count" | bc )
+            SNPs_density=$(echo "scale=4; $SNPs_count/$len" | bc )   
+	        MAF_average=$(echo "scale=5; $MAF_sum/$SNPs_count" | bc )
     
-    fi
+        fi
    
-    echo "$SNPs_count,$SNPs_density,$MAF_average" >> "$output_file_gnomAD" 
+        echo "$SNPs_count,$SNPs_density,$MAF_average" >> "$output_file_gnomAD" 
     
-    (( var++ )) 
+        (( var++ )) 
 
-    mv "$rna_id".vcf "$VCF_directory_gnomAD"
+        mv "$rna_id".vcf "$VCF_directory_gnomAD"
     
-done < "$coordinates"
+    done < "$coordinates"
 
+fi
+
+if [ ! -e "$output_file_variation" ]; then
+
+    paste -d',' "$output_file_1kGP" "$output_file_gnomAD"   > "$output_file_variation"
+
+fi
 
 ######## Zip VCF files for further analyses
 #zip -r VCF VCF &> /dev/null
