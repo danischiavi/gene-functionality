@@ -130,7 +130,7 @@ filter_out_functional(){
     cut -f 1-3 "$bed_intersect_gencode" | tr '\t' ',' > "$intersect_gencode"
 
     ######## Remove negative control sequences that overlap with known functional sequences
-    while IFS=',' read -r chr start end _; do
+    while IFS=',' read -r chr start end seq; do
 
         coordinates="${chr},${start},${end}"
 
@@ -140,7 +140,7 @@ filter_out_functional(){
             :
         else
             (( count++ ))
-            echo "RNA$count,No,$chr,$start,$end" >> "$negative_control"
+            echo "RNA$count,No,$chr,$start,$end,$seq" >> "$negative_control"
         fi
 
     done < "$negative_coords"
@@ -153,7 +153,7 @@ filter_out_functional(){
 
 }
 
-if [ ! -e "$negative_control" ]; then
+if [ ! -s "$negative_control" ]; then
 
     echo "ID,Functional,Chromosome,Start,End,Sequence" > "$negative_control"
     count=$(wc -l < "$initial_data")                           # Start counting from last functional seq  
