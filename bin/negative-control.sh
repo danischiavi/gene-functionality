@@ -45,10 +45,18 @@ negative_control() {
 
 
     ## Generate null sequences downstream of sequence
+    if [ ! -z "$right_len" ]; then                                            # Right_len will be empty for short-ncrna due to single exon
 
-    right_start=$(( "$end" + "$distance_to_rna" ))
-    right_end=$(( "$right_start" + "$right_len" ))
+        right_start=$(( "$end" + "$distance_to_rna" ))
+        right_end=$(( "$right_start" + "$right_len" ))
     
+    else
+
+        right_start=$(( "$end" + "$distance_to_rna" ))
+        right_end=$(( "$right_start" + "$left_len" ))                        # left_len is the length of the only exon for short-ncrna
+
+    fi
+
     if [[ "$right_start" -lt 0 ]] || [[ "$right_end" -lt 0 ]]; then 
     
         right_sequence= 
@@ -76,11 +84,15 @@ negative_control() {
 
 distances_to_rna=("4000000" "8000000" "12000000" "16000000" "20000000")
 
-while IFS=, read chr start end left_len right_len; do   #start exon 1, end last exon, length exon 2 and 3
+if [ ! -e "$right_negative_coords" ] || [ ! -e "$left_negative_coords" ]; then 
 
-    for position in "${distances_to_rna[@]}"; do negative_control "$position"; done
+    while IFS=, read chr start end left_len right_len; do   #start exon 1, end last exon, length exon 2 and 3
 
-done < "$initial_data"
+        for position in "${distances_to_rna[@]}"; do negative_control "$position"; done
+
+    done < "$initial_data"
+
+fi
 
 
 ###########################################################################################################################
@@ -108,23 +120,19 @@ filter_out_functional(){
     "$bedtools_exe" intersect -a "$uniprot_bed" -b "$bed_coords" > "$bed_intersect_uniprot"
 
     ######## Extract chromosome coordinates of overlapping negative control sequences
-    cut -f 1-3 "$bed_coords" | sed 's/^chr//' | tr '\t' ',' > "$intersect_uniprot"
-    left_count=$( cat "$intersect" | wc -l )
+    cut -f 1-3 "$bed_intersect_uniprot" | tr '\t' ',' > "$intersect_uniprot"
+    #left_count=$( cat "$intersect" | wc -l )
 
     ######## GENCODE filtering
     "$bedtools_exe" intersect -a "$gencode_bed" -b "$bed_coords" > "$bed_intersect_gencode"
 
     ######## Extract chromosome coordinates of overlapping negative control sequences
-    cut -f 1-3 "$bed_coords" | sed 's/^chr//' | tr '\t' ',' > "$intersect_gencode"
+    cut -f 1-3 "$bed_intersect_gencode" | tr '\t' ',' > "$intersect_gencode"
 
     ######## Remove negative control sequences that overlap with known functional sequences
-    echo "ID,Functional,Chromosome,Start,End,Sequence" > "$negative_control"
-
-    count=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA')                           # Start counting from last functional seq  
-
     while IFS=',' read -r chr start end _; do
 
-        coordinates="${chr}${start}${end}"
+        coordinates="${chr},${start},${end}"
 
         if grep -qF "$coordinates" "$intersect_uniprot"; then
             :
@@ -137,12 +145,31 @@ filter_out_functional(){
 
     done < "$negative_coords"
 
+    rm -rf "$bed_coords"
+    rm -rf "$bed_intersect_uniprot"
+    rm -rf "$bed_intersect_gencode"
+    rm -rf "$intersect_uniprot"
+    rm -rf "$intersect_gencode"
+
 }
 
-filter_out_functional 'left'
-filter_out_functional 'right'
+if [ ! -e "$negative_control" ]; then
+
+    echo "ID,Functional,Chromosome,Start,End,Sequence" > "$negative_control"
+    count=$(wc -l < "$initial_data")                           # Start counting from last functional seq  
+    # count=$(( $(wc -l < "$initial_data") - 1 )) # replace for this count when add header to the initial_data 
+    filter_out_functional 'left'
+    filter_out_functional 'right'
+
+else
+
+    echo "$negative_control already exist"
+
+fi
 
 ######## Generate negative control FASTA file
 #grep -v "Start" ./data/negative-control-dataset.csv | cut -d ',' -f 1,6 | tr ',' ' ' | perl -lane '{print ">$F[0]\n$F[1]"}' > ./data/negative-control-seq.fa
 
 ###########################################################################################################################
+
+#rm -rf "$negative_coords"
