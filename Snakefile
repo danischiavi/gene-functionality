@@ -79,7 +79,7 @@ rule sequences_processing:
 
 rule all_negative_control:
     input:
-        expand("data/{sample_neg}-negative-control-dataset.csv", sample=["protein", "lncrna", "short-ncrna"])
+        expand("data/{sample_neg}-negative-control-dataset.csv", sample_neg=["protein", "lncrna", "short-ncrna"])
         
 
 rule negative_control:
@@ -92,6 +92,7 @@ rule negative_control:
     shell:
         "bin/negative-control.sh {input} > {output}"
 
+
 ##################################################
 
 # Generate functional FASTA file from CSV file
@@ -99,20 +100,22 @@ names=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-
 
 rule all:
     input:
-        expand("data/{name}-seq.fa", name=names)
+        expand("data/{sample}-seq.fa", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-negative-control", "lncrna-negative-control", "short-ncrna-negative-control"])
 
 rule csv_to_fasta:
     input:
-        csv="data/{name}-dataset.csv"
+        csv="data/{sample}-dataset.csv"
     output:
-        fasta="data/{name}-seq.fa"
-    shell:                                      # should this be in python? 
+        fasta="data/{sample}-seq.fa"
+    shell:                                      
         """
-        while IFS=',' read -r id _ _ _ _ seq
-        do
+        sed '1d' {input.csv} | while IFS=',' read -r id _ _ _ _ seq; do 
+
             echo -e ">$id\n$seq" >> {output.fasta}
-        done < {input.csv}
+            
+        done 
         """
+
 
 
 
@@ -120,7 +123,7 @@ rule csv_to_fasta:
 # EXTRACT FEATURES 
 ########################
 
-sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-negative-control", "lncrna-negative-control", "short-ncrna-negative-control"]
 
 ## GC content 
 
@@ -197,8 +200,7 @@ rule run_populatio_variation:
         initial_data="data/{sample}-dataset.csv",
         initial_fasta="data/{sample}-seq.fa"
     output:
-        "data/population/{sample}-1kGP-variation.csv",
-        "data/population/{sample}-gnomAD-variation.csv"
+        "data/population/{sample}-variation.csv"
     shell:
         "bin/population-variation-features.sh {input} > {output}"
 
@@ -226,6 +228,13 @@ rule run_protein_and_rna_specific_features:
 
 
 
+
+#### FINAL FEATURES DATASET #### 
+rule all_concatenate_features:
+    input:
+        expand("data/{sample}-features.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+      
+
 rule concatenate_features:
     input:
         "data/intrinsic/{sample}-conservation.csv",
@@ -239,6 +248,11 @@ rule concatenate_features:
         "data/population/{sample}-variation.csv"
 
     output:
-        "{sample_features}-features.csv"
+        "data/{sample}-features.csv"
     shell:
         "paste -d '\t' {input} > {output}"
+
+
+##### ADD RULE TO INCLUDE NEGATIVE CONTROL FEATURES TO DATASET 
+
+

@@ -23,11 +23,12 @@ output_directory=data/population
 mkdir -p "$output_directory"
 
 # Final output file
-output_file_variation="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')variation.csv"   
+file_name=${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+output_file_variation="$file_name"-variation.csv 
 
 # Temporary output file
-output_file_1kGP="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')1kGP-variation.csv"                  # Define name and directory for output file
-output_file_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')gnomAD-variation.csv" 
+output_file_1kGP="$file_name"-1kGP-variation.csv                  
+output_file_gnomAD="$file_name"-gnomAD-variation.csv 
  
 # Variables
 liftOver_exe=liftOver
@@ -42,30 +43,29 @@ vcftools_exe=vcftools
 
 ###########################################################################################################################
 
-#### Convert coordinates to hg19 genome version
+## Convert coordinates to hg19 genome version
+current_coord="$file_name"-hg38-coordinates.bed
+old_coord="$file_name"-hg19-coordinates.bed
+unlifted_coord="$file_name"-unlifted.bed
 
-current_coord="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')hg38-coordinates.bed"
-old_coord="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')hg19-coordinates.bed"
-unlifted_coord="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')unlifted.bed"
-
-awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > $current_coord   # Reformat coordinates for LiftOver
+## Reformat coordinates for LiftOver
+awk -F',' 'NR > 1 {print $3"\t"$4"\t"$5"\t"$1}' "$initial_data" > "$current_coord"  
 
 echo "$liftOver_exe $current_coord $chain_file $old_coord $unlifted_coord &> /dev/null" >> errors.log
 "$liftOver_exe" "$current_coord" "$chain_file" "$old_coord" "$unlifted_coord" &> /dev/null
-
-##
 
 max="$last_rna_id"
 var="$first_rna_id"
 
 ## If available, unzip previously VCF files, otherwise extract files
-VCF_directory_1kGP="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')1kGP-VCF" 
+VCF_directory_1kGP="$file_name"-1kGP-VCF 
     
 if [ -f "$VCF_directory_1kGP".zip ]; then
 
     unzip "$VCF_directory_1kGP".zip &> /dev/null
 
 else
+
     mkdir -p "$VCF_directory_1kGP"
     
     ## Obtain VCF files according to hg19 chromosome coordinates
@@ -126,10 +126,6 @@ else
 
 fi
 
-######## Remove excess files
-#rm -rf data/hg19-coordinated.bed
-# rm -rf data/hg38-coordinates.bed
-#rm -rf data/unlifted.bed
 
 
 
@@ -146,12 +142,12 @@ VCF2summary() {
     local len="$2"
 
     ## Determine SNP frequencies for each ncRNA sequence
-    output_vcftools="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')vcftools-output" 
+    output_vcftools="$file_name"-vcftools-output
     echo "$vcftools_exe --vcf $input_vcf --freq --out $output_vcftools &> /dev/null" >> tabix.log   
     $vcftools_exe --vcf "$input_vcf" --freq --out "$output_vcftools" &> /dev/null
 
     ## Extract SNPs for each sequence at frequency observed at that position into a parsable format
-    snps_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')snps"
+    snps_file="$file_name"-snps
     awk -F'\t' 'NR > 1 {print $5":"$6}' "$output_vcftools".frq > "$snps_file"    
 
     SNPs_count=$( wc -l < "$snps_file")
@@ -173,7 +169,7 @@ VCF2summary() {
 
 
 ## Call function for each sequence
-if [ ! -e "$output_file_1kGP" ]; then
+if [ ! -s "$output_file_1kGP" ]; then
     
     echo "1kGP_SNPs,1kGP_SNPSNP_density,1kGP_aveMAF" > "$output_file_1kGP"
 
@@ -195,10 +191,6 @@ if [ ! -e "$output_file_1kGP" ]; then
 
 fi
 
-rm -rf data/hg19-coordinates.bed
-rm -rf data/hg38-coordinates.bed
-rm -rf data/snps
-# remove VCF files or zip them? 
 
 ############################################################################################################################
 
@@ -206,20 +198,28 @@ rm -rf data/snps
 
 ############################################################################################################################
 
-if [ ! -e "$output_file_gnomAD" ]; then
+if [ ! -s "$output_file_gnomAD" ]; then
     
     echo "gnomAD_SNPs,gnomAD_SNP_density,gnomAD_aveMAF" > "$output_file_gnomAD"
 
-    VCF_directory_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')gnomAD-VCF" 
+    VCF_directory_gnomAD="$file_name"-gnomAD-VCF
 
-    coordinates="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')-tabix-coordinates"
+    if [ -f "$VCF_directory_gnomAD".zip ]; then
+
+        unzip "$VCF_directory_gnomAD".zip &> /dev/null
+
+    else
+
+        mkdir -p "$VCF_directory_gnomAD"
+
+    
+    coordinates="$file_name"-tabix-coordinates
 
     awk -F',' 'NR > 1 {print $3":"$4"-"$5}' "$initial_data" > "$coordinates"
 
     ### Variables 
     max="$last_rna_id"
     var="$first_rna_id"
-
 
     while IFS= read -r line; do
         
@@ -228,19 +228,22 @@ if [ ! -e "$output_file_gnomAD" ]; then
         start=$(echo "$line" | awk -F'[:-]' '{print $2}')
         end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density        len=$(( $end-$start ))  
 
-        rna_id=RNA"$var"-gnomad
+        rna_id="$VCF_directory_gnomAD"/RNA"$var"
 
-        chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
-        gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites."$chr".vcf.bgz               # make it a variable with user input
+        if [ ! -f "$rna_id" ]; then
+            
+            chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
+            gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites."$chr".vcf.bgz               # make it a variable with user input
 
-        echo Extracting :"$rna_id".vcf >> tabix.log ;
-        echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
-        $tabix_exe -f -h "$gnomad_database" "$tabix_input" > "$rna_id".vcf 2>>tabix.log ;
-        #do
-        echo >> tabix.log 
-#       done
+            echo Extracting :"$rna_id".vcf >> tabix.log ;
+            echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
+            $tabix_exe -f -h "$gnomad_database" "$tabix_input" > "$rna_id".vcf 2>>tabix.log ;
+            #do
+            echo >> tabix.log 
+#           done
+        fi
 
-        snps_file_gnomAD="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')snps-gnomAD"
+        snps_file_gnomAD="$file_name"-snps-gnomAD
         awk -F';' '{for(i=1;i<=NF;i++) if($i ~ /^AF=/) {split($i, a, "="); print a[2]}}' "$rna_id".vcf > "$snps_file_gnomAD"
         
         SNPs_count=$( wc -l < "$snps_file_gnomAD")
@@ -262,19 +265,26 @@ if [ ! -e "$output_file_gnomAD" ]; then
         echo "$SNPs_count,$SNPs_density,$MAF_average" >> "$output_file_gnomAD" 
     
         (( var++ )) 
-
-        mv "$rna_id".vcf "$VCF_directory_gnomAD"
     
     done < "$coordinates"
 
 fi
 
-if [ ! -e "$output_file_variation" ]; then
+if [ ! -s "$output_file_variation" ]; then
 
     paste -d',' "$output_file_1kGP" "$output_file_gnomAD"   > "$output_file_variation"
 
 fi
 
 ######## Zip VCF files for further analyses
-#zip -r VCF VCF &> /dev/null
-#rm -rf VCF/
+zip -r "$VCF_directory_1kGP".zip "$VCF_directory_1kGP" && rm -rf "$VCF_directory_1kGP"
+zip -r "$VCF_directory_gnomAD".zip "$VCF_directory_gnomAD" && rm -rf "$VCF_directory_gnomAD"
+
+### Remove excess files
+rm -rf "$current_coord"
+rm -rf "$old_coord"
+rm -rf "$unlifted_coord"
+rm -rf "$snps_file" 
+rm -rf "$output_vcftools"
+rm -rf "$coordinates"
+rm -rf "$snps_file_gnomAD"

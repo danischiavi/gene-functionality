@@ -18,6 +18,7 @@
 
 ############################################################################################################################
 
+#### Files and directories #### 
 initial_data=$1
 initial_fasta=$2
 
@@ -27,8 +28,9 @@ last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA')
 output_directory=data/repeats
 mkdir -p "$output_directory"
 
-output_file_copy="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')copy-number.csv"                  # Define name and directory for output file
-output_file_distance="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dfam-distance.csv" 
+file_name=${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+output_file_copy="$file_name"-copy-number.csv                                        
+output_file_distance="$file_name"-dfam-distance.csv
  
 
 ##### Variables #####
@@ -45,30 +47,26 @@ dfam_hits=data/raw/dfam-hg38-sorted.bed
 
 ############################################################################################################################
 
-if [ ! -e "$output_file_copy" ]; then
+if [ ! -s "$output_file_copy" ]; then
 
-    echo "Genome_copy_number, T2T_copy_number" > "$output_file_copy"
-
-    ## Run MMseqs2
+    #### Run MMseqs2 ####
 
     # Hits agains hg38
-    mmseqs_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')mmseqs-output"
+    mmseqs_output="$file_name"-mmseqs-output
 
     if [ ! -e "$mmseqs_output" ]; then
-        $mmseqs_exe easy-search \
-        "$initial_fasta" "$human_genome_mmseqs" "$mmseqs_output" "$output_directory/tmp" \
-        --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue \
-        >/dev/null 2>>errors.log                              # max-seq not to be limited by default 600; search-type 3 for nucleotides; format-output to extract only required values 
+
+        "$mmseqs_exe" easy-search "$initial_fasta" "$human_genome_mmseqs" "$mmseqs_output" "$file_name-tmp" --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue >/dev/null 2>>errors.log                              # max-seq not to be limited by default 600; search-type 3 for nucleotides; format-output to extract only required values 
+    
     fi
 
     # Hits agains T2T
-    mmseqs_output_T2T="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')mmseqs-output-T2T"
+    mmseqs_output_T2T="$file_name"-mmseqs-output-T2T
 
     if [ ! -e "$mmseqs_output_T2T" ]; then
-        $mmseqs_exe easy-search \
-        "$initial_fasta" "$T2T_genome_mmseqs" "$mmseqs_output_T2T" "$output_directory/tmp-t2t" \
-        --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue \
-        >/dev/null 2>>errors.log
+
+        "$mmseqs_exe" easy-search "$initial_fasta" "$T2T_genome_mmseqs" "$mmseqs_output_T2T" "$file_name-tmp-t2t" --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue >/dev/null 2>>errors.log
+    
     fi
 
 
@@ -85,6 +83,7 @@ if [ ! -e "$output_file_copy" ]; then
         if [ -z "$total_mmseqs" ]; then total_mmseqs='NA'; fi 
         if [ -z "$total_mmseqs_T2T" ]; then total_mmseqs_T2T='NA'; fi
 
+        echo "hg38_copy_number, T2T_copy_number" > "$output_file_copy"
         echo "$total_mmseqs, $total_mmseqs_T2T" >> "$output_file_copy"
 
         (( var++ ))
@@ -99,20 +98,20 @@ fi
 
 ############################################################################################################################
 
-if [ ! -e "$output_file_distance" ]; then
+if [ ! -s "$output_file_distance" ]; then
 
     echo "Dfam_min,Dfam_sum" > "$output_file_distance"
     ######## Format data for bedtools and temporary files
 
-    initial_data_temporary="${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//').bed" 
-    initial_data_sorted="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')sorted.bed"
+    initial_data_temporary="$file_name".bed 
+    initial_data_sorted="$file_name"-sorted.bed
 
     awk -F',' 'NR > 1 {print $3, $4, $5}' "$initial_data" > "$initial_data_temporary"
     sort -k1,1V -k2,2n "$initial_data_temporary" | tr ' ' '\t' > "$initial_data_sorted" 
 
-    downstream_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dfam-downstream.bed" 
-    upstream_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dfam-upstream.bed"
-    combined_output="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dfam-combined.bed"
+    downstream_output="$file_name"-dfam-downstream.bed
+    upstream_output="$file_name"-dfam-upstream.bed
+    combined_output="$file_name"-dfam-combined.bed
 
     ######## Upstrean hits
     $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits" -io -D ref -iu > "$downstream_output" 2>>errors.log
@@ -157,8 +156,8 @@ rm -rf "$combined_output"
 rm -rf "$initial_data_temporary"
 rm -rf "$initial_data_sorted"
 
-rm -rf "$output_directory"/tmp
-rm -rf "$output_directory"/tmp-t2t
+rm -rf "$file_name"/tmp
+rm -rf "$file_name"/tmp-t2t
 
 
 
