@@ -19,21 +19,20 @@ last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA')
 
 #### File declaration ####
 mkdir -p data/specific && output_directory=data/specific
-file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')"
+file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
 
 # Final output files
-output_file_interaction="$file_name"interaction.csv                  # Define name and directory for output file
-output_file_coding_potential="$file_name"coding-potential.csv 
-output_file_structure="$file_name"structure.csv 
+output_file_interaction="$file_name"-interaction.csv                  # Define name and directory for output file
+output_file_coding_potential="$file_name"-coding-potential.csv 
+output_file_structure="$file_name"-structure.csv 
+output_file_specific="$file_name"-specific.csv
 
 # Temporary output files
-output_file_MFE="$file_name"MFE.csv 
-output_file_accesibility="$file_name"accesibility.csv 
-output_file_fickett="$file_name"fickett.csv 
-output_file_rnacoding="$file_name"RNAcoding.csv 
-output_file_Rscape="$file_name"covariance.csv
-
-
+output_file_MFE="$file_name"-MFE.csv 
+output_file_accesibility="$file_name"-accesibility.csv 
+output_file_fickett="$file_name"-fickett.csv 
+output_file_rnacoding="$file_name"-RNAcoding.csv 
+output_file_Rscape="$file_name"-covariance.csv
 
 #### Variables ####
 RNAup_exe=RNAup
@@ -47,6 +46,7 @@ cpc2_file=./bin/CPC2_standalone-1.0.1/bin/CPC2.py
 bigBedToBed_exe=./bin/bigBedToBed
 cactus_align_url=http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf
 
+RNAalifold_exe=RNAalifold
 RNAcode_exe=RNAcode
 Rscape_exe=R-scape
 esl_reformat_exe=esl-reformat
@@ -64,9 +64,9 @@ if [ ! -e "$output_file_interaction" ]; then
     last_seq=$last_rna_id               
 
     # Temporary files
-    RNAup_input="$file_name"RNAup-input
-    RNAup_output="$file_name"RNAup-output
-    kcal_mol_RNAup="$file_name"kcal-mol-RNAup
+    RNAup_input="$file_name"-RNAup-input
+    RNAup_output="$file_name"-RNAup-output
+    kcal_mol_RNAup="$file_name"-kcal-mol-RNAup
 
     while [ $var -le $last_seq ]; do
 
@@ -198,60 +198,61 @@ fi
 
 ###########################################################################################################################
 
-if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_rscape" ]; then
+if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
 
-    echo RNAcode_score,RNAalifold_score > "$output_file_rnacoding" 
+    echo "RNAcode_score,RNAalifold_score" > "$output_file_rnacoding" 
 
     #### Directories and temporary files
     maf_directory="$output_directory"/maf/$(basename "${initial_data%.*}" | sed 's/-dataset//')
     mkdir -p "$maf_directory"
 
-    RNAcode_output="$file_name"rnacode-output
-    RNAalifold_output="${output_directory}/RNAalifold/$(basename "${initial_data%.*}" | sed 's/dataset//')/$rna_id"
-    
+    RNAcode_output="$file_name"-rnacode-output
+   
+    RNAalifold_directory="$output_directory"/RNAalifold/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+    mkdir -p "$RNAalifold_directory"
+    RNAalifold_output="$RNAalifold_directory"/"$rna_id"
     Rscape_directory="$output_directory"/Rscape/$(basename "${initial_data%.*}" | sed 's/-dataset//')
-    Rscape_output="$Rscape_directory"/"$rna_id".cov
-
-
-#### Obtain MSA maf-files from 241-way cactus alignment
-{
-    read  
-    while IFS=, read -r rna_id _ chr start end _; do
+    mkdir -p  "$Rscape_directory"
+    
+  
+    #### Obtain MSA maf-files from 241-way cactus alignment
+    tail -n +2 "$initial_data"  | while IFS=, read -r rna_id _ chr start end _; do
 
         maf_file="$maf_directory"/"$rna_id".maf
 
-        if [ ! -e "$maf_file" ] && [ ! -z "$maf_file" ]; then                                                                               
+        if [ ! -s "$maf_file" ]; then                                                                               
 
             "$bigBedToBed_exe" "$cactus_align_url" stdout -chrom="$chr" -start="$start" -end="$end" | cut -f 4 | tr ';' '\n' > "$maf_file"                                                                   # to extract MSA of regions from UCSC server  
                                                                                         
         fi
 
-        if [ ! -z "$maf_file" ]; then #CHECK IF THISONE IS WORKING
+        if [ ! -s "$maf_file" ]; then 
         
             #### Reformat MSA.maf files for tools #### 
 
-                ## maf to stk for RNAalifold and R-scape
+            ## maf to stk for RNAalifold and R-scape
 
             stk_dir="${output_directory}/stk/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
-            mkdir -p "$stk_dir"
+            if [ ! -e "$stk_dir" ]; then mkdir -p "$stk_dir"; fi
             stk_file="$stk_dir"/"$rna_id".stk
 
-            ./bin/maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
-                                                         
-            
+            if [ ! -s "$stk_file" ]; then
+                
+                ./bin/maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
+                                                    
                 ## stk to clustal (.aln) for Rcode (see notes for more details)
-            
-            aln_dir="${output_directory}/aln/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
-            mkdir -p "$aln_dir"
-            aln_file="$aln_dir"/"$rna_id".aln
+                aln_dir="${output_directory}/aln/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
+                mkdir -p "$aln_dir"
+                aln_file="$aln_dir"/"$rna_id".aln
 
-            "$esl_reformat_exe" clustal "$stk_file" > "$aln_file"
+                "$esl_reformat_exe" clustal "$stk_file" > "$aln_file"
 
+            fi
 
             ##### RNAalifold ####
-            if [ ! -e "$output_file_rnacoding" ]; then
+            if [ $(wc -l < "$output_file_rnacoding") -le 1 ]; then                          # line 1 is the header
+                
                 ## Generate secondary structure consensus sequence and associated MFE value
-            
                 echo "$RNAalifold_exe -f S --noPS --aln $stk_file >$RNAalifold_output 2>>errors.log" >>errors.log
                 #timeout 60m
 	            "$RNAalifold_exe" -f S --noPS --aln "$stk_file" > "$RNAalifold_output" 2>>errors.log
@@ -278,9 +279,9 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_rscape" ]; then
             fi
 
             ##### R-scape ####
-            if [ ! -e "$Rscape_directory" ]; then
-
-                mkdir -p  "$Rscape_directory"
+            Rscape_output="$Rscape_directory"/"$rna_id".cov
+            
+            if [ ! -s "$Rscape_output" ]; then
 
 		        echo "$Rscape_exe -E 100 -s $stk_file >/dev/null 2>>errors.log" >>errors.log
                 "$Rscape_exe" -E 100 "$stk_file" > "$Rscape_output" /dev/null 2>>errors.log   # deleted -s option since structure is required 
@@ -297,12 +298,10 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_rscape" ]; then
 
     done 
 
-    } < "$initial_data"
-
 fi
 ##### Process R-scape output files ####
 
-if [ ! -e "$output_file_Rscape" ]; then
+if [ ! -s "$output_file_Rscape" ]; then
     
     echo Max_covariance,Min_covariance_Eval > "$output_file_Rscape"
 
@@ -311,13 +310,13 @@ if [ ! -e "$output_file_Rscape" ]; then
 
     while [ $count_file -lt $total_rna ]; do
 
-        file="$Rscape_directory"/"$count_file".cov
+        file="$Rscape_directory"/RNA"$count_file".cov
 
-        if [ -f "$file" ] && [ -s "$file" ]; then                                                  # Check file exists and is not empty, otherwise NA
+        if [ -s "$file" ]; then                                                  # Check file exists and is not empty, otherwise NA
 
-            max=$(  grep -r 'GTp' "$file"    | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)     # Max covariance observed
-            min=$(  grep -v "#" "$file"      | cut -f 4 | sort -n | head -1 | tr -d '-' )          # Min covariance observed
-            eval=$( grep -m 1 "$min" "$file" | cut -f 5 )                                          # E-val of min covariance
+            max=$(  grep -r 'GTp' "$file"    | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)          # Max covariance observed
+            min=$(  grep -v "#" "$file" | grep -v '^$' | cut -f 4 | sort -n | head -n 1 | tr -d '-' )   # Min covariance observed
+            eval=$( grep -m 1 "$min" "$file" | cut -f 5 )                                               # E-val of min covariance
             
             [[ "$eval" == "no significant pairs" ]] && eval=NA   
             
@@ -335,21 +334,18 @@ if [ ! -e "$output_file_Rscape" ]; then
 
 fi
 
-## Join some output files for better organization 
-if [ ! -e "$output_file_coding_potential" ]; then
-    paste -d',' "$output_file_fickett" "$output_file_rnacoding" > "$output_file_coding_potential"
+## Join output files for better organization into one
+if [ ! -e "$output_file_specific" ]; then
+    paste -d',' "$output_file_interaction" "$output_file_fickett" "$output_file_rnacoding" "$output_file_accesibility" "$output_file_Rscape" "$output_file_MFE" > "$output_file_specific"
 fi
 
-if [ ! -e "$output_file_structure" ]; then
-    paste -d',' "$output_file_accesibility" "$output_file_Rscape" "$output_file_MFE"  > "$output_file_structure"
-fi
 
 #####?#####
 
-rm -rf "$output_file_fickett"
-rm -rf "$output_file_rnacoding"
-rm -rf "$output_file_accesibility" 
-rm -rf "$output_file_Rscape" 
-rm -rf "$output_file_MFE"
+#rm -rf "$output_file_fickett"
+#rm -rf "$output_file_rnacoding"
+#rm -rf "$output_file_accesibility" 
+#rm -rf "$output_file_Rscape" 
+#rm -rf "$output_file_MFE"
 
 ########

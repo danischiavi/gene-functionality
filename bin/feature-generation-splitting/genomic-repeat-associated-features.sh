@@ -72,6 +72,8 @@ if [ ! -s "$output_file_copy" ]; then
 
     ## Process mmseqs results in order 
 
+    echo "hg38_copy_number, T2T_copy_number" > "$output_file_copy"
+
     var=$first_rna_id
     last_seq=$last_rna_id
 
@@ -83,7 +85,6 @@ if [ ! -s "$output_file_copy" ]; then
         if [ -z "$total_mmseqs" ]; then total_mmseqs='NA'; fi 
         if [ -z "$total_mmseqs_T2T" ]; then total_mmseqs_T2T='NA'; fi
 
-        echo "hg38_copy_number, T2T_copy_number" > "$output_file_copy"
         echo "$total_mmseqs, $total_mmseqs_T2T" >> "$output_file_copy"
 
         (( var++ ))
@@ -156,8 +157,8 @@ rm -rf "$combined_output"
 rm -rf "$initial_data_temporary"
 rm -rf "$initial_data_sorted"
 
-rm -rf "$file_name"/tmp
-rm -rf "$file_name"/tmp-t2t
+rm -rf "$file_name"-tmp
+rm -rf "$file_name"-tmp-t2t
 
 
 

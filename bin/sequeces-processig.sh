@@ -14,43 +14,16 @@
 # General setup
 
 ###########################################################################################################################
-pre_mirna_fasta=
-short_ncrna_fasta=
-lncrna_fasta=
+rnacentral_coords=$1
+rnacentral_lncrna_seqs=$2
+rnacentral_short_ncrna_seqs=$3
+rnacentral_pre_mirna_seqs=$4
+genome_annotations=$5
+genome_csv=$6
+RefSeq_protein_coding=$7
 
 
-### Input Files
-
-# check if files exist 
-if [ ! -f "$lncrna_fasta" ] || [ ! -f "$short_ncrna_fasta" ] || [ ! -f "$chr_coord_ncrna" ]  ## ADD THE OTHER FILES!
-then
-    echo "Initial data files do not exist"
-    break 
-else
-    :
-fi
-
-## Convert input from FASTA to CSV file for easier parsability
-rnacentral_lncrna_seqs=$(fasta_formatter -i "$lncrna_fasta" -o "data/raw/rnacentral-lncrna-seq.csv" -t)             # downloaded fasta file from RNAcentral with: lncRNA sequences
-rnacentral_short_ncrna_seqs=$(fasta_formatter -i "$short_ncrna_fasta" -o "data/raw/rnacentral-short-ncrna-seq.csv" -t )   #                                             short-ncRNA sequences
-fasta_formatter -i "$pre_mirna_fasta" -o "data/raw/rnacentral-pre-mirna-seq.csv" -t        #                                             precursor miRNA sequences
-
-## Variables
-lncrna_fasta='data/raw/rnacentral-lncrna.fasta'
-short_ncrna_fasta='data/raw/rnacentral-short-ncrna.fasta'
-pre_mirna_fasta='data/raw/rnacentral-pre-miRNA.fasta'
-
-rnacentral_lncrna_seqs='data/raw/rnacentral-lncrna-seq.csv'
-rnacentral_short_ncrna_seqs='data/raw/rnacentral-short-ncrna-seq.csv'
-rnacentral_pre_mirna_seqs='data/raw/rnacentral-pre-mirna-seq.csv'
-
-rnacentral_coords='data/raw/rnacentral_GRCh38_coordinates.bed'
-RefSeq_protein_coding='data/raw/hgnc-protein-coding-RefSeq.txt'
-genome_annotations='data/raw/GRCh38_p14_genomic.gff'
-genome_csv='data/raw/GRCh38.p14_genome.csv'
-
-### Output files
-
+#### Output files ####
 # File creation
 file_creation() {
 
@@ -62,7 +35,7 @@ names=("protein-exon2" "protein-exon3" "functional-lncrna-exon1" "functional-lnc
 for name in "${names[@]}"; do file_creation "$name"; done
 
 
-# Set variables 
+# Output files into variables 
 lncrna_exon_one='data/functional-lncrna-exon1-dataset.csv' 
 lncrna_exon_two='data/functional-lncrna-exon2-dataset.csv' 
 short_ncrna='data/functional-short-ncrna-dataset.csv'
@@ -79,15 +52,16 @@ lower_limit='75'
 upper_limit='3000'
 lower_limit_short='10' # CHECK
 
+
 ###########################################################################################################################
 
 # NON-CODING RNA - Chromosome coordinates and sequence 
 
 ###########################################################################################################################
 
-#### Function declaration
+#### Function declaration ####
 
-set_variables() {                                        ## Set variables to filter out ncRNA sequences from the RNAcentral database
+set_variables() {                                           # Set variables to filter out ncRNA sequences from the RNAcentral database
     
     local id=$1
     local seq_csv=$2
@@ -95,19 +69,22 @@ set_variables() {                                        ## Set variables to fil
     seq=$(  grep -m 1 "$id" "$seq_csv" | cut -f 2 )
     meta=$( grep -m 1 "$id" "$rnacentral_coords" )
     chr=$(  echo "$meta" | cut -f 1 )
-    status='pass'                                        # Set status to filter out sequences which are redifine as 'not-pass'
+    status='pass'                                           # Set status to filter out sequences which are redifine as 'not-pass'
         
-    if [ -z "$seq" ]; then                               # Remove if no sequence available
+    if [ -z "$seq" ]; then                                  # Remove if no sequence available
         status='not-pass'
         return
-	elif [ $chr == 'chrM' ] || [ $chr == 'chrY' ]; then  # Remove ncRNA from mitochondria and Y chromosome
+	elif [ $chr == 'chrM' ] || [ $chr == 'chrY' ]; then     # Remove ncRNA from mitochondria and Y chromosome
         status='not-pass'
         return
     fi
 }
-                
 
-# Extract ID column to array for searching short and lncrna ids within all ncrna RNAcentral database 
+###############################               
+
+#### Extracting sequences ####
+
+# Populate arrays with short/lncrna IDs column for searching within all ncrna RNAcentral database 
 declare -a "IDs_ncrna=()"  
 mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
 
@@ -122,22 +99,22 @@ mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | aw
 
 ## D: ADD CHECKS FOR ARRAYS!  
 
-## LNCRNA - Extracting random sequences from RNAcentral database
+## LNCRNA ##
 
-declare -a "selected_ids=()"                            # Keeps track of selected random IDs
+declare -a "selected_ids=()"                                                                                    # Keeps track of selected random IDs
 lncrna_count=0
 
 while [ "$lncrna_count" -lt "$sample_size" ]; do
     
-    random_id="${IDs_lncrna[RANDOM % ${#IDs_lncrna[@]}]}" # Select a random ID from the lncrna list
+    random_id="${IDs_lncrna[RANDOM % ${#IDs_lncrna[@]}]}"                                                       # Select a random ID from the lncrna list
                                                      
-    if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then  # Select no repeated IDs
+    if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
        
         if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
     
             set_variables "$random_id" "$rnacentral_lncrna_seqs" 
 
-            if [ "$status" != 'not-pass' ]; then                                                                      # Status returned by function if empty sequence or mitocondrial/Ychr
+            if [ "$status" != 'not-pass' ]; then                                                                # Status returned by function if empty sequence or mitocondrial/Ychr
          
                 exon_count=$( echo "$meta" | cut -f 10 )
 
@@ -155,7 +132,7 @@ while [ "$lncrna_count" -lt "$sample_size" ]; do
                         relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons     
                         relative_start_one=$((relative_start_one + 1))                                           # +1 to account for the first relative start pos being 0
                         relative_end_one=$((relative_start_one + len_one))
-                        seq_one=$( echo "$seq" | cut -c $relative_start_one-$relative_end_one)                  # Sequence of exon 1 extracted from RNAcentral (fasta file converted to csv)
+                        seq_one=$( echo "$seq" | cut -c $relative_start_one-$relative_end_one)                   # Sequence of exon 1 extracted from RNAcentral (fasta file converted to csv)
 
                         relative_start_two=$((relative_end_one + 1))                                             # Field 12 are the coordinates relative to seq_start but considering the introns,     # which are not present in the downloaded RNAcentral lncrna sequence -> to extract exon seq   # use values relative to exon 1                                          
                         relative_end_two=$((relative_start_two + len_two))
@@ -179,7 +156,7 @@ while [ "$lncrna_count" -lt "$sample_size" ]; do
 
                         if [ "$start_one" -gt "$end_last" ]; then                                                       # Reverse transcripts can alter order of start/end positions
                                                                              
-                            echo $chr,$end_last,$start_one,$len_one,$len_two >> "$lncrna_negative_control"                   # To generate negative control sequences that are the same length as exons two and three
+                            echo $chr,$end_last,$start_one,$len_one,$len_two >> "$lncrna_negative_control"              # To generate negative control sequences that are the same length as exons two and three
                         
                         else
 
@@ -192,7 +169,7 @@ while [ "$lncrna_count" -lt "$sample_size" ]; do
     fi
 done
 
-## SHORT-NCRNA - Extracting random sequences from RNAcentral database
+## SHORT-NCRNA ##
 
 declare -a "selected_ids=()"
 short_count=0
@@ -330,7 +307,7 @@ gff2Info() {                                                                    
 
 ###############################
 
-# Apply to each random sequences
+#### Extracting sequences ####
 
 declare -a "selected_ids=()"
 protein_count=0
@@ -341,9 +318,9 @@ while [ "$protein_count" -lt "$sample_size" ]; do                             # 
 
     if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
 
-        grep "exon-$random_id" "$genome_annotations" > data/exons        # Grep annotation from Reference Genome (NCBI) according to protein-coding genes (HGNC)
+        grep "exon-$random_id" "$genome_annotations" > data/exons             # Grep annotation from Reference Genome (NCBI) according to protein-coding genes (HGNC)
         
-        if [ "$(wc -l < data/exons)" -ge 4 ]; then                # At least 4 exons 
+        if [ "$(wc -l < data/exons)" -ge 4 ]; then                            # At least 4 exons 
             gff2Info data/exons "$genome_csv"
         fi
     fi
@@ -351,28 +328,4 @@ done
 
 rm -rf data/exons
 
-###########################################################################################################################
 
-# Generate functional FASTA file from CSV file
-
-###########################################################################################################################
-
-csv_to_fasta() {                     
-    
-    local file=$1
-    {
-    read 
-    while IFS=',' read -r id _ _ _ _ seq; do
-            output_file="${file/dataset.csv/seq.fa}"
-            echo -e ">$id\n$seq" >> $output_file
-        
-    done
-
-    } < $file   
-}   
-
-
-for name in "${names[@]}"; do 
-    file=data/$name-dataset.csv
-    csv_to_fasta "$file"
-done
