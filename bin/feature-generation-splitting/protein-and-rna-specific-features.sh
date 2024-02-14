@@ -31,7 +31,7 @@ output_file_specific="$file_name"-specific.csv
 output_file_MFE="$file_name"-MFE.csv 
 output_file_accesibility="$file_name"-accesibility.csv 
 output_file_fickett="$file_name"-fickett.csv 
-output_file_rnacoding="$file_name"-RNAcoding.csv 
+output_file_rnacoding="$file_name"-coding.csv 
 output_file_Rscape="$file_name"-covariance.csv
 
 #### Variables ####
@@ -154,6 +154,10 @@ if [ ! -e "$output_file_accesibility" ]; then
         elif [[ "$access" == "THIS happened"* ]]; then      # If error occurred, record NA
                                                      
             echo 'NA' >> "$output_file_accesibility"
+        
+        elif [[ "$access" == 'inf' ]]; then                 # If error occurred, record NA
+                                                     
+            echo 'NA' >> "$output_file_accesibility"
 
         elif [ "$exit_status" -eq "124" ]; then             # If calculation timed out, record NA
                                                           
@@ -176,7 +180,7 @@ fi
 # Coding Potential - Fickett Score
 
 ############################################################################################################################
-if [ ! -e "$output_file_fickett" ]; then
+if [ ! -s "$output_file_fickett" ]; then
 
     ## Temporary files
     echo "Fickett_score" > "$output_file_fickett"
@@ -200,17 +204,16 @@ fi
 
 if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
 
-    echo "RNAcode_score,RNAalifold_score" > "$output_file_rnacoding" 
-
     #### Directories and temporary files
     maf_directory="$output_directory"/maf/$(basename "${initial_data%.*}" | sed 's/-dataset//')
     mkdir -p "$maf_directory"
 
-    RNAcode_output="$file_name"-rnacode-output
-   
     RNAalifold_directory="$output_directory"/RNAalifold/$(basename "${initial_data%.*}" | sed 's/-dataset//')
     mkdir -p "$RNAalifold_directory"
-    RNAalifold_output="$RNAalifold_directory"/"$rna_id"
+
+    RNAcode_directory="$output_directory"/RNAcode/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+    mkdir -p "$RNAcode_directory"
+
     Rscape_directory="$output_directory"/Rscape/$(basename "${initial_data%.*}" | sed 's/-dataset//')
     mkdir -p  "$Rscape_directory"
     
@@ -226,67 +229,76 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
                                                                                         
         fi
 
-        if [ ! -s "$maf_file" ]; then 
+        if [ -s "$maf_file" ]; then 
         
             #### Reformat MSA.maf files for tools #### 
 
-            ## maf to stk for RNAalifold and R-scape
+            
 
             stk_dir="${output_directory}/stk/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
             if [ ! -e "$stk_dir" ]; then mkdir -p "$stk_dir"; fi
             stk_file="$stk_dir"/"$rna_id".stk
 
+            aln_dir="${output_directory}/aln/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
+            mkdir -p "$aln_dir"
+            aln_file="$aln_dir"/"$rna_id".aln
+
             if [ ! -s "$stk_file" ]; then
                 
+                ## maf to stk for RNAalifold and R-scape
                 ./bin/maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
                                                     
                 ## stk to clustal (.aln) for Rcode (see notes for more details)
-                aln_dir="${output_directory}/aln/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
-                mkdir -p "$aln_dir"
-                aln_file="$aln_dir"/"$rna_id".aln
-
                 "$esl_reformat_exe" clustal "$stk_file" > "$aln_file"
 
             fi
 
             ##### RNAalifold ####
-            if [ $(wc -l < "$output_file_rnacoding") -le 1 ]; then                          # line 1 is the header
+            RNAalifold_output="$RNAalifold_directory"/"$rna_id"
+            if [ ! -s "$RNAalifold_output" ]; then                          # line 1 is the header
                 
                 ## Generate secondary structure consensus sequence and associated MFE value
                 echo "$RNAalifold_exe -f S --noPS --aln $stk_file >$RNAalifold_output 2>>errors.log" >>errors.log
                 #timeout 60m
 	            "$RNAalifold_exe" -f S --noPS --aln "$stk_file" > "$RNAalifold_output" 2>>errors.log
-                rnaalifold_score=$( cat "$RNAalifold_output" | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
+            fi
+
+            rnaalifold_score=$( cat "$RNAalifold_output" | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
 
 	            # Remove gap-only columns:
 	            #echo "esl-alimask -g --gapthresh 1 data/STK/$rna_id.stk > maf/$rna_id.stk" >>errors.log
 	            #esl-alimask -g --gapthresh 1 $rna_id.stk > maf/$rna_id.stk
                 exit_status=$?
-
-                ##### RNAcode ####
             
+            
+            ##### RNAcode ####
+            RNAcode_output="$RNAcode_directory"/"$rna_id"
+            if [ ! -s "$RNAcode_output" ]; then
+
 	            echo "$RNAcode_exe $aln_file -o $RNAcode_output 2>>errors.log &> /dev/null" >>errors.log
 	            "$RNAcode_exe" "$aln_file" -o "$RNAcode_output" 2>>errors.log &> /dev/null
             
-                # Takes the largest score, but records zero if no significant hits found.
-                rnacode=$( grep -v "No significant coding regions found.\|#\|=" "$RNAcode_output" | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
-            
-                [ -z $rnacode ] && rnacode=NA
-                [ -z "$rnaalifold_score" ] && rnaalifold_score=NA
-
-                echo "$rnacode,$rnaalifold_score" | tr -d ' ' >> "$output_file_rnacoding"
-            
             fi
+            # Takes the largest score, but records zero if no significant hits found.
+            rnacode=$( grep -v "No significant coding regions found.\|#\|=" "$RNAcode_output" | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
+            
+            [ -z $rnacode ] && rnacode=NA
+            [ -z "$rnaalifold_score" ] && rnaalifold_score=NA
+            
+            if [ ! -e "$output_file_rnacoding" ]; then echo "RNAcode_score,RNAalifold_score" > "$output_file_rnacoding"; fi
+            echo "$rnacode,$rnaalifold_score" | tr -d ' ' >> "$output_file_rnacoding"
 
             ##### R-scape ####
-            Rscape_output="$Rscape_directory"/"$rna_id".cov
-            
+            Rscape_output="$Rscape_directory"/"$rna_id"
             if [ ! -s "$Rscape_output" ]; then
+                
+		        echo "$Rscape_exe -E 100 $stk_file >/dev/null 2>>errors.log" >>errors.log
+                "$Rscape_exe" -E 100 --outdir "$Rscape_directory" --nofigures "$stk_file" >/dev/null 2>>errors.log                           # deleted -s option since structure is required ??
 
-		        echo "$Rscape_exe -E 100 -s $stk_file >/dev/null 2>>errors.log" >>errors.log
-                "$Rscape_exe" -E 100 "$stk_file" > "$Rscape_output" /dev/null 2>>errors.log   # deleted -s option since structure is required 
-
-            
+                # remove extra output files 
+                rm -rf "$Rscape_directory"/"$rna_id".power
+                rm -rf "$Rscape_directory"/"$rna_id".sorted.cov
+                 
             fi
 
         else                                                                                      # Generate blanks if no MAF available
@@ -335,7 +347,7 @@ if [ ! -s "$output_file_Rscape" ]; then
 fi
 
 ## Join output files for better organization into one
-if [ ! -e "$output_file_specific" ]; then
+if [ ! -s "$output_file_specific" ]; then
     paste -d',' "$output_file_interaction" "$output_file_fickett" "$output_file_rnacoding" "$output_file_accesibility" "$output_file_Rscape" "$output_file_MFE" > "$output_file_specific"
 fi
 
