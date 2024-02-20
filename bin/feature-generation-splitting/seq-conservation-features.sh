@@ -6,26 +6,22 @@
 #              and negative control sequences.
 #
 # Input: $1 is the dataset 
-#        $2 is the location of the folder with the local databases/datasets or version specific executables
-# 
-# Any additional required files, directories or dependencies will be requested when the script is run and require manual
-# input.
+#       
 #
 # Log files: tabix.log records any potential VCF files that weren't downloaded correctly.
 #
 ############################################################################################################################
 
 #### Files and directories #### 
-
 initial_data=$1
 
 output_directory=data/conservation
 mkdir -p "$output_directory"
 
-output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')conservation.csv"                  # Define name and directory for output file
-   
+output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')conservation.csv"                  
 
-#### Variables and databases ####
+
+#### Variables and databases #### --> D: still not sure which is the best way to handle this inputs . Some are relative paths to the directory of the project and other are absolute 
 bigWigSummary_exe=bin/bigWigSummary
 phylo_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phyloP100way.bw
 phast_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phastCons100way.bw
@@ -35,6 +31,8 @@ gerp_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/
 
 #### Extract conservation features for each set of chromosome coordinates #### 
 if [ ! -s "$output_file" ]; then
+
+    echo "241w_PP_mean,241w_PP_max,100w_PP_mean,100w_PP_max,100w_PC_mean,100w_PC_max,GERP_mean,GERP_max" > "$output_file"
 
     tail -n +2 "$initial_data"  | while IFS=',' read -r _ _ chr start end _; do
 
@@ -77,11 +75,11 @@ if [ ! -s "$output_file" ]; then
         gerp_max=$(missing_value "$gerp_max")
 
         ## Values to output file 
-        echo "241w_PP_mean,241w_PP_max,100w_PP_mean,100w_PP_max,100w_PC_mean,100w_PC_max,GERP_mean,GERP_max" > "$output_file"
         echo "$zoonomia_mean,$zoonomia_max,$mean_pp,$max_pp,$mean_pc,$max_pc,$gerp_mean,$gerp_max" >> "$output_file"
 
     done
 
 fi
+
 
 

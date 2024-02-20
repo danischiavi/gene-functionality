@@ -6,7 +6,6 @@
 # Description: This script runs all the scripts to calculates the chosen features for protein-coding exons, lncRNA exons, short ncRNAs 
 #              and negative control sequences. 
 #
-# 
 #
 # Log files: tabix.log records any potential VCF files that weren't downloaded correctly.
 
@@ -22,7 +21,7 @@ mkdir -p data/specific && output_directory=data/specific
 file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
 
 # Final output files
-output_file_interaction="$file_name"-interaction.csv                  # Define name and directory for output file
+output_file_interaction="$file_name"-interaction.csv                  
 output_file_coding_potential="$file_name"-coding-potential.csv 
 output_file_structure="$file_name"-structure.csv 
 output_file_specific="$file_name"-specific.csv
@@ -255,7 +254,7 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
 
             ##### RNAalifold ####
             RNAalifold_output="$RNAalifold_directory"/"$rna_id"
-            if [ ! -s "$RNAalifold_output" ]; then                          # line 1 is the header
+            if [ ! -s "$RNAalifold_output" ]; then                          
                 
                 ## Generate secondary structure consensus sequence and associated MFE value
                 echo "$RNAalifold_exe -f S --noPS --aln $stk_file >$RNAalifold_output 2>>errors.log" >>errors.log
@@ -324,7 +323,7 @@ if [ ! -s "$output_file_Rscape" ]; then
 
         file="$Rscape_directory"/RNA"$count_file".cov
 
-        if [ -s "$file" ]; then                                                  # Check file exists and is not empty, otherwise NA
+        if [ -s "$file" ]; then                                                                         # Check file exists and is not empty, otherwise NA
 
             max=$(  grep -r 'GTp' "$file"    | cut -d '[' -f 2 | tr ']' ',' | cut -d ',' -f 2)          # Max covariance observed
             min=$(  grep -v "#" "$file" | grep -v '^$' | cut -f 4 | sort -n | head -n 1 | tr -d '-' )   # Min covariance observed
@@ -346,18 +345,19 @@ if [ ! -s "$output_file_Rscape" ]; then
 
 fi
 
+
 ## Join output files for better organization into one
 if [ ! -s "$output_file_specific" ]; then
     paste -d',' "$output_file_interaction" "$output_file_fickett" "$output_file_rnacoding" "$output_file_accesibility" "$output_file_Rscape" "$output_file_MFE" > "$output_file_specific"
 fi
 
 
-#####?#####
+#### Remove excess files #####
 
-#rm -rf "$output_file_fickett"
-#rm -rf "$output_file_rnacoding"
-#rm -rf "$output_file_accesibility" 
-#rm -rf "$output_file_Rscape" 
-#rm -rf "$output_file_MFE"
+rm -rf "$output_file_fickett"
+rm -rf "$output_file_rnacoding"
+rm -rf "$output_file_accesibility" 
+rm -rf "$output_file_Rscape" 
+rm -rf "$output_file_MFE"
 
 ########

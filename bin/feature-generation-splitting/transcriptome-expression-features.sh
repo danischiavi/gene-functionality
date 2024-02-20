@@ -5,8 +5,8 @@
 # Description: This script calculates Maximum read depth (MRD) and the average number of reads per kilobase of transcripts per million mapped reads (RPKM) for protein-coding exons, lncRNA exons, short ncRNAs 
 #              and negative control sequences.
 #
-# Input: $1 is the file identifier for the dataset and fasta file. Eg: 200702-functional-ncrna
-#        $2 is the location of the folder with the local databases/datasets or version specific executables
+# Input: $1 is the file dataset 
+#        
 # 
 # Any additional required files, directories or dependencies will be requested when the script is run and require manual
 # input.
@@ -69,7 +69,7 @@ run_encode() {
         done 
 
         [ -z "$max_depth" ] && max_depth=0      
-                                                                  # Record MRD as zero rather than blank
+                                                                                            # Record MRD as zero rather than blank
         if [ -z "$count_max" ] ; then count_max=NA ; max_depth=NA ; fi                       # But if no transcription whatsoever, set everything to NA 
 
         echo "$count_max,$max_depth" >> "$output_file"
