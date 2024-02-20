@@ -1,12 +1,27 @@
 
-#### Variables and files
+#!/bin/bash
+#
+# Notes: 
+#        initial_data: 
+#        first refers to the first exon of the initial data, which not necessary corresponds to the exon number 1 
+#        last refers to the second exon of the initial data, which not necessary corresponds to the exon number 2
+#        single refers to sequences which have a single exon 
+#
+#
+#### Variables and files ####
 initial_data=$1
 
-file_name=$(basename "${initial_data%.*}" | sed 's/coords-negative-control//')                  # Define name and directory for output file
+file_name=data/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
-left_negative_coords=data/"$file_name"left-negative-control.csv
-right_negative_coords=data/"$file_name"right-negative-control.csv
-negative_control=data/"$file_name"negative-control-dataset.csv
+# Temporary files
+first_negative_coords="$file_name"-first-negative-coords.csv
+last_negative_coords="$file_name"-last-negative-coords.csv
+single_negative_coords="$file_name"-negative-coords.csv
+
+# Final file
+first_negative_control="$file_name"-first-negative-control-dataset.csv
+last_negative_control="$file_name"-last-negative-control-dataset.csv
+single_negative_control="$file_name"-negative-control-dataset.csv
 
 genome_csv=data/raw/GRCh38.p14_genome.csv
 gencode_bed=data/raw/gencode-ncrna-annotation.bed 
@@ -14,104 +29,155 @@ uniprot_bed=data/raw/unipAliSwissprot.bed
 
 bedtools_exe=bedtools
 
+###########################################################################################################################
 
-negative_control() {
+#### Function declaration ####
 
-    local distance_to_rna=$1
+#################################################################################################
+# To extract coordinates and sequences of the negative control given a distance from the sequence
+#################################################################################################
 
-    chromo=$( echo $chr | tr -d "chr" )
+#### For sequences with more than 1 exon #### 
+multiple_exons_negative_control() {
 
-
-    ## Generate null sequences upstream of sequence
-
-    left_end=$(( "$start" - "$distance_to_rna" ))
-    left_start=$((   "$left_end" - "$left_len" ))                                                               # length based on exons's length
+    local distance_to_seq=$1
     
-    if [[ "$left_end" -lt 0 ]] || [[ "$left_start" -lt 0 ]]; then 
-    
-        left_sequence=                                                                                          # Blank to filter out if negative coord
+    chromo=$( echo $chr | tr -d "chr" )                                                                                                    # Variables extract from initial_data file
+    distance_between_exons=$(( "$end_seq" - "$start_seq" - "$first_len" - "$last_len" ))                                                    
 
-    else 
+
+    # UPSTREAM
+    last_exon_left_end=$((     "$start_seq" - "$distance_to_seq" ))
+    last_exon_left_start=$(( "$last_exon_left_end" - "$last_len" ))                                                                         # length based on exons's length
     
-        left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$left_start-$left_end )  # Extract seq from genome file 
+    first_exon_left_end=$(( "$last_exon_left_start" - "$distance_between_exons" ))                              
+    first_exon_left_start=$(( "first_exon_left_end" - "$first_len" ))
+
+
+    if [[ "$last_left_end" -gt 0 ]] || [[ "$last_left_start" -gt 0 ]]; then                                                                 # Filter out if negative coord
     
+        last_left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$last_exon_left_start-$last_exon_left_end )     # Extract seq from genome file                                                                                      # Blank to filter out if negative coord
+
+        if [ ! -z "$last_left_sequence" ] && [[ "$last_left_sequence" != *"N"* ]]; then                                                                                       # If no sequence extracted, then remove
+            
+            echo "$chr,$last_exon_left_start,$last_exon_left_end,$last_left_sequence" >> "$last_negative_coords"
+        
+        fi
+
     fi
    
-    if [ ! -z $left_sequence ] && [[ $left_sequence != *"N"* ]]; then                                           # If no sequence extracted, then remove.
 
-        echo "$chr,$left_start,$left_end,$left_sequence" >> "$left_negative_coords"
+    if [[ "$first_left_end" -gt 0 ]] || [[ "$first_left_start" -gt 0 ]]; then 
+    
+        first_left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$first_exon_left_start-$first_exon_left_end )  
+ 
+        if [ ! -z "$first_left_sequence" ] && [[ "$first_left_sequence" != *"N"* ]]; then  
+            
+            echo "$chr,$first_exon_left_start,$first_exon_left_end,$first_left_sequence" >> "$first_negative_coords"
+    
+        fi
 
     fi
+   
+
+    ## DOWNSTREAM
+    first_exon_right_start=$(( "$end_seq" + "$distance_to_seq" ))
+    first_exon_right_end=$(( "$first_exon_right_start" + "$first_len" ))                                
+
+    last_exon_right_start=$(( "$first_exon_right_end" + "$distance_between_exons" ))
+    last_exon_right_end=$((  "$last_exon_right_start" + "$last_len" ))
 
 
-    ## Generate null sequences downstream of sequence
-    if [ ! -z "$right_len" ]; then                                            # Right_len will be empty for short-ncrna due to single exon
-
-        right_start=$(( "$end" + "$distance_to_rna" ))
-        right_end=$(( "$right_start" + "$right_len" ))
+    if [[ "$first_exon_right_start" -gt 0 ]] || [[ "$first_exon_right_end" -gt 0 ]]; then 
+  
+        first_right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$first_exon_right_start-$first_exon_right_end ) 
     
-    else
-
-        right_start=$(( "$end" + "$distance_to_rna" ))
-        right_end=$(( "$right_start" + "$left_len" ))                        # left_len is the length of the only exon for short-ncrna
-
-    fi
-
-    if [[ "$right_start" -lt 0 ]] || [[ "$right_end" -lt 0 ]]; then 
-    
-        right_sequence= 
-    
-    else 
-    
-        right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$right_start-$right_end ) 
+        if [ ! -z "$first_right_sequence" ] && [[ "$first_right_sequence" != *"N"* ]]; then                                                                                       # If no sequence extracted, then remove.
+            
+            echo "$chr,$first_exon_right_start,$first_exon_right_end,$first_right_sequence" >> "$first_negative_coords"
+        
+        fi
     
     fi
     
-    if [ ! -z $right_sequence ] && [[ $right_sequence != *"N"* ]]; then   
 
-        echo "$chr,$right_start,$right_end,$right_sequence" >> "$right_negative_coords"
-
+    if [[ "$last_exon_right_start" -gt 0 ]] || [[ "$last_exon_right_end" -gt 0 ]]; then 
+  
+        last_right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$last_exon_right_start-$last_exon_right_end ) 
+    
+        if [ ! -z "$last_right_sequence" ] && [[ "$last_right_sequence" != *"N"* ]]; then                                                                                       # If no sequence extracted, then remove.
+            
+            echo "$chr,$last_exon_right_start,$last_exon_right_end,$last_right_sequence" >> "$last_negative_coords"
+        
+        fi
+    
     fi
 
 }
 
 
-###########################################################################################################################
+#### For sequences with single exon (short-ncRNA) ####
+single_exon_negative_control() {
 
-# Generate sequences upstream and downstream of functional gene
-
-###########################################################################################################################
-
-distances_to_rna=("4000000" "8000000" "12000000" "16000000" "20000000")
-
-if [ ! -e "$right_negative_coords" ] || [ ! -e "$left_negative_coords" ]; then 
-
-    while IFS=, read chr start end left_len right_len; do   #start exon 1, end last exon, length exon 2 and 3
-
-        for position in "${distances_to_rna[@]}"; do negative_control "$position"; done
-
-    done < "$initial_data"
-
-fi
+    local distance_to_seq=$1
+    
+    chromo=$( echo $chr | tr -d "chr" )
 
 
-###########################################################################################################################
+    # UPSTREAM
+    left_end=$(( "$start_seq" - "$distance_to_seq" ))
+    left_start=$(( "$left_end" - "$len" ))                                                              
+    
+    if [[ "$left_end" -gt 0 ]] || [[ "$left_start" -gt 0 ]]; then 
+    
+        left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$left_start-$left_end )
+   
+        if [ ! -z "$left_sequence"] && [[ "$left_sequence" != *"N"* ]]; then                                           # If no sequence extracted, then remove.
 
-# Filter upstream (left) and downstream (right) negative control sequences using UniProt and GENCODE
+            echo "$chr,$left_start,$left_end,$left_sequence" >> "$single_negative_coords"
+        
+        fi
+    
+    fi
 
-###########################################################################################################################
+
+    # DOWNSTREAM                       
+    right_start=$(( "$end_seq" + "$distance_to_seq" ))
+    right_end=$(( "right_start" + "$len" ))                                
+                              
+
+    if [[ "$right_start" -gt 0 ]] || [[ "$right_end" -gt 0 ]]; then 
+
+        right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$right_start-$right_end ) 
+
+        if [ ! -z "$right_sequence" ] && [[ "$right_sequence" != *"N"* ]]; then   
+
+            echo "$chr,$right_start,$right_end,$right_sequence" >> "$single_negative_coords"
+
+        fi
+    
+    fi
+
+}
+
+
+
+################################################################
+# To filter negative control sequences using UniProt and GENCODE
+################################################################
 
 filter_out_functional(){
     
-    local side=$1
+    local negative_coords=$1
+    local exon=$2
+    local negative_control=$3
 
     ## Temporary files
-    negative_coords=data/${file_name}${side}-negative-control.csv
-    bed_coords=data/${file_name}${side}-coordinates.bed
-    bed_intersect_uniprot=data/${file_name}${side}-intersect-uniprot.bed
-    bed_intersect_gencode=data/${file_name}${side}-intersect-gencode.bed
-    intersect_uniprot=data/${file_name}${side}-intersect-uniprot
-    intersect_gencode=data/${file_name}${side}-intersect-gencode
+    bed_coords="$file_name"-"$exon"-coordinates.bed
+    bed_intersect_uniprot="$file_name"-"$exon"-intersect-uniprot.bed
+    bed_intersect_gencode="$file_name"-"$exon"-intersect-gencode.bed
+    intersect_uniprot="$file_name"-"$exon"-intersect-uniprot
+    intersect_gencode="$file_name"-"$exon"-intersect-gencode
 
     ######## Reformat data for bedtools
     grep -v "Start" "$negative_coords" | awk -F',' '{print $1 "\t" $2 "\t" $3}' > "$bed_coords"
@@ -145,27 +211,99 @@ filter_out_functional(){
 
     done < "$negative_coords"
 
-    rm -rf "$bed_coords"
-    rm -rf "$bed_intersect_uniprot"
-    rm -rf "$bed_intersect_gencode"
-    rm -rf "$intersect_uniprot"
-    rm -rf "$intersect_gencode"
+    #rm -rf "$bed_coords"
+    #rm -rf "$bed_intersect_uniprot"
+    #rm -rf "$bed_intersect_gencode"
+    #rm -rf "$intersect_uniprot"
+    #rm -rf "$intersect_gencode"
 
 }
 
-if [ ! -s "$negative_control" ]; then
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" > "$negative_control"
-    count=$(wc -l < "$initial_data")                           # Start counting from last functional seq  
-    # count=$(( $(wc -l < "$initial_data") - 1 )) # replace for this count when add header to the initial_data 
-    filter_out_functional 'left'
-    filter_out_functional 'right'
 
-else
+###########################################################################################################################
 
-    echo "$negative_control already exist"
+# Generate sequences upstream and downstream of functional gene and filter out 
+
+###########################################################################################################################
+
+distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
+
+num_fields=$( awk -F',' '{print NF}' "$initial_data" | sort -nu | tail -n 1 )              # To define if it's single or multiple exon sequences
+
+
+# Single exon sequences # 
+if [[ "$num_fields" -eq 4 ]]; then                                                                      
+
+    if [ ! -s "$single_negative_coords" ]; then 
+
+        tail -n +2 "$initial_data"  | while IFS=, read chr start_seq end_seq len; do   
+
+            for position in "${distances_to_seq[@]}"; do single_exon_negative_control "$position"; done
+
+        done 
+
+    fi
+
+    
+    if [ ! -s "$single_negative_control" ]; then
+
+        echo "ID,Functional,Chromosome,Start,End,Sequence" > "$single_negative_control"
+        count=$(( $(wc -l < "$initial_data") - 1 ))                                     # Start counting from last functional seq  
+        filter_out_functional "$single_negative_coords" 'single' "$single_negative_control"
+
+    fi
 
 fi
+
+
+# Multiple exons sequences #
+if [[ "$num_fields" -eq 5 ]]; then 
+
+    if [ ! -s "$first_negative_coords" ] || [ ! -s "$last_negative_coords" ]; then 
+
+        tail -n +2 "$initial_data"  | while IFS=, read chr start_seq end_seq first_len last_len; do  
+
+            for position in "${distances_to_seq[@]}"; do multiple_exons_negative_control "$position"; done
+
+        done 
+
+    fi
+
+
+    if [ ! -s "$first_negative_control" ]; then
+
+        echo "ID,Functional,Chromosome,Start,End,Sequence" > "$first_negative_control"
+        count=$(( $(wc -l < "$initial_data") - 1 ))                                    
+        filter_out_functional "$first_negative_coords" 'first' "$first_negative_control"
+
+    fi
+
+
+    if [ ! -s "$last_negative_control" ]; then
+
+        echo "ID,Functional,Chromosome,Start,End,Sequence" > "$last_negative_control"
+        count=$(( $(wc -l < "$initial_data") - 1 ))                                     
+        filter_out_functional "$last_negative_coords" 'last' "$last_negative_control"
+
+    fi
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ######## Generate negative control FASTA file
 #grep -v "Start" ./data/negative-control-dataset.csv | cut -d ',' -f 1,6 | tr ',' ' ' | perl -lane '{print ">$F[0]\n$F[1]"}' > ./data/negative-control-seq.fa
@@ -173,3 +311,8 @@ fi
 ###########################################################################################################################
 
 #rm -rf "$negative_coords"
+
+
+
+
+awk -F',' '$6 != ""' "$data" > data/lncrna-first-negative-control-dataset.csv
