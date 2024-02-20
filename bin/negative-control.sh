@@ -315,4 +315,3 @@ fi
 
 
 
-awk -F',' '$6 != ""' "$data" > data/lncrna-first-negative-control-dataset.csv

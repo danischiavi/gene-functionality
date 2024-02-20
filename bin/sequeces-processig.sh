@@ -3,12 +3,10 @@
 # Script Name: slicing-database.sh
 #
 # Author: Daniela Schiavinato
-# Last edited: November 2023
+# Last edited: 
 #
-# Description: This script filters the functional long and short-ncRNAs from RNAcentral database and protein-coding-RNA from xxx
-#
-
-
+# Description: This script filters the functional long and short-ncRNAs from RNAcentral database and protein-coding-RNA 
+# and extracts the coordinates to generate negative-control
 ###########################################################################################################################
 
 # General setup
@@ -24,7 +22,7 @@ RefSeq_protein_coding=$7
 
 
 #### Output files ####
-# File creation
+# File creation    --> this will be redundant once snakameke rule is finished
 file_creation() {
 
     local name=$1
@@ -50,7 +48,7 @@ sample_size=1000
 ### Sequence length limits
 lower_limit='75'
 upper_limit='3000'
-lower_limit_short='10' # CHECK
+lower_limit_short='10' # CHECK! --> analize size distribution 
 
 
 ###########################################################################################################################
@@ -179,7 +177,7 @@ while [ "$short_count" -lt "$sample_size" ]; do
     
     if [ "$short_count" -le "$short_total" ]; then
 
-        random_id="${IDs_short_ncrna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                                  # Select a random ID from the lncrna list
+        random_id="${IDs_short_ncrna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                   # Select a random ID from the lncrna list
 
         if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
 
@@ -189,7 +187,7 @@ while [ "$short_count" -lt "$sample_size" ]; do
 
     else 
 
-        random_id="${IDs_pre_mirna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                                  # Select a random ID from the lncrna list
+        random_id="${IDs_pre_mirna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                    # Select a random ID from the lncrna list
 
         if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
 
@@ -259,18 +257,16 @@ gff2Info() {                                                                    
     elif [[ "$test" == "0" ]]                                                               # If chromosome variable begins with zero, then rename as a single digit (ie: 01 becomes 1).
     then
         chr="$other"    
-    else
-        :
     fi
 
     # Process exon data to create a dataset
-    if [ "$chr" -le '23' ]  
-    then
+    if [ "$chr" -le '23' ]; then  
+    
         IFS=' ' read -r _ start_one end_one     <<< "$coords_one"                                               # Starting and end coordinates of exons
         IFS=' ' read -r _ start_two end_two     <<< "$coords_two"
         IFS=' ' read -r _ start_three end_three <<< "$coords_three"
         
-        if [[ "$chr" == 23 ]]; then chr=X; else :; fi                                                           # Chromosome X is NC_000023, but should be recorded as X in the final dataset for readability.
+        if [[ "$chr" == 23 ]]; then chr=X; fi                                                                   # Chromosome X is NC_000023, but should be recorded as X in the final dataset for readability.
         
         seq_two=$(   grep -w "chromosome $chr" "$genome_csv" | cut -f 2 | cut -c$start_two-$end_two )           # Exons sequences 
         seq_three=$( grep -w "chromosome $chr" "$genome_csv" | cut -f 2 | cut -c$start_three-$end_three )       
@@ -280,12 +276,10 @@ gff2Info() {                                                                    
         len_three=$(( $end_three - $start_three ))          
         
         # Exclude empty and with any unknown nucleotides (N) sequences
-        if [ ! -z "$seq_two" ] && [ ! -z "$seq_three" ] && [[ "$seq_two" != *"N"* ]] && [[ "$seq_three" != *"N"* ]]
-        then
+        if [ ! -z "$seq_two" ] && [ ! -z "$seq_three" ] && [[ "$seq_two" != *"N"* ]] && [[ "$seq_three" != *"N"* ]]; then
        
 	    # Exclude sequences out of length limits 
-	        if ([ "$len_two" -ge "$lower_limit" ] && [ "$len_two" -le "$upper_limit" ]) && ([ "$len_three" -ge "$lower_limit" ] && [ "$len_three" -le "$upper_limit" ]) 
-	        then
+	        if ([ "$len_two" -ge "$lower_limit" ] && [ "$len_two" -le "$upper_limit" ]) && ([ "$len_three" -ge "$lower_limit" ] && [ "$len_three" -le "$upper_limit" ]); then 
                 
                 selected_ids+=("$random_id")                            # D: probably is better if its in the while structure below nstead
                 protein_count=$(echo "${#selected_ids[@]}") 
@@ -293,12 +287,15 @@ gff2Info() {                                                                    
                 echo RNA$protein_count,Yes,chr$chr,$start_two,$end_two,$seq_two >> "$protein_exon_two"
                 echo RNA$protein_count,Yes,chr$chr,$start_three,$end_three,$seq_three >> "$protein_exon_three"
     
-                if [ "$start_one" -gt "$end_final" ]                                                            # Reverse transcripts can alter order of start/end positions
-                then
+                if [ "$start_one" -gt "$end_final" ]; then                                                       # Reverse transcripts can alter order of start/end positions
+               
 		            # To generate negative control sequences that are the same length as exons two and three
                     echo chr$chr,$end_final,$start_one,$len_two,$len_three >> "$coding_negative_control"
+                
                 else
+
                     echo chr$chr,$start_one,$end_final,$len_two,$len_three >> "$coding_negative_control"
+                
                 fi
             fi 
 	    fi
@@ -312,17 +309,16 @@ gff2Info() {                                                                    
 declare -a "selected_ids=()"
 protein_count=0
 
-while [ "$protein_count" -lt "$sample_size" ]; do                             # D: count in the gff2Info function --> it would be better to have it here --> TO THINK
+while [ "$protein_count" -lt "$sample_size" ]; do                                               # D: count in the gff2Info function --> it would be better to have it here --> TO THINK
 
     random_id=$(shuf -n 1 "$RefSeq_protein_coding")
 
     if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
 
-        grep "exon-$random_id" "$genome_annotations" > data/exons             # Grep annotation from Reference Genome (NCBI) according to protein-coding genes (HGNC)
+        grep "exon-$random_id" "$genome_annotations" > data/exons                               # Grep annotation from Reference Genome (NCBI) according to protein-coding genes (HGNC)
         
-        if [ "$(wc -l < data/exons)" -ge 4 ]; then                            # At least 4 exons 
-            gff2Info data/exons "$genome_csv"
-        fi
+        if [ "$(wc -l < data/exons)" -ge 4 ]; then gff2Info data/exons "$genome_csv"; fi        # At least 4 exons 
+            
     fi
 done 
 
