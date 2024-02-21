@@ -104,8 +104,8 @@ lncrna_count=0
 
 while [ "$lncrna_count" -lt "$sample_size" ]; do
     
-    random_id="${IDs_lncrna[RANDOM % ${#IDs_lncrna[@]}]}"                                                       # Select a random ID from the lncrna list
-                                                     
+    random_id=$(printf "%s\n" "${IDs_lncrna[@]}" | shuf -n 1)                                                   # Select a random ID from the lncrna list
+                                             
     if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
        
         if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
@@ -177,8 +177,8 @@ while [ "$short_count" -lt "$sample_size" ]; do
     
     if [ "$short_count" -le "$short_total" ]; then
 
-        random_id="${IDs_short_ncrna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                   # Select a random ID from the lncrna list
-
+        random_id=$(printf "%s\n" "${IDs_short_ncrna[@]}" | shuf -n 1)                                   
+        
         if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
 
             set_variables "$random_id" "$rnacentral_short_ncrna_seqs" 
@@ -187,7 +187,8 @@ while [ "$short_count" -lt "$sample_size" ]; do
 
     else 
 
-        random_id="${IDs_pre_mirna[RANDOM % ${#IDs_short_ncrna[@]}]}"                                    # Select a random ID from the lncrna list
+        random_id=$(printf "%s\n" "${IDs_pre_mirna[@]}" | shuf -n 1)
+                                           
 
         if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
 
