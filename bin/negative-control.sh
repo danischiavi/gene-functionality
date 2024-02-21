@@ -70,7 +70,7 @@ multiple_exons_negative_control() {
 
         if [ ! -z "$last_left_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                 # If no sequence extracted or if the ambiguous nucleotides are more than 5%, then remove
 
-            echo "$chr,$last_exon_left_start,$last_exon_left_end,$last_left_sequence" >> "$last_negative_coords"
+            echo "$chr,$last_exon_left_start,$last_exon_left_end,$last_left_sequence,$distance_to_seq" >> "$last_negative_coords"
         
         fi
 
@@ -83,7 +83,7 @@ multiple_exons_negative_control() {
  
         if [ ! -z "$first_left_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then  
             
-            echo "$chr,$first_exon_left_start,$first_exon_left_end,$first_left_sequence" >> "$first_negative_coords"
+            echo "$chr,$first_exon_left_start,$first_exon_left_end,$first_left_sequence,$distance_to_seq" >> "$first_negative_coords"
     
         fi
 
@@ -104,7 +104,7 @@ multiple_exons_negative_control() {
     
         if [ ! -z "$first_right_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
             
-            echo "$chr,$first_exon_right_start,$first_exon_right_end,$first_right_sequence" >> "$first_negative_coords"
+            echo "$chr,$first_exon_right_start,$first_exon_right_end,$first_right_sequence,$distance_to_seq" >> "$first_negative_coords"
         
         fi
     
@@ -117,7 +117,7 @@ multiple_exons_negative_control() {
     
         if [ ! -z "$last_right_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
             
-            echo "$chr,$last_exon_right_start,$last_exon_right_end,$last_right_sequence" >> "$last_negative_coords"
+            echo "$chr,$last_exon_right_start,$last_exon_right_end,$last_right_sequence,$distance_to_seq" >> "$last_negative_coords"
         
         fi
     
@@ -144,7 +144,7 @@ single_exon_negative_control() {
    
         if [ ! -z "$left_sequence"] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                           # If no sequence extracted, then remove.
 
-            echo "$chr,$left_start,$left_end,$left_sequence" >> "$single_negative_coords"
+            echo "$chr,$left_start,$left_end,$left_sequence,$distance_to_seq" >> "$single_negative_coords"
         
         fi
     
@@ -162,7 +162,7 @@ single_exon_negative_control() {
 
         if [ ! -z "$right_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then   
 
-            echo "$chr,$right_start,$right_end,$right_sequence" >> "$single_negative_coords"
+            echo "$chr,$right_start,$right_end,$right_sequence,$distance_to_seq" >> "$single_negative_coords"
 
         fi
     
@@ -206,7 +206,7 @@ filter_out_functional(){
     cut -f 1-3 "$bed_intersect_gencode" | tr '\t' ',' > "$intersect_gencode"
 
     ######## Remove negative control sequences that overlap with known functional sequences
-    while IFS=',' read -r chr start end seq; do
+    while IFS=',' read -r chr start end seq distance; do
 
         coordinates="${chr},${start},${end}"
 
@@ -216,7 +216,7 @@ filter_out_functional(){
             :
         else
             (( count++ ))
-            echo "RNA$count,No,$chr,$start,$end,$seq" >> "$negative_control"
+            echo "RNA$count,No,$chr,$start,$end,$seq,$distance" >> "$negative_control"
         fi
 
     done < "$negative_coords"
@@ -258,7 +258,7 @@ if [[ "$num_fields" -eq 4 ]]; then
     
     if [ ! -s "$single_negative_control" ]; then
 
-        echo "ID,Functional,Chromosome,Start,End,Sequence" > "$single_negative_control"
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$single_negative_control"
         count=$(( $(wc -l < "$initial_data") - 1 ))                                     # Start counting from last functional seq  
         filter_out_functional "$single_negative_coords" 'single' "$single_negative_control"
 
@@ -283,7 +283,7 @@ if [[ "$num_fields" -eq 5 ]]; then
 
     if [ ! -s "$first_negative_control" ]; then
 
-        echo "ID,Functional,Chromosome,Start,End,Sequence" > "$first_negative_control"
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$first_negative_control"
         count=$(( $(wc -l < "$initial_data") - 1 ))                                    
         filter_out_functional "$first_negative_coords" 'first' "$first_negative_control"
 
@@ -292,7 +292,7 @@ if [[ "$num_fields" -eq 5 ]]; then
 
     if [ ! -s "$last_negative_control" ]; then
 
-        echo "ID,Functional,Chromosome,Start,End,Sequence" > "$last_negative_control"
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$last_negative_control"
         count=$(( $(wc -l < "$initial_data") - 1 ))                                     
         filter_out_functional "$last_negative_coords" 'last' "$last_negative_control"
 
