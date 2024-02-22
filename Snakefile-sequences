@@ -1,0 +1,117 @@
+##################################################
+# Extract 1000 sequences for each type of RNA: protein coding exon 2 & 3, lncrna exon 1 & 2, short-ncrna; 
+# and corresponding coordinates for negative control 
+# Sequences are selected randomly filtering out:    
+#       mitocondrial or Ychr RNA 
+#       length XXXX 
+#       number of exons: at least 2 for lncrna and protein-coding-rna 
+#         
+##################################################
+functional_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-lncrna-exon3", "functional-short-ncrna"]
+negative_rna=["protein", "lncrna", "short-ncrna"]
+
+
+rule all_sequences_processing:
+    input:
+        expand("data/{sample}-dataset.csv", sample=functional_rna)
+        expand("data/{sample}-coords-negative-control.csv", sample=negative_rna)
+
+rule sequences_processing:
+    input: 
+        rnacentral_coords="data/raw/rnacentral_GRCh38_coordinates.bed",
+        rnacentral_lncrna_seq="data/raw/rnacentral-lncrna-seq.csv", 
+        rnacentral_short_ncrna="data/raw/rnacentral-short-ncrna-seq.csv",
+        rnacentral_pre_mirna="data/raw/rnacentral-pre-mirna-seq.csv",
+        genome_annotations= "data/raw/GRCh38_latest_genomic.gff",
+        genome_seq="data/raw/GRCh38.p14_genome.csv",
+        protein_coding_refseq="data/raw/hgnc-protein-coding-RefSeq.txt"
+
+    output:
+        "data/{sample}-dataset.csv",
+        "data/{sample}-coords-negative-control.csv"
+    
+    shell:
+        "bin/initial-dataset.sh {input} > {output}"
+
+
+##################################################
+# Generate Negative control: 
+
+#       - 2 separate rules to run the scripts on the datasets since short-ncrna outputs one file
+#       while the protein-coding and lncrnas output two (due number of exons)
+
+#       - Starting with the coordinates for negative control obtain with rule "sequences_processing",
+#       10 sequences are extract for each functional sequence 1000, 10000, 100000, 1000000 and 5000000 
+#       nucleotides away upstream and downstream. Sequences with more than 5% ambiguos nucleotides and 
+#       overlapping known genes are filter out 
+
+##################################################
+
+rule all_negative_control_multiple_exons:
+    input:
+        expand("data/{sample}-negative-control-dataset.csv", sample=["protein", "lncrna"])
+        
+rule negative_control_multiple_exons:
+    input:
+        initial_data="data/{sample}-coords-negative-control.csv"
+        
+    output:
+        "data/{sample}-negative-control-dataset.csv"
+       
+    shell:
+        "bin/negative-control.sh {input.initial_data} > {output}"
+
+        
+rule negative_control_single_exon:
+    input:
+        initial_data="data/short-ncrna-coords-negative-control.csv"
+        
+    output:
+        "data/short-ncrna-negative-control-dataset.csv"
+       
+    shell:
+        "bin/negative-control.sh {input.initial_data} > {output}"
+
+
+##################################################
+# ITS NOT WORKING 
+rule rename_negative_control_files:
+    input:
+        "data/protein-last-negative-control-dataset.csv",
+        "data/protein-first-negative-control-dataset.csv",
+        "data/lncrna-first-negative-control-dataset.csv",
+        "data/lncrna-last-negative-control-dataset.csv" 
+    output:
+        "data/protein-exon3-negative-control-dataset.csv",
+        "data/protein-exon2-negative-control-dataset.csv",
+        "data/lncrna-exon1-negative-control-dataset.csv",
+        "data/lncrna-exon2-negative-control-dataset.csv"
+    shell:
+        "mv {input} {output}"
+
+
+##################################################
+
+# Generate functional FASTA file from CSV file
+names=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-lncrna-exon3", "functional-short-ncrna"]
+
+rule all:
+    input:
+        expand("data/{sample}-seq.fa", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-negative-control", "lncrna-negative-control", "short-ncrna-negative-control"])
+
+rule csv_to_fasta:
+    input:
+        csv="data/{sample}-dataset.csv"
+    output:
+        fasta="data/{sample}-seq.fa"
+    shell:                                      
+        """
+        sed '1d' {input.csv} | while IFS=',' read -r id _ _ _ _ seq; do 
+
+            echo -e ">$id\n$seq" >> {output.fasta}
+            
+        done 
+        """
+
+
+##################################################

@@ -12,7 +12,7 @@
 # Input: $1 is the dataset 
 #        $2 is the fasta file for the sequences
 #        $3 is the file which contains the sequence coordinates sorted and bed formatted
-#        $4 is the location of the folder with the local databases/datasets or version specific executables
+#        
 #       
 # Log files: tabix.log records any potential VCF files that weren't downloaded correctly.
 
@@ -28,16 +28,19 @@ last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA')
 output_directory=data/repeats
 mkdir -p "$output_directory"
 
-file_name=${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+file_name="$output_directory"/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+
+# Temporary files
 output_file_copy="$file_name"-copy-number.csv                                        
 output_file_distance="$file_name"-dfam-distance.csv
- 
+
+# Final output file 
+output_file_repeats="$file_name"-repeats.csv 
 
 ##### Variables #####
 mmseqs_exe=mmseqs
 human_genome_mmseqs=data/raw/mmseqs/human_genome
-T2T_genome_mmseqs=data/raw/mmseqs/T2T/human_genome         
-
+        
 bedtools_exe=bedtools
 dfam_hits=data/raw/dfam-hg38-sorted.bed
 
@@ -60,19 +63,9 @@ if [ ! -s "$output_file_copy" ]; then
     
     fi
 
-    # Hits agains T2T
-    mmseqs_output_T2T="$file_name"-mmseqs-output-T2T
-
-    if [ ! -e "$mmseqs_output_T2T" ]; then
-
-        "$mmseqs_exe" easy-search "$initial_fasta" "$T2T_genome_mmseqs" "$mmseqs_output_T2T" "$file_name-tmp-t2t" --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue >/dev/null 2>>errors.log
-    
-    fi
-
-
     ## Process mmseqs results in order 
 
-    echo "hg38_copy_number, T2T_copy_number" > "$output_file_copy"
+    echo "hg38_copy_number" > "$output_file_copy"
 
     var=$first_rna_id
     last_seq=$last_rna_id
@@ -80,12 +73,10 @@ if [ ! -s "$output_file_copy" ]; then
     while [ $var -lt $last_seq ]; do
     
         total_mmseqs=$( grep -w "RNA$var" $mmseqs_output | wc -l) 
-        total_mmseqs_T2T=$( grep -w "RNA$var" $mmseqs_output_T2T | wc -l) 
 
         if [ -z "$total_mmseqs" ]; then total_mmseqs='NA'; fi 
-        if [ -z "$total_mmseqs_T2T" ]; then total_mmseqs_T2T='NA'; fi
-
-        echo "$total_mmseqs, $total_mmseqs_T2T" >> "$output_file_copy"
+        
+        echo "$total_mmseqs" >> "$output_file_copy"
 
         (( var++ ))
    
@@ -102,8 +93,8 @@ fi
 if [ ! -s "$output_file_distance" ]; then
 
     echo "Dfam_min,Dfam_sum" > "$output_file_distance"
-    ######## Format data for bedtools and temporary files
 
+    ##### Format data for bedtools and temporary files ####
     initial_data_temporary="$file_name".bed 
     initial_data_sorted="$file_name"-sorted.bed
 
@@ -114,16 +105,16 @@ if [ ! -s "$output_file_distance" ]; then
     upstream_output="$file_name"-dfam-upstream.bed
     combined_output="$file_name"-dfam-combined.bed
 
-    ######## Upstrean hits
+    ## Upstrean hits
     $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits" -io -D ref -iu > "$downstream_output" 2>>errors.log
 
-    ######## Downstream hits
+    ## Downstream hits
     $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits" -io -D ref -id > "$upstream_output" 2>>errors.log
 
     paste <( cut -f 1,2,3,7 "$downstream_output" ) <( cut -f 7 "$upstream_output" ) --delimiters '\t' > "$combined_output"
 
 
-    ######## Calculate sum of upstream and downstream, and combine into one file
+    ## Calculate sum of upstream and downstream, and combine into one file
     while IFS=$'\t' read -r chr start end downstream upstream; do
 
         chr_numb=$(      echo "$chr" | cut -c 4- )
@@ -148,17 +139,23 @@ if [ ! -s "$output_file_distance" ]; then
 
 fi
 
-#### Remove unnessesary files
+## Join output files for better organization 
+if [ ! -s "$output_file_repeats" ]; then
+
+    paste -d',' "$output_file_copy" "$output_file_distance" > "$output_file_repeats"
+
+fi
+
+## Remove unnessesary files
 rm -rf "$mmseqs_output"
-rm -rf "$mmseqs_output_T2T"
 rm -rf "$downstream_output"
 rm -rf "$upstream_output"
 rm -rf "$combined_output"
 rm -rf "$initial_data_temporary"
 rm -rf "$initial_data_sorted"
-
 rm -rf "$file_name"-tmp
-rm -rf "$file_name"-tmp-t2t
 
+#rm -rf "$output_file_copy"
+#rm -rf "$output_file_distance"
 
 

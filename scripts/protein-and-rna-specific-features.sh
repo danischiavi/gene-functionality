@@ -20,13 +20,11 @@ last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA')
 mkdir -p data/specific && output_directory=data/specific
 file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
 
-# Final output files
-output_file_interaction="$file_name"-interaction.csv                  
-output_file_coding_potential="$file_name"-coding-potential.csv 
-output_file_structure="$file_name"-structure.csv 
+# Final output file
 output_file_specific="$file_name"-specific.csv
 
 # Temporary output files
+output_file_interaction="$file_name"-interaction.csv  
 output_file_MFE="$file_name"-MFE.csv 
 output_file_accesibility="$file_name"-accesibility.csv 
 output_file_fickett="$file_name"-fickett.csv 
@@ -203,7 +201,7 @@ fi
 
 if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
 
-    #### Directories and temporary files
+    #### Directories and temporary files ####
     maf_directory="$output_directory"/maf/$(basename "${initial_data%.*}" | sed 's/-dataset//')
     mkdir -p "$maf_directory"
 
@@ -217,7 +215,7 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
     mkdir -p  "$Rscape_directory"
     
   
-    #### Obtain MSA maf-files from 241-way cactus alignment
+    #### Obtain MSA maf-files from 241-way cactus alignment ####
     tail -n +2 "$initial_data"  | while IFS=, read -r rna_id _ chr start end _; do
 
         maf_file="$maf_directory"/"$rna_id".maf
@@ -231,8 +229,6 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
         if [ -s "$maf_file" ]; then 
         
             #### Reformat MSA.maf files for tools #### 
-
-            
 
             stk_dir="${output_directory}/stk/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
             if [ ! -e "$stk_dir" ]; then mkdir -p "$stk_dir"; fi
@@ -254,12 +250,14 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
 
             ##### RNAalifold ####
             RNAalifold_output="$RNAalifold_directory"/"$rna_id"
+
             if [ ! -s "$RNAalifold_output" ]; then                          
                 
                 ## Generate secondary structure consensus sequence and associated MFE value
-                echo "$RNAalifold_exe -f S --noPS --aln $stk_file >$RNAalifold_output 2>>errors.log" >>errors.log
+                echo "$RNAalifold_exe --input-format=S --noPS $stk_file >$RNAalifold_output 2>>errors.log" >>errors.log
                 #timeout 60m
-	            "$RNAalifold_exe" -f S --noPS --aln "$stk_file" > "$RNAalifold_output" 2>>errors.log
+	            "$RNAalifold_exe" --input-format=S --noPS "$stk_file" > "$RNAalifold_output" 2>>errors.log
+            
             fi
 
             rnaalifold_score=$( cat "$RNAalifold_output" | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
@@ -354,10 +352,10 @@ fi
 
 #### Remove excess files #####
 
-rm -rf "$output_file_fickett"
-rm -rf "$output_file_rnacoding"
-rm -rf "$output_file_accesibility" 
-rm -rf "$output_file_Rscape" 
-rm -rf "$output_file_MFE"
+#rm -rf "$output_file_fickett"
+#rm -rf "$output_file_rnacoding"
+#rm -rf "$output_file_accesibility" 
+#rm -rf "$output_file_Rscape" 
+#rm -rf "$output_file_MFE"
 
 ########

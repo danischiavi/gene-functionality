@@ -1,0 +1,142 @@
+###########################################################################################################################
+# EXTRACTING FEATURES
+###########################################################################################################################
+
+all_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-exon2-negative-control", "protein-exon3-negative-control", "lncrna-exon1-negative-control", "lncrna-exon2-negative-control", "short-ncrna-negative-control"]
+
+#############
+## GC content 
+#############
+
+rule all_GC:
+    input:
+        expand("data/{sample}-GC.csv", sample=all_rna)
+
+rule run_intrinsic_seq_features:
+    input:
+        "data/{sample}-dataset.csv"
+    output:
+        "data/{sample}-GC.csv"
+    shell:
+        "bin/intrinsic-seq-features.sh {input} > {output}"
+
+
+###############
+## Conservation 
+###############
+
+rule all_conservation:
+    input:
+        expand("data/conservation/{sample}-conservation.csv", sample=all_rna)
+
+rule run_seq_conservation_features:
+    input:
+        "data/{sample}-dataset.csv"
+    output:
+        "data/conservation/{sample}-conservation.csv"
+    shell:
+        "bin/seq-conservation-features.sh {input} > {output}"
+
+
+################
+## Transcriptome
+################
+
+rule all_transcriptome:
+    input:
+        expand("data/transcriptome/{sample}-transcriptome.csv", sample=all_rna)
+
+rule run_transcriptome:
+    input:
+        "data/{sample}-dataset.csv"
+    output:
+        "data/transcriptome/{sample}-transcriptome.csv"
+    shell:
+        "bin/transcriptome-expression-features.sh {input} > {output}"
+
+
+##################        
+## Genomic repeats 
+##################
+
+rule all_genomic_repeat:
+    input:
+        expand("data/repeats/{sample}-copy-number.csv", sample=all_rna),
+        expand("data/repeats/{sample}-dfam-distance.csv", sample=all_rna)
+
+rule run_genomic_repeat:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa"
+    output:
+        "data/repeats/{sample}-copy-number.csv",
+        "data/repeats/{sample}-dfam-distance.csv"
+    shell:
+        "bin/genomic-repeat-associated-features.sh {input} > {output}"
+
+
+#######################        
+## Population variation
+#######################
+
+rule all_population_variation:
+    input:
+        expand("data/population/{sample}-1kGP-variation.csv", sample=all_rna),
+        expand("data/population/{sample}-gnomAD-variation.csv", sample=all_rna)
+
+rule run_populatio_variation:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa"
+    output:
+        "data/population/{sample}-variation.csv"
+    shell:
+        "bin/population-variation-features.sh {input} > {output}"
+
+
+###########################        
+## Protein and RNA specific 
+###########################
+
+rule all_protein_and_rna_specific_features:
+    input:
+        expand("data/specific/{sample}-specific.csv", sample=all_rna)   
+
+rule run_protein_and_rna_specific_features:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa"
+    output:
+        "data/specific/{sample}-specific.csv"
+       
+    shell:
+        "bin/protein-and-rna-specific-features.sh {input} > {output}"
+
+
+#### FINAL FEATURES DATASET #### 
+rule all_concatenate_features:
+    input:
+        expand("data/{sample}-features.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+      
+
+rule concatenate_features:
+    input:
+        "data/intrinsic/{sample}-conservation.csv",
+        "data/conservation/{sample}-conservation.csv",
+        "data/transcriptome/{sample}-transcriptome.csv",
+        "data/repeats/{sample}-copy-number.csv",
+        "data/repeats/{sample}-dfam-distance.csv",
+        "data/specific/{sample}-interaction.csv",
+        "data/specific/{sample}-coding-potential.csv",
+        "data/specific/{sample}-structure.csv", 
+        "data/population/{sample}-variation.csv"
+
+    output:
+        "data/{sample}-features.csv"
+    shell:
+        "paste -d '\t' {input} > {output}"
+
+
+##### ADD RULE TO INCLUDE NEGATIVE CONTROL FEATURES TO DATASET 
+
+
