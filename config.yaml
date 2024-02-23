@@ -1,4 +1,9 @@
 ---
+## Negative control ##
+genome_csv: "data/raw/GRCh38.p14_genome.csv"
+gencode_bed: "data/raw/gencode-ncrna-annotation.bed" 
+uniprot_bed: "data/raw/unipAliSwissprot.bed"
+
 ## Conservation features ##
 bigWigSummary_exe: "bin/bigWigSummary"
 phylo_bw: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phyloP100way.bw" # UPDATE

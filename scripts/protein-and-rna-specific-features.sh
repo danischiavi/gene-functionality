@@ -12,6 +12,11 @@
 ############################################################################################################################
 initial_data=$1
 initial_fasta=$2
+interaction_database=$3
+access_file=$4
+cpc2_file=$5
+bigBedToBed_exe=$6
+cactus_align_url=$7
 
 first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')
 last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA') 
@@ -33,16 +38,7 @@ output_file_Rscape="$file_name"-covariance.csv
 
 #### Variables ####
 RNAup_exe=RNAup
-interaction_database=data/raw/curated-interaction-database.fa
-
 RNAfold_exe=RNAfold
-
-access_file=./bin/access_py.py
-cpc2_file=./bin/CPC2_standalone-1.0.1/bin/CPC2.py
-
-bigBedToBed_exe=./bin/bigBedToBed
-cactus_align_url=http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf
-
 RNAalifold_exe=RNAalifold
 RNAcode_exe=RNAcode
 Rscape_exe=R-scape

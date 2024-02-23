@@ -22,11 +22,7 @@ output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/datase
 
 
 #### Variables and databases #### --> D: still not sure which is the best way to handle this inputs . Some are relative paths to the directory of the project and other are absolute 
-bigWigSummary_exe=bin/bigWigSummary
-phylo_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phyloP100way.bw
-phast_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phastCons100way.bw
-zoonomia_phylo_bw=data/raw/hg38.phyloP241mammalian2020v2.bigWig
-gerp_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-functional-human-genes/data/raw/gerp_conservation_scores.homo_sapiens.GRCh38.bw
+
 
 
 #### Extract conservation features for each set of chromosome coordinates #### 

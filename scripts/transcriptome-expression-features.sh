@@ -1,28 +1,25 @@
 #!/bin/bash 
-
+#
 # Script Name: transcriptome-expression-features.sh
 #
 # Description: This script calculates Maximum read depth (MRD) and the average number of reads per kilobase of transcripts per million mapped reads (RPKM) for protein-coding exons, lncRNA exons, short ncRNAs 
 #              and negative control sequences.
 #
-# Input: $1 is the file dataset 
-#        
+# Input: $1 is the csv file dataset for each type of RNA and negative control
+#        $2 is the folder containing the ENCODE data. Within the ENCODE folder, the .bam files are organized in folders corresponding the samplet type (Ex: endode_folder/primary-cell) 
 # 
-# Any additional required files, directories or dependencies will be requested when the script is run and require manual
-# input.
 #
 # Log files: tabix.log records any potential VCF files that weren't downloaded correctly.
-
-
+#
 ############################################################################################################################
-
-initial_data=$1
+## Set up ## 
+initial_data=$1                                                                                     
+encode_folder=$2
 
 output_directory=data/transcriptome
 mkdir -p "$output_directory"
 
 # Variables
-encode_folder=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data
 samtools_exe=samtools
 
 #### Function declaration 
@@ -35,8 +32,8 @@ run_encode() {
     echo "RPKM_$sample_type,MRD_$sample_type" > "$output_file"
 
     ######## Define location of downloaded ENCODE RNAseq data
-    encode_data=$encode_folder/ENCODE-$sample_type/*.bam
-    total_read_file=$encode_folder/ENCODE-$sample_type/total-read-count.txt 
+    encode_data=$encode_folder/$sample_type/*.bam
+    total_read_file=$encode_folder/$sample_type/total-read-count.txt 
 
     
     tail -n +2 "$initial_data"  | while IFS=',' read -r _ _ chr start end _; do
@@ -49,7 +46,7 @@ run_encode() {
         count_max=0                                                                                  # To record maximum RPKM and MRD observed
         max_depth=0                                                                                  # To record maximum MRD observed
 
-        for file in $encode_data; do                                                                     # Loop through all RNAseq datasets
+        for file in $encode_data; do                                                                 # Loop through all RNAseq datasets
      
             read=$( $samtools_exe view -c $file $input_samtools 2>>errors.log )                      # Number of reads for sequence of interest
             file_name=$( echo $file | rev | cut -d '/' -f 1 | rev )                                  # ID for RNAseq dataset

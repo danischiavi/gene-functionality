@@ -2,6 +2,7 @@
 # EXTRACTING FEATURES
 ###########################################################################################################################
 
+configfile: "config.yaml"
 all_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-exon2-negative-control", "protein-exon3-negative-control", "lncrna-exon1-negative-control", "lncrna-exon2-negative-control", "short-ncrna-negative-control"]
 
 #############
@@ -48,9 +49,12 @@ rule all_transcriptome:
 
 rule run_transcriptome:
     input:
-        "data/{sample}-dataset.csv"
+        "data/{sample}-dataset.csv", 
+        encode_folder=config["encode_folder"]
+
     output:
         "data/transcriptome/{sample}-transcriptome.csv"
+
     shell:
         "bin/transcriptome-expression-features.sh {input} > {output}"
 
@@ -61,16 +65,18 @@ rule run_transcriptome:
 
 rule all_genomic_repeat:
     input:
-        expand("data/repeats/{sample}-copy-number.csv", sample=all_rna),
-        expand("data/repeats/{sample}-dfam-distance.csv", sample=all_rna)
+        expand("data/repeats/{sample}-repeats.csv", sample=all_rna)
 
 rule run_genomic_repeat:
     input:
         initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa"
+        initial_fasta="data/{sample}-seq.fa", 
+        human_genome_mmseqs=config["human_genome_mmseqs"],
+        dfam_hits=config["dfam_hits"]   
+
     output:
-        "data/repeats/{sample}-copy-number.csv",
-        "data/repeats/{sample}-dfam-distance.csv"
+        "data/repeats/{sample}-repeats.csv"
+
     shell:
         "bin/genomic-repeat-associated-features.sh {input} > {output}"
 
@@ -81,15 +87,19 @@ rule run_genomic_repeat:
 
 rule all_population_variation:
     input:
-        expand("data/population/{sample}-1kGP-variation.csv", sample=all_rna),
-        expand("data/population/{sample}-gnomAD-variation.csv", sample=all_rna)
+        expand("data/population/{sample}-variation.csv", sample=all_rna),
 
 rule run_populatio_variation:
     input:
         initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa"
+        initial_fasta="data/{sample}-seq.fa", 
+        chain_file=config["chain_file"], 
+        onekGP_directory=config["onekGP_directory"],
+        gnomad_directory=config["gnomad_directory"]
+
     output:
         "data/population/{sample}-variation.csv"
+
     shell:
         "bin/population-variation-features.sh {input} > {output}"
 
@@ -105,7 +115,13 @@ rule all_protein_and_rna_specific_features:
 rule run_protein_and_rna_specific_features:
     input:
         initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa"
+        initial_fasta="data/{sample}-seq.fa",
+        interaction_database=config["interaction_database"],
+        access_file=config["access_file"],
+        cpc2_file=config["cpc2_file"],
+        bigBedToBed_exe=["bigBedToBed_exe"],
+        cactus_align_url=config["cactus_align_url"]
+        
     output:
         "data/specific/{sample}-specific.csv"
        

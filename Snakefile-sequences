@@ -53,7 +53,10 @@ rule all_negative_control_multiple_exons:
         
 rule negative_control_multiple_exons:
     input:
-        initial_data="data/{sample}-coords-negative-control.csv"
+        initial_data="data/{sample}-coords-negative-control.csv",
+        genome_csv=config["genome_csv"],
+        gencode_bed=config["gencode_bed"],
+        uniprot_bed=config["uniprot_bed"]
         
     output:
         "data/{sample}-negative-control-dataset.csv"

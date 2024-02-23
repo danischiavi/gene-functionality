@@ -15,6 +15,9 @@
 ############################################################################################################################
 initial_data=$1
 initial_fasta=$2
+chain_file=$3
+onekGP_directory=$4
+gnomad_directory=$5
 
 first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')
 last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA') 
@@ -32,8 +35,6 @@ output_file_gnomAD="$file_name"-gnomAD-variation.csv
  
 # Variables
 liftOver_exe=liftOver
-chain_file=data/raw/hg38ToHg19.over.chain
-onekGP_directory=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/1000genomes
 tabix_exe=tabix
 vcftools_exe=vcftools 
 
@@ -182,6 +183,9 @@ if [ ! -s "$output_file_1kGP" ]; then
     
     done
 
+    ## Zip VCF files for further analyses
+    zip -r "$VCF_directory_1kGP".zip "$VCF_directory_1kGP" &> /dev/null  && rm -rf "$VCF_directory_1kGP"
+
 fi
 
 
@@ -227,10 +231,11 @@ if [ ! -s "$output_file_gnomAD" ]; then
             tabix_input="$line"
 
             start=$(echo "$line" | awk -F'[:-]' '{print $2}')
-            end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                 # For SNP density        len=$(( $end-$start ))  
+            end=$(echo "$line" | awk -F'[:-]' '{print $3}')                                         
+            len=$(( $end-$start ))                                                                     # For SNP density 
 
             chr=$(echo "$line" | awk -F'[:-]' '{print $1}')
-            gnomad_database=data/raw/gnomad/gnomad.genomes.v4.0.sites."$chr".vcf.bgz               # make it a variable with user input
+            gnomad_database="$gnomad_directory"/gnomad.genomes.v4.0.sites."$chr".vcf.bgz               # make it a variable with user input
 
             echo Extracting :"$rna_id".vcf >> tabix.log ;
             echo "$tabix_exe -f -h $gnomad_database $tabix_input > $rna_id.vcf 2>>tabix.log ;" >>tabix.log
@@ -247,7 +252,7 @@ if [ ! -s "$output_file_gnomAD" ]; then
         MAF_sum=$(awk -F':' '{sum += $1} END {printf "%.10f", sum}' "$snps_file_gnomAD")
       
 
-        if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then               # If no SNPs were recorded, set everything to NA
+        if [[ "$SNPs_count" == "0" ]] || [ -z "$SNPs_count" ]; then                                     # If no SNPs were recorded, set everything to NA
     
             SNPs_count='NA'
             SNPs_density='NA'
@@ -267,6 +272,9 @@ if [ ! -s "$output_file_gnomAD" ]; then
     
     done < "$coordinates"
 
+    ## Zip VCF files for further analyses
+    zip -r "$VCF_directory_gnomAD".zip "$VCF_directory_gnomAD" &> /dev/null && rm -rf "$VCF_directory_gnomAD" 
+
 fi
 
 if [ ! -s "$output_file_variation" ]; then
@@ -274,10 +282,7 @@ if [ ! -s "$output_file_variation" ]; then
     paste -d',' "$output_file_1kGP" "$output_file_gnomAD"   > "$output_file_variation"
 
 fi
-
-######## Zip VCF files for further analyses
-zip -r "$VCF_directory_1kGP".zip "$VCF_directory_1kGP" && rm -rf "$VCF_directory_1kGP"
-zip -r "$VCF_directory_gnomAD".zip "$VCF_directory_gnomAD" && rm -rf "$VCF_directory_gnomAD"  
+ 
 
 ### Remove excess files
 rm -rf "$output_vcftools".frq
@@ -288,3 +293,4 @@ rm -rf "$snps_file"
 rm -rf "$output_vcftools"
 rm -rf "$coordinates"
 rm -rf "$snps_file_gnomAD"
+rm -rf "$snps_file" 
