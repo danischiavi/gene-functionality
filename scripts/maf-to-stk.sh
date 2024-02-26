@@ -24,7 +24,7 @@ output_file="${stk_directory}/$(basename "${input_file%.*}" | sed 's/maf//').stk
 ## Array with species Ids present in the MAF alignment 
 
 declare -a "species_id=()"
-mapfile -t species_id < <(grep -v -E "#\|score|^$" "$input_file" | awk '{print $2}' | awk '!seen[$0]++')    
+mapfile -t species_id < <(grep -v -E "#|score=[[:alnum:]]|^$" "$input_file" | awk '{print $2}' | awk '!seen[$0]++')    
 
 
 ## Find the longest Id to align sequences in stk file relatively to it
@@ -46,16 +46,27 @@ for species_id in "${species_id[@]}"; do
 done
 
 
-## stk file - print header; remove partial aligments (seqs with at least 50% match with human seqs length)
-
+## Remove partial aligments whose length is less than 50% of human's (to calculate length: '-' and 'N' are not included)
 len_hg38=$(awk -v partial_id="hg38" '{ if ($1 ~ "^" partial_id) { print length($2) } }' "$output_file".tmp)
 
-awk -v len="$len_hg38" 'length($2) >= len * 0.5' "$output_file".tmp >> "$output_file".tmp2
-"$output_file".tmp2
+awk -v len="$len_hg38" '
+    function custom_length(str) {
+        gsub("-", "", str);                                         
+        gsub("N", "", str) 
+        return length(str); 
+    } 
+    { 
+        if (custom_length($2) >= len * 0.5) 
+            print 
+    }' "$output_file".tmp > "$output_file".tmp2
 
+
+## Format stk file
 echo -e "# STOCKHOLM 1.0 \n#=GF ID\t$id" > "$output_file"
+awk '!seen[$2]++' "$output_file".tmp2 >> "$output_file"
 echo "//" >> "$output_file" 
 
 rm -rf "$output_file".tmp
+rm -rf "$output_file".tmp2
 
 ############################################################################################################################
