@@ -10,6 +10,9 @@
 #
 #### Variables and files ####
 initial_data=$1
+genome_csv=$2
+gencode_bed=$3 
+uniprot_bed=$4
 
 file_name=data/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
@@ -23,29 +26,30 @@ first_negative_control="$file_name"-first-negative-control-dataset.csv
 last_negative_control="$file_name"-last-negative-control-dataset.csv
 single_negative_control="$file_name"-negative-control-dataset.csv
 
-genome_csv=data/raw/GRCh38.p14_genome.csv
-gencode_bed=data/raw/gencode-ncrna-annotation.bed 
-uniprot_bed=data/raw/unipAliSwissprot.bed
-
 bedtools_exe=bedtools
 
 ###########################################################################################################################
 
 #### Function declaration ####
 
-#################################################################################################
-# To extract coordinates and sequences of the negative control given a distance from the sequence
-#################################################################################################
+###########################################
+# To determinate percentage of ambiguous nucleotides on sequences (used to filter out if >5%)
+##########################################
 ambiguity_percent() {
+    
     seq=$1
 
     amb_nucleotides=$( echo "$seq" | grep -o '[RYMKSWBDHVNrymkswbdhvn]' | wc -l )
     total_nucleotides=$( echo -n "$seq" | wc -c )
-    ambiguity_percent=$(( (amb_nucleotides * 100) / total_nucleotides ))
+    ambiguity_percent=$(echo "scale=2; ($amb_nucleotides * 100) / $total_nucleotides" | bc)
 
     echo "$ambiguity_percent"
 
 }
+
+#######################################
+# To extract coordinates and sequences of the negative control given a distance from the sequence
+#######################################
 
 #### For sequences with more than 1 exon #### 
 multiple_exons_negative_control() {
@@ -64,7 +68,7 @@ multiple_exons_negative_control() {
     first_exon_left_start=$(( "first_exon_left_end" - "$first_len" ))
 
 
-    if [[ "$last_left_end" -gt 0 ]] || [[ "$last_left_start" -gt 0 ]]; then                                                                 # Filter out if negative coord
+    if [[ "$last_exon_left_end" -gt 0 ]] && [[ "$last_exon_left_start" -gt 0 ]]; then                                                                 # Filter out if negative coord
     
         last_left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$last_exon_left_start-$last_exon_left_end )     # Extract seq from genome file                                                                                      # Blank to filter out if negative coord
 
@@ -77,11 +81,11 @@ multiple_exons_negative_control() {
     fi
    
 
-    if [[ "$first_left_end" -gt 0 ]] || [[ "$first_left_start" -gt 0 ]]; then 
+    if [[ "$first_exon_left_end" -gt 0 ]] && [[ "$first_exon_left_start" -gt 0 ]]; then 
     
         first_left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$first_exon_left_start-$first_exon_left_end )  
  
-        if [ ! -z "$first_left_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then  
+        if [ ! -z "$first_left_sequence" ] && [[ $( ambiguity_percent "$first_left_sequence" ) -lt 5 ]]; then  
             
             echo "$chr,$first_exon_left_start,$first_exon_left_end,$first_left_sequence,$distance_to_seq" >> "$first_negative_coords"
     
@@ -98,11 +102,11 @@ multiple_exons_negative_control() {
     last_exon_right_end=$((  "$last_exon_right_start" + "$last_len" ))
 
 
-    if [[ "$first_exon_right_start" -gt 0 ]] || [[ "$first_exon_right_end" -gt 0 ]]; then 
+    if [[ "$first_exon_right_start" -gt 0 ]] && [[ "$first_exon_right_end" -gt 0 ]]; then 
   
         first_right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$first_exon_right_start-$first_exon_right_end ) 
     
-        if [ ! -z "$first_right_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
+        if [ ! -z "$first_right_sequence" ] && [[ $( ambiguity_percent "$first_right_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
             
             echo "$chr,$first_exon_right_start,$first_exon_right_end,$first_right_sequence,$distance_to_seq" >> "$first_negative_coords"
         
@@ -111,11 +115,11 @@ multiple_exons_negative_control() {
     fi
     
 
-    if [[ "$last_exon_right_start" -gt 0 ]] || [[ "$last_exon_right_end" -gt 0 ]]; then 
+    if [[ "$last_exon_right_start" -gt 0 ]] && [[ "$last_exon_right_end" -gt 0 ]]; then 
   
         last_right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$last_exon_right_start-$last_exon_right_end ) 
     
-        if [ ! -z "$last_right_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
+        if [ ! -z "$last_right_sequence" ] && [[ $( ambiguity_percent "$last_right_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
             
             echo "$chr,$last_exon_right_start,$last_exon_right_end,$last_right_sequence,$distance_to_seq" >> "$last_negative_coords"
         
@@ -138,11 +142,11 @@ single_exon_negative_control() {
     left_end=$(( "$start_seq" - "$distance_to_seq" ))
     left_start=$(( "$left_end" - "$len" ))                                                              
     
-    if [[ "$left_end" -gt 0 ]] || [[ "$left_start" -gt 0 ]]; then 
+    if [[ "$left_end" -gt 0 ]] && [[ "$left_start" -gt 0 ]]; then 
     
         left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$left_start-$left_end )
    
-        if [ ! -z "$left_sequence"] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                           # If no sequence extracted, then remove.
+        if [ ! -z "$left_sequence"] && [ $( ambiguity_percent "$left_sequence" ) -lt 5 ]; then                                           # If no sequence extracted, then remove.
 
             echo "$chr,$left_start,$left_end,$left_sequence,$distance_to_seq" >> "$single_negative_coords"
         
@@ -156,11 +160,11 @@ single_exon_negative_control() {
     right_end=$(( "right_start" + "$len" ))                                
                               
 
-    if [[ "$right_start" -gt 0 ]] || [[ "$right_end" -gt 0 ]]; then 
+    if [[ "$right_start" -gt 0 ]] && [[ "$right_end" -gt 0 ]]; then 
 
         right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$right_start-$right_end ) 
 
-        if [ ! -z "$right_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then   
+        if [ ! -z "$right_sequence" ] && [[ $( ambiguity_percent "$right_sequence" ) -lt 5 ]]; then   
 
             echo "$chr,$right_start,$right_end,$right_sequence,$distance_to_seq" >> "$single_negative_coords"
 

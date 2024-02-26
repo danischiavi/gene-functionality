@@ -4,6 +4,7 @@
 
 configfile: "config.yaml"
 all_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-exon2-negative-control", "protein-exon3-negative-control", "lncrna-exon1-negative-control", "lncrna-exon2-negative-control", "short-ncrna-negative-control"]
+rna_types=["protein-exon2", "protein-exon3", "lncrna-exon1", "lncrna-exon2", "short-ncrna"]
 
 #############
 ## GC content 
@@ -132,27 +133,38 @@ rule run_protein_and_rna_specific_features:
 #### FINAL FEATURES DATASET #### 
 rule all_concatenate_features:
     input:
-        expand("data/{sample}-features.csv", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna"])
+        expand("data/{sample}-features.csv", sample=all_rna)
       
 
 rule concatenate_features:
     input:
-        "data/intrinsic/{sample}-conservation.csv",
+        "data/{sample}-dataset.csv",
+        "data/intrinsic/{sample}-GC.csv",
         "data/conservation/{sample}-conservation.csv",
         "data/transcriptome/{sample}-transcriptome.csv",
-        "data/repeats/{sample}-copy-number.csv",
-        "data/repeats/{sample}-dfam-distance.csv",
-        "data/specific/{sample}-interaction.csv",
-        "data/specific/{sample}-coding-potential.csv",
-        "data/specific/{sample}-structure.csv", 
+        "data/repeats/{sample}-repeats.csv",
+        "data/specific/{sample}-specific.csv", 
         "data/population/{sample}-variation.csv"
 
     output:
         "data/{sample}-features.csv"
     shell:
-        "paste -d '\t' {input} > {output}"
+        "paste -d ',' {input} > {output}"
 
 
-##### ADD RULE TO INCLUDE NEGATIVE CONTROL FEATURES TO DATASET 
+## Join negative control with corresponding functional dataset ## 
 
+rule all_join_positive_negative:
+    input:
+        expand("data/{sample}-features.csv", sample=rna_types)
+      
+rule join_positive_negative:
+    input:
+        positive="data/*-{sample}-features.csv",
+        negative="data/{sample}-negative-control-features.csv"
+        
+    output:
+        "data/{sample}-features.csv"
 
+    shell:
+        "paste -d'\n' {input.positive}{input.negative} > {output}"

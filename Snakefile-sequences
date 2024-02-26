@@ -1,3 +1,7 @@
+configfile: "config.yaml"
+functional_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-lncrna-exon3", "functional-short-ncrna"]
+negative_rna=["protein", "lncrna", "short-ncrna"]
+
 ##################################################
 # Extract 1000 sequences for each type of RNA: protein coding exon 2 & 3, lncrna exon 1 & 2, short-ncrna; 
 # and corresponding coordinates for negative control 
@@ -7,10 +11,6 @@
 #       number of exons: at least 2 for lncrna and protein-coding-rna 
 #         
 ##################################################
-functional_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-lncrna-exon3", "functional-short-ncrna"]
-negative_rna=["protein", "lncrna", "short-ncrna"]
-
-
 rule all_sequences_processing:
     input:
         expand("data/{sample}-dataset.csv", sample=functional_rna)
@@ -18,21 +18,20 @@ rule all_sequences_processing:
 
 rule sequences_processing:
     input: 
-        rnacentral_coords="data/raw/rnacentral_GRCh38_coordinates.bed",
-        rnacentral_lncrna_seq="data/raw/rnacentral-lncrna-seq.csv", 
-        rnacentral_short_ncrna="data/raw/rnacentral-short-ncrna-seq.csv",
-        rnacentral_pre_mirna="data/raw/rnacentral-pre-mirna-seq.csv",
-        genome_annotations= "data/raw/GRCh38_latest_genomic.gff",
-        genome_seq="data/raw/GRCh38.p14_genome.csv",
-        protein_coding_refseq="data/raw/hgnc-protein-coding-RefSeq.txt"
+        rnacentral_coords=config["rnacentral_coords"],
+        rnacentral_lncrna_seq=config["rnacentral_lncrna_seq"], 
+        rnacentral_short_ncrna=config["rnacentral_short_ncrna"],
+        rnacentral_pre_mirna=config["rnacentral_pre_mirna"],
+        genome_annotations=config["genome_annotations"],
+        genome_seq=config["genome_seq"],
+        protein_coding_refseq=config["protein_coding_refseq"]
 
     output:
         "data/{sample}-dataset.csv",
         "data/{sample}-coords-negative-control.csv"
     
     shell:
-        "bin/initial-dataset.sh {input} > {output}"
-
+        "scripts/sequences-processing.sh {input} > {output}"
 
 ##################################################
 # Generate Negative control: 
@@ -47,10 +46,12 @@ rule sequences_processing:
 
 ##################################################
 
-rule all_negative_control_multiple_exons:
+rule all_negative_control:
     input:
-        expand("data/{sample}-negative-control-dataset.csv", sample=["protein", "lncrna"])
-        
+        expand("data/{sample}-first-negative-control-dataset.csv", sample=["protein", "lncrna"]),
+        expand("data/{sample}-last-negative-control-dataset.csv", sample=["protein", "lncrna"]),
+        expand("data/{sample}-negative-control-dataset.csv", sample=["short-ncrna"])
+
 rule negative_control_multiple_exons:
     input:
         initial_data="data/{sample}-coords-negative-control.csv",
@@ -59,21 +60,26 @@ rule negative_control_multiple_exons:
         uniprot_bed=config["uniprot_bed"]
         
     output:
-        "data/{sample}-negative-control-dataset.csv"
-       
+        "data/{sample}-first-negative-control-dataset.csv",
+        "data/{sample}-last-negative-control-dataset.csv"
+
     shell:
-        "bin/negative-control.sh {input.initial_data} > {output}"
+        "scripts/negative-control.sh {input} > {output}"
 
         
+
 rule negative_control_single_exon:
     input:
-        initial_data="data/short-ncrna-coords-negative-control.csv"
-        
+        initial_data="data/short-ncrna-coords-negative-control.csv",
+        genome_csv=config["genome_csv"],
+        gencode_bed=config["gencode_bed"],
+        uniprot_bed=config["uniprot_bed"]
+    
     output:
         "data/short-ncrna-negative-control-dataset.csv"
        
     shell:
-        "bin/negative-control.sh {input.initial_data} > {output}"
+        "scripts/negative-control.sh {input} > {output}"
 
 
 ##################################################
