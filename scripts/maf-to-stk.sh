@@ -46,12 +46,14 @@ for species_id in "${species_id[@]}"; do
 done
 
 
-## stk file - print header; remove partial aligments (seqs which don't match with human seqs length)
+## stk file - print header; remove partial aligments (seqs with at least 50% match with human seqs length)
 
 len_hg38=$(awk -v partial_id="hg38" '{ if ($1 ~ "^" partial_id) { print length($2) } }' "$output_file".tmp)
 
+awk -v len="$len_hg38" 'length($2) >= len * 0.5' "$output_file".tmp >> "$output_file".tmp2
+"$output_file".tmp2
+
 echo -e "# STOCKHOLM 1.0 \n#=GF ID\t$id" > "$output_file"
-awk -v len="$len_hg38" 'length($2) == len' "$output_file".tmp >> "$output_file"
 echo "//" >> "$output_file" 
 
 rm -rf "$output_file".tmp
