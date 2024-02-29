@@ -22,7 +22,7 @@ RefSeq_protein_coding=$7
 
 
 #### Output files ####
-# File creation    --> this will be redundant once snakameke rule is finished
+# File creation  
 file_creation() {
 
     local name=$1
@@ -46,10 +46,12 @@ short_negative_control='data/short-ncrna-coords-negative-control.csv'
 sample_size=1000 
 
 ### Sequence length limits
-lower_limit='75'
-upper_limit='3000'
-lower_limit_short='10' # CHECK! --> analize size distribution 
-
+lower_limit_lncrna='74'
+upper_limit_lncrna='1149'
+lower_limit_short='71' 
+upper_limit_short='142'
+lower_limit_protein='61'
+upper_limit_protein='272'
 
 ###########################################################################################################################
 
@@ -122,7 +124,7 @@ while [ "$lncrna_count" -lt "$sample_size" ]; do
                     len_two=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}') 
                     len_last=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')
 
-                    if ([ "$len_one" -ge "$lower_limit" ] && [ "$len_one" -le "$upper_limit" ]) && ([ "$len_two" -ge "$lower_limit" ] && [ "$len_two" -le "$upper_limit" ])  
+                    if ([ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]) && ([ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ])  
                     then
                         
                         seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                     # 0-start. Function in progress for this (see ./bin/draft)
@@ -202,7 +204,7 @@ while [ "$short_count" -lt "$sample_size" ]; do
         IFS=$'\t ' read -r chr zero_start end _ <<< "$meta"                                             # zero_start: 0-start bed format
         len=$(( $end-$zero_start ))  
             
-        if [ "$len" -ge "$lower_limit_short" ] && [ "$len" -le "$upper_limit" ]; then  
+        if [ "$len" -ge "$lower_limit_short" ] && [ "$len" -le "$upper_limit_short" ]; then  
            
             start=$((zero_start+=1))                                                                    # add 1 to change coordinate from 0-start
             selected_ids+=("$random_id")
@@ -280,7 +282,7 @@ gff2Info() {                                                                    
         if [ ! -z "$seq_two" ] && [ ! -z "$seq_three" ] && [[ "$seq_two" != *"N"* ]] && [[ "$seq_three" != *"N"* ]]; then
        
 	    # Exclude sequences out of length limits 
-	        if ([ "$len_two" -ge "$lower_limit" ] && [ "$len_two" -le "$upper_limit" ]) && ([ "$len_three" -ge "$lower_limit" ] && [ "$len_three" -le "$upper_limit" ]); then 
+	        if ([ "$len_two" -ge "$lower_limit_protein" ] && [ "$len_two" -le "$upper_limit_protein" ]) && ([ "$len_three" -ge "$lower_limit_protein" ] && [ "$len_three" -le "$upper_limit_protein" ]); then 
                 
                 selected_ids+=("$random_id")                            # D: probably is better if its in the while structure below nstead
                 protein_count=$(echo "${#selected_ids[@]}") 
