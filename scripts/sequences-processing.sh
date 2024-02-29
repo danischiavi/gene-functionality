@@ -7,10 +7,9 @@
 #
 # Description: This script filters the functional long and short-ncRNAs from RNAcentral database and protein-coding-RNA 
 # and extracts the coordinates to generate negative-control
+
 ###########################################################################################################################
-
-# General setup
-
+#### GENERAL SETUP ####
 ###########################################################################################################################
 rnacentral_coords=$1
 rnacentral_lncrna_seqs=$2
@@ -20,28 +19,26 @@ genome_annotations=$5
 genome_seq=$6
 protein_coding_refseq=$7
 
-
-#### Output files ####
-
-# Output files into variables 
+# Final Output files 
 lncrna_exon_one='data/functional-lncrna-exon1-dataset.csv' 
 lncrna_exon_two='data/functional-lncrna-exon2-dataset.csv' 
 short_ncrna='data/functional-short-ncrna-dataset.csv'
-protein_exon_two='data/protein-exon2-dataset.csv'
-protein_exon_three='data/protein-exon3-dataset.csv'
+protein_exon_two='data/functional-protein-exon2-dataset.csv'
+protein_exon_three='data/functional-protein-exon3-dataset.csv'
+
 coding_negative_control='data/protein-coords-negative-control.csv'
 lncrna_negative_control='data/lncrna-coords-negative-control.csv'
 short_negative_control='data/short-ncrna-coords-negative-control.csv'
 
-sample_size=2
-
-### Sequence length limits
-lower_limit_lncrna='74'
+# Constrains
+sample_size=2                        # Number of sequences for each type of RNA 
+lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
 upper_limit_lncrna='1149'
 lower_limit_short='71' 
 upper_limit_short='142'
 lower_limit_protein='61'
 upper_limit_protein='272'
+
 
 ###########################################################################################################################
 #### FUNCTION DECLARATION ####
@@ -142,6 +139,7 @@ gff2Info() {
 
 ###########################             
 
+
 ###########################################################################################################################
 #### EXTRACT SEQUENCES ####
 ###########################################################################################################################
@@ -158,6 +156,7 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 
     echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_one"
     echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_two"
+    echo "Chromosome,Start,End,Length_exon1,Length_exon2" >> "$lncrna_negative_control" 
 
     declare -a "IDs_lncrna=()"
     mapfile -t IDs_lncrna < <(cut -f 1 -d $'\t' "$rnacentral_lncrna_seqs" | awk '{print $1}')
@@ -217,11 +216,11 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 
                             if [ "$start_one" -gt "$end_last" ]; then                                                       # Reverse transcripts can alter order of start/end positions
                                                                              
-                                echo $chr,$end_last,$start_one,$len_one,$len_two >> "$lncrna_negative_control"              # To generate negative control sequences that are the same length as exons two and three
+                                echo "$chr,$end_last,$start_one,$len_one,$len_two" >> "$lncrna_negative_control"              # To generate negative control sequences that are the same length as exons two and three
                         
                             else
 
-                                echo $chr,$start_one,$end_last,$len_one,$len_two >> "$lncrna_negative_control"
+                                echo "$chr,$start_one,$end_last,$len_one,$len_two" >> "$lncrna_negative_control"
                             fi   
                         fi
                     fi
@@ -238,6 +237,7 @@ fi
 if [ ! -s "$short_ncrna" ]; then 
 
     echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$short_ncrna"
+    echo "Chromosome,Start,End,Length" >> "$short_negative_control" 
 
     declare -a "IDs_short_ncrna=()"
     mapfile -t IDs_short_ncrna < <(cut -f 1 -d $'\t' "$rnacentral_short_ncrna_seqs" | awk '{print $1}')
@@ -309,6 +309,7 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 
     echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_two"
     echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_three"
+    echo "Chromosome,Start,End,Length_exon2,Length_exon3" >> "$coding_negative_control"
 
     declare -a "selected_ids=()"
     protein_count=0

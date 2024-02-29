@@ -10,7 +10,7 @@
 #
 #### Variables and files ####
 initial_data=$1
-genome_csv=$2
+genome_seq=$2
 gencode_bed=$3 
 uniprot_bed=$4
 
@@ -21,35 +21,33 @@ first_negative_coords="$file_name"-first-negative-coords.csv
 last_negative_coords="$file_name"-last-negative-coords.csv
 single_negative_coords="$file_name"-negative-coords.csv
 
-# Final file
-first_negative_control="$file_name"-first-negative-control-dataset.csv
-last_negative_control="$file_name"-last-negative-control-dataset.csv
-single_negative_control="$file_name"-negative-control-dataset.csv
+# Output files
+single_negative_control="$file_name"-negative-control-dataset.csv   # File for short-ncrna is the final negative control dataset
+first_negative_control="$file_name"-first-negative-control.csv      # File for lncrna and protein will be rename after this script to associated with the corresponding exon  
+last_negative_control="$file_name"-last-negative-control.csv
 
 bedtools_exe=bedtools
 
 ###########################################################################################################################
+#### FUNCTION DECLARATION ####
+###########################################################################################################################
 
-#### Function declaration ####
-
-###########################################
+###########################
 # To determinate percentage of ambiguous nucleotides on sequences (used to filter out if >5%)
-##########################################
 ambiguity_percent() {
     
     seq=$1
 
     amb_nucleotides=$( echo "$seq" | grep -o '[RYMKSWBDHVNrymkswbdhvn]' | wc -l )
     total_nucleotides=$( echo -n "$seq" | wc -c )
-    ambiguity_percent=$(echo "scale=2; ($amb_nucleotides * 100) / $total_nucleotides" | bc)
+    ambiguity_percent=$(echo "scale=0; ($amb_nucleotides * 100) / $total_nucleotides" | bc)
 
     echo "$ambiguity_percent"
 
 }
 
-#######################################
+###########################
 # To extract coordinates and sequences of the negative control given a distance from the sequence
-#######################################
 
 #### For sequences with more than 1 exon #### 
 multiple_exons_negative_control() {
@@ -57,20 +55,20 @@ multiple_exons_negative_control() {
     local distance_to_seq=$1
     
     chromo=$( echo $chr | tr -d "chr" )                                                                                                    # Variables extract from initial_data file
-    distance_between_exons=$(( "$end_seq" - "$start_seq" - "$first_len" - "$last_len" ))                                                    
+    distance_between_exons=$(( $end_seq - $start_seq - $first_len - $last_len ))                                                    
 
 
     # UPSTREAM
-    last_exon_left_end=$((     "$start_seq" - "$distance_to_seq" ))
-    last_exon_left_start=$(( "$last_exon_left_end" - "$last_len" ))                                                                         # length based on exons's length
+    last_exon_left_end=$((     $start_seq - $distance_to_seq ))
+    last_exon_left_start=$(( $last_exon_left_end - $last_len ))                                                                         # length based on exons's length
     
-    first_exon_left_end=$(( "$last_exon_left_start" - "$distance_between_exons" ))                              
-    first_exon_left_start=$(( "first_exon_left_end" - "$first_len" ))
+    first_exon_left_end=$(( $last_exon_left_start - $distance_between_exons ))                              
+    first_exon_left_start=$(( first_exon_left_end - $first_len ))
 
 
     if [[ "$last_exon_left_end" -gt 0 ]] && [[ "$last_exon_left_start" -gt 0 ]]; then                                                                 # Filter out if negative coord
     
-        last_left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$last_exon_left_start-$last_exon_left_end )     # Extract seq from genome file                                                                                      # Blank to filter out if negative coord
+        last_left_sequence=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c$last_exon_left_start-$last_exon_left_end )     # Extract seq from genome file                                                                                      # Blank to filter out if negative coord
 
         if [ ! -z "$last_left_sequence" ] && [[ $( ambiguity_percent "$last_left_sequence" ) -lt 5 ]]; then                                 # If no sequence extracted or if the ambiguous nucleotides are more than 5%, then remove
 
@@ -83,7 +81,7 @@ multiple_exons_negative_control() {
 
     if [[ "$first_exon_left_end" -gt 0 ]] && [[ "$first_exon_left_start" -gt 0 ]]; then 
     
-        first_left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$first_exon_left_start-$first_exon_left_end )  
+        first_left_sequence=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c$first_exon_left_start-$first_exon_left_end )  
  
         if [ ! -z "$first_left_sequence" ] && [[ $( ambiguity_percent "$first_left_sequence" ) -lt 5 ]]; then  
             
@@ -95,16 +93,16 @@ multiple_exons_negative_control() {
    
 
     ## DOWNSTREAM
-    first_exon_right_start=$(( "$end_seq" + "$distance_to_seq" ))
-    first_exon_right_end=$(( "$first_exon_right_start" + "$first_len" ))                                
+    first_exon_right_start=$(( $end_seq + $distance_to_seq ))
+    first_exon_right_end=$(( $first_exon_right_start + $first_len ))                                
 
-    last_exon_right_start=$(( "$first_exon_right_end" + "$distance_between_exons" ))
-    last_exon_right_end=$((  "$last_exon_right_start" + "$last_len" ))
+    last_exon_right_start=$(( $first_exon_right_end + $distance_between_exons ))
+    last_exon_right_end=$((  $last_exon_right_start + $last_len ))
 
 
     if [[ "$first_exon_right_start" -gt 0 ]] && [[ "$first_exon_right_end" -gt 0 ]]; then 
   
-        first_right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$first_exon_right_start-$first_exon_right_end ) 
+        first_right_sequence=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c$first_exon_right_start-$first_exon_right_end ) 
     
         if [ ! -z "$first_right_sequence" ] && [[ $( ambiguity_percent "$first_right_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
             
@@ -117,7 +115,7 @@ multiple_exons_negative_control() {
 
     if [[ "$last_exon_right_start" -gt 0 ]] && [[ "$last_exon_right_end" -gt 0 ]]; then 
   
-        last_right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$last_exon_right_start-$last_exon_right_end ) 
+        last_right_sequence=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c$last_exon_right_start-$last_exon_right_end ) 
     
         if [ ! -z "$last_right_sequence" ] && [[ $( ambiguity_percent "$last_right_sequence" ) -lt 5 ]]; then                                                                                       # If no sequence extracted, then remove.
             
@@ -129,8 +127,7 @@ multiple_exons_negative_control() {
 
 }
 
-
-#### For sequences with single exon (short-ncRNA) ####
+#### For sequences with single exon (short-ncRNA) 
 single_exon_negative_control() {
 
     local distance_to_seq=$1
@@ -139,14 +136,14 @@ single_exon_negative_control() {
 
 
     # UPSTREAM
-    left_end=$(( "$start_seq" - "$distance_to_seq" ))
-    left_start=$(( "$left_end" - "$len" ))                                                              
+    left_end=$(( $start_seq - $distance_to_seq ))
+    left_start=$(( $left_end - $len ))                                                              
     
     if [[ "$left_end" -gt 0 ]] && [[ "$left_start" -gt 0 ]]; then 
     
-        left_sequence=$( grep -w "chromosome $chromo" "$genome_csv" | cut -f 2 | cut -c$left_start-$left_end )
+        left_sequence=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c$left_start-$left_end )
    
-        if [ ! -z "$left_sequence"] && [ $( ambiguity_percent "$left_sequence" ) -lt 5 ]; then                                           # If no sequence extracted, then remove.
+        if [ ! -z "$left_sequence" ] && [[ $( ambiguity_percent "$left_sequence" ) -lt 5 ]]; then                                           # If no sequence extracted, then remove.
 
             echo "$chr,$left_start,$left_end,$left_sequence,$distance_to_seq" >> "$single_negative_coords"
         
@@ -156,13 +153,13 @@ single_exon_negative_control() {
 
 
     # DOWNSTREAM                       
-    right_start=$(( "$end_seq" + "$distance_to_seq" ))
-    right_end=$(( "right_start" + "$len" ))                                
+    right_start=$(( $end_seq + $distance_to_seq ))
+    right_end=$(( right_start + $len ))                                
                               
 
     if [[ "$right_start" -gt 0 ]] && [[ "$right_end" -gt 0 ]]; then 
 
-        right_sequence=$( grep -w "chromosome $chromo" $genome_csv | cut -f 2 | cut -c$right_start-$right_end ) 
+        right_sequence=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c$right_start-$right_end ) 
 
         if [ ! -z "$right_sequence" ] && [[ $( ambiguity_percent "$right_sequence" ) -lt 5 ]]; then   
 
@@ -174,11 +171,8 @@ single_exon_negative_control() {
 
 }
 
-
-
-################################################################
+###########################
 # To filter negative control sequences using UniProt and GENCODE
-################################################################
 
 filter_out_functional(){
     
@@ -233,12 +227,10 @@ filter_out_functional(){
 
 }
 
-
+###########################
 
 ###########################################################################################################################
-
-# Generate sequences upstream and downstream of functional gene and filter out 
-
+#### EXTRACT NEGATIVE CONTROLS ####
 ###########################################################################################################################
 
 distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)

@@ -1,6 +1,9 @@
 configfile: "config.yaml"
-functional_rna=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-lncrna-exon3", "functional-short-ncrna"]
-negative_rna=["protein", "lncrna", "short-ncrna"]
+
+rule all:
+    input:
+        expand("data/{sample}-seq.fa", sample=["functional-protein-exon2", "functional-protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-exon2-negative-control", "protein-exon3-negative-control", "lncrna-exon1-negative-control", "lncrna-exon2-negative-control", "short-ncrna-negative-control"])
+
 
 ##################################################
 # Extract 1000 sequences for each type of RNA: protein coding exon 2 & 3, lncrna exon 1 & 2, short-ncrna; 
@@ -11,10 +14,6 @@ negative_rna=["protein", "lncrna", "short-ncrna"]
 #       number of exons: at least 2 for lncrna and protein-coding-rna 
 #         
 ##################################################
-rule all_sequences_processing:
-    input:
-        expand("data/{sample}-dataset.csv", sample=functional_rna)
-        expand("data/{sample}-coords-negative-control.csv", sample=negative_rna)
 
 rule sequences_processing:
     input: 
@@ -27,11 +26,18 @@ rule sequences_processing:
         protein_coding_refseq=config["protein_coding_refseq"]
 
     output:
-        "data/{sample}-dataset.csv",
-        "data/{sample}-coords-negative-control.csv"
+        "data/functional-lncrna-exon1-dataset.csv",
+        "data/functional-lncrna-exon2-dataset.csv",
+        "data/lncrna-coords-negative-control.csv",
+        "data/functional-protein-exon2-dataset.csv",
+        "data/functional-protein-exon3-dataset.csv",
+        "data/protein-coords-negative-control.csv",
+        "data/functional-short-ncrna-dataset.csv",
+        "data/short-ncrna-coords-negative-control.csv"
     
     shell:
         "scripts/sequences-processing.sh {input} > {output}"
+
 
 ##################################################
 # Generate Negative control: 
@@ -45,23 +51,16 @@ rule sequences_processing:
 #       overlapping known genes are filter out 
 
 ##################################################
-
-rule all_negative_control:
-    input:
-        expand("data/{sample}-first-negative-control-dataset.csv", sample=["protein", "lncrna"]),
-        expand("data/{sample}-last-negative-control-dataset.csv", sample=["protein", "lncrna"]),
-        expand("data/{sample}-negative-control-dataset.csv", sample=["short-ncrna"])
-
 rule negative_control_multiple_exons:
     input:
         initial_data="data/{sample}-coords-negative-control.csv",
-        genome_csv=config["genome_csv"],
+        genome_seq=config["genome_seq"],
         gencode_bed=config["gencode_bed"],
         uniprot_bed=config["uniprot_bed"]
         
     output:
-        "data/{sample}-first-negative-control-dataset.csv",
-        "data/{sample}-last-negative-control-dataset.csv"
+        "data/{sample}-first-negative-control.csv",
+        "data/{sample}-last-negative-control.csv"
 
     shell:
         "scripts/negative-control.sh {input} > {output}"
@@ -71,7 +70,7 @@ rule negative_control_multiple_exons:
 rule negative_control_single_exon:
     input:
         initial_data="data/short-ncrna-coords-negative-control.csv",
-        genome_csv=config["genome_csv"],
+        genome_seq=config["genome_seq"],
         gencode_bed=config["gencode_bed"],
         uniprot_bed=config["uniprot_bed"]
     
@@ -83,39 +82,41 @@ rule negative_control_single_exon:
 
 
 ##################################################
-# ITS NOT WORKING 
+# Rename lncrna and protein-rna negative control files to match corresponding functional dataset 
 rule rename_negative_control_files:
     input:
-        "data/protein-last-negative-control-dataset.csv",
-        "data/protein-first-negative-control-dataset.csv",
-        "data/lncrna-first-negative-control-dataset.csv",
-        "data/lncrna-last-negative-control-dataset.csv" 
+        protein_first = "data/protein-first-negative-control.csv",
+        protein_last = "data/protein-last-negative-control.csv",
+        lncrna_first = "data/lncrna-first-negative-control.csv",
+        lncrna_last = "data/lncrna-last-negative-control.csv"
+    
     output:
-        "data/protein-exon3-negative-control-dataset.csv",
-        "data/protein-exon2-negative-control-dataset.csv",
-        "data/lncrna-exon1-negative-control-dataset.csv",
-        "data/lncrna-exon2-negative-control-dataset.csv"
+        protein_exon2 = "data/protein-exon2-negative-control-dataset.csv",
+        protein_exon3 = "data/protein-exon3-negative-control-dataset.csv",
+        lncrna_exon1 = "data/lncrna-exon1-negative-control-dataset.csv",
+        lncrna_exon2 = "data/lncrna-exon2-negative-control-dataset.csv"
+    
     shell:
-        "mv {input} {output}"
+        """
+        mv {input.protein_first} {output.protein_exon2}
+        mv {input.protein_last} {output.protein_exon3}
+        mv {input.lncrna_first} {output.lncrna_exon1}
+        mv {input.lncrna_last} {output.lncrna_exon2}
+        """
 
 
 ##################################################
 
 # Generate functional FASTA file from CSV file
-names=["protein-exon2", "protein-exon3", "functional-lncrna-exon2", "functional-lncrna-exon3", "functional-short-ncrna"]
-
-rule all:
-    input:
-        expand("data/{sample}-seq.fa", sample=["protein-exon2", "protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-negative-control", "lncrna-negative-control", "short-ncrna-negative-control"])
-
 rule csv_to_fasta:
     input:
         csv="data/{sample}-dataset.csv"
     output:
         fasta="data/{sample}-seq.fa"
+    
     shell:                                      
         """
-        sed '1d' {input.csv} | while IFS=',' read -r id _ _ _ _ seq; do 
+        sed '1d' {input.csv} | while IFS=',' read -r id _ _ _ _ seq _; do 
 
             echo -e ">$id\n$seq" >> {output.fasta}
             

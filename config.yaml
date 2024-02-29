@@ -1,15 +1,12 @@
 ---
-## Sequences Processing ## 
+## Sequences Processing & Negative control ## 
 rnacentral_coords: "data/raw/rnacentral_GRCh38_coordinates.bed"
 rnacentral_lncrna_seq: "data/raw/rnacentral-lncrna-seq.csv"
 rnacentral_short_ncrna: "data/raw/rnacentral-short-ncrna-seq.csv"
 rnacentral_pre_mirna: "data/raw/rnacentral-pre-mirna-seq.csv"
-genome_annotations: "data/raw/GRCh38_latest_genomic.gff"
-genome_seq: "data/raw/GRCh38.p14_genome.csv"
-protein_coding_refse: "data/raw/hgnc-protein-coding-RefSeq.txt"
-
-## Negative control ##
-genome_csv: "data/raw/GRCh38.p14_genome.csv"
+genome_annotations: "data/raw/GRCh38_p14_genomic.gff"
+genome_seq: "data/raw/GRCh38_p14_genome.csv"
+protein_coding_refseq: "data/raw/hgnc-protein-coding-RefSeq.txt"
 gencode_bed: "data/raw/gencode-ncrna-annotation.bed" 
 uniprot_bed: "data/raw/unipAliSwissprot.bed"
 
