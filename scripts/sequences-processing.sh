@@ -179,33 +179,39 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
                     exon_count=$( echo "$meta" | cut -f 10 )
 
                     if [ "$exon_count" -ge 2 ]; then                                                                # Filter for Multiexonic lncrna
-             
+                        
+                        # Length of the required exons
                         len_one=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $1}')               # Length exons within range
                         len_two=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}') 
                         len_last=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')
 
                         if ([ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]) && ([ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ])  
                         then
-                        
-                            seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                     # 0-start. Function in progress for this (see ./bin/draft)
-                        
-                            relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons     
-                            relative_start_one=$((relative_start_one + 1))                                           # +1 to account for the first relative start pos being 0
-                            relative_end_one=$((relative_start_one + len_one))
-                            seq_one=$( echo "$seq" | cut -c $relative_start_one-$relative_end_one)                   # Sequence of exon 1 extracted from RNAcentral (fasta file converted to csv)
 
-                            relative_start_two=$((relative_end_one + 1))                                             # Field 12 are the coordinates relative to seq_start but considering the introns,     # which are not present in the downloaded RNAcentral lncrna sequence -> to extract exon seq   # use values relative to exon 1                                          
-                            relative_end_two=$((relative_start_two + len_two))
-                            seq_two=$( echo "$seq" | cut -c $relative_start_two-$relative_end_two)
-                        
-                            relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
-                            relative_start_last=$((relative_start_last + 1))
+                            # Coordinates to extract sequence from RNAcentral
+                            seq_start_zero=$(echo "$meta" | awk -F'\t' '{print $2}' )                                # 0-start. Function in progress for this (see ./bin/draft)
+                            seq_start=$((seq_start_zero + 1))
 
+                            relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. It's actually zero     
+                            start_index_one=$((relative_start_one + 1))                                              # index to extract sequece: +1 to account for the first relative start pos being 0
+                            end_index_one=$((relative_start_one + len_one))
+                            seq_one=$( echo "$seq" | cut -c $start_index_one-$end_index_one)                         # Sequence of exon 1 extracted from RNAcentral (fasta file converted to csv)
+
+                            start_index_two=$((end_index_one + 1))                                                   # Field 12 are the coordinates relative to seq_start but considering the introns,     # which are not present in the downloaded RNAcentral lncrna sequence -> to extract exon seq   # use values relative to exon 1                                          
+                            end_index_two=$((end_index_one + len_two))
+                            seq_two=$( echo "$seq" | cut -c $start_index_two-$end_index_two)
+                        
+                            
+                            # Coordinates in genome 
                             start_one=$((   $seq_start + $relative_start_one ))                                  
-                            start_two=$((   $seq_start + $relative_start_two ))                                         
-                            start_last=$(( $seq_start + $relative_start_last )) 
                             end_one=$((                $start_one + $len_one ))
+
+                            relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
+                            start_two=$((   $seq_start + $relative_start_two ))                                         
                             end_two=$((                $start_two + $len_two ))
+
+                            relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
+                            start_last=$(( $seq_start + $relative_start_last )) 
                             end_last=$((             $start_last + $len_last ))
                         
                             selected_ids+=("$random_id")
@@ -280,7 +286,7 @@ if [ ! -s "$short_ncrna" ]; then
             
             if [ "$len" -ge "$lower_limit_short" ] && [ "$len" -le "$upper_limit_short" ]; then  
            
-                start=$((zero_start+=1))                                                                    # add 1 to change coordinate from 0-start
+                start=$((zero_start + 1))                                                                    # add 1 to change coordinate from 0-start
                 selected_ids+=("$random_id")
                 short_count="${#selected_ids[@]}"
                                                              
@@ -288,11 +294,11 @@ if [ ! -s "$short_ncrna" ]; then
                 
                 if [ "$start" -gt "$end" ]; then                                                            # Reverse transcripts can alter order of start/end positions
                 
-                    echo $chr,$end,$start,$len >> "$short_negative_control"
+                    echo "$chr,$end,$start,$len" >> "$short_negative_control"
 
                 else
 
-                    echo $chr,$start,$end,$len >> "$short_negative_control"
+                    echo "$chr,$start,$end,$len" >> "$short_negative_control"
 
                 fi
             fi 
