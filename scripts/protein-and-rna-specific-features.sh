@@ -258,12 +258,6 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
             fi
 
             rnaalifold_score=$( cat "$RNAalifold_output" | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
-
-	            # Remove gap-only columns:
-	            #echo "esl-alimask -g --gapthresh 1 data/STK/$rna_id.stk > maf/$rna_id.stk" >>errors.log
-	            #esl-alimask -g --gapthresh 1 $rna_id.stk > maf/$rna_id.stk
-                exit_status=$?
-            
             
             ##### RNAcode ####
             RNAcode_output="$RNAcode_directory"/"$rna_id"
@@ -314,7 +308,7 @@ if [ ! -s "$output_file_Rscape" ]; then
     count_file="$first_rna_id"
     total_rna="$last_rna_id"
 
-    while [ $count_file -lt $total_rna ]; do
+    while [ $count_file -le $total_rna ]; do
 
         file="$Rscape_directory"/RNA"$count_file".cov
 
