@@ -237,11 +237,12 @@ if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
             if [ ! -s "$stk_file" ]; then
                 
                 ## maf to stk for RNAalifold and R-scape
-                ./bin/maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
+                ./scripts/maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
                                                     
                 ## stk to clustal (.aln) for Rcode (see notes for more details)
-                "$esl_reformat_exe" clustal "$stk_file" > "$aln_file"
-
+                "$esl_reformat_exe" --mingap clustal "$stk_file" > "$aln_file"
+                # --mingap remove columns containing all gaps
+            
             fi
 
             ##### RNAalifold ####
