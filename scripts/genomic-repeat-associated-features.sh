@@ -34,8 +34,8 @@ file_name="$output_directory"/$(basename "${initial_data%.*}" | sed 's/-dataset/
 
 # Temporary files
 output_file_copy="$file_name"-copy-number.csv                                        
-output_file_distance_not_matching="$file_name"-dfam-distance-not-matching.csv
-output_file_distance_temp="$file_name"-dfam-distance-temp.csv
+output_file_distance_not_sorted="$file_name"-dfam-distance-not-sorted.csv
+output_file_distance_tmp="$file_name"-dfam-distance-tmp.csv
 output_file_distance="$file_name"-dfam-distance.csv
 
 # Final output file 
@@ -99,27 +99,31 @@ if [ ! -s "$output_file_distance" ]; then
 
     echo "Dfam_min,Dfam_sum" > "$output_file_distance"
 
-    ##### Format data for bedtools and temporary files ####
-    # Bedtools requires sorted input which matches the database ($dfam_hits)
-
-    initial_data_temporary="$file_name".bed 
-    initial_data_sorted="$file_name"-sorted.bed
-
-    awk -F',' 'NR > 1 {print $3, $4, $5}' "$initial_data" > "$initial_data_temporary"
-    sort -k1,1V -k2,2n "$initial_data_temporary" | tr ' ' '\t' > "$initial_data_sorted" 
-
+    ## Temporary files ## 
     downstream_output="$file_name"-dfam-downstream.bed
     upstream_output="$file_name"-dfam-upstream.bed
     combined_output="$file_name"-dfam-combined.bed
+    dfam_hits_tmp="$file_name"-dfam-hits-tmp
+    initial_data_tmp="$file_name".bed 
+    initial_data_sorted="$file_name"-sorted.bed
 
+    ##### Format data for bedtools ####
+    # Bedtools requires sorted input which matches the database ($dfam_hits)
+    awk -F',' 'NR > 1 {print $3, $4, $5}' "$initial_data" > "$initial_data_tmp"
+    sort -k1,1V -k2,2n "$initial_data_tmp" | tr ' ' '\t' > "$initial_data_sorted" 
+
+    # Bedtools closest doesn't work if any chr is missing. This is unlikely on a big dataset, but to avoid errors: lines which corresponds to chr not present on the dataset are filtered out of the Dfam_hits database 
+    awk -F'\t' 'NR==FNR{chrom[$1]; next} $1 in chrom' "$initial_data_sorted" "$dfam_hits" > "$dfam_hits_tmp"
+
+    
     # Upstrean hits
-    $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits" -io -iu -D ref  > "$downstream_output" 2>>errors.log 
+    $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits_tmp" -io -iu -D ref  > "$downstream_output" 2>>errors.log 
     # -io : ignore features in B that overlap A
     # -iu : ignore upstream Ignore features in B that are upstream of features in A. Required -D option  
     # -D: report the closest feature in B, and its distance to A as an extra column
 
     # Downstream hits
-    $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits" -io -id -D ref  > "$upstream_output" 2>>errors.log
+    $bedtools_exe closest -a "$initial_data_sorted" -b "$dfam_hits_tmp" -io -id -D ref  > "$upstream_output" 2>>errors.log
 
     # Combine outputs 
     paste <( cut -f 1,2,3,7 "$downstream_output" ) <( cut -f 7 "$upstream_output" ) --delimiters '\t' > "$combined_output"
@@ -138,11 +142,11 @@ if [ ! -s "$output_file_distance" ]; then
 
         if [[ "$upstream" -lt "$downstream" ]]; then                                        # Taking into account forward and reverse strand
                                                
-            echo "$chr,$start,$end,$upstream,$sum" >> "$output_file_distance_not_matching"
+            echo "$chr,$start,$end,$upstream,$sum" >> "$output_file_distance_not_sorted"
 
         else
 
-            echo "$chr,$start,$end,$downstream,$sum" >> "$output_file_distance_not_matching"   
+            echo "$chr,$start,$end,$downstream,$sum" >> "$output_file_distance_not_sorted"   
 
         fi
 
@@ -156,10 +160,9 @@ fi
 
 # Rscript: Matches start coordinate and chr, and returns a file with matching bedtools results and initial_data following initial_data order 
 
-Rscript scripts/reformat_dfam.R "$initial_data" "$output_file_distance_not_matching" "$output_file_distance_temp" >/dev/null 2>>errors.log
+Rscript scripts/reformat_dfam.R "$initial_data" "$output_file_distance_not_sorted" "$output_file_distance_tmp" >/dev/null 2>>errors.log
 
-cat "$output_file_distance_temp" | cut -d ',' -f 7,8 > "$output_file_distance"
-
+awk -F',' '{print $(NF-1)","$NF}' "$output_file_distance_tmp" > "$output_file_distance"             # last 2 columns have the values (not same column number for negative and functional dataset due to distance label)
 
 ## Join output files for better organization 
 if [ ! -s "$output_file_repeats" ]; then
@@ -174,12 +177,12 @@ rm -rf "$mmseqs_output"
 rm -rf "$downstream_output"
 rm -rf "$upstream_output"
 rm -rf "$combined_output"
-rm -rf "$initial_data_temporary"
+rm -rf "$initial_data_tmp"
 rm -rf "$initial_data_sorted"
-rm -rf "$output_file_distance_not_matching"
-rm -rf "$output_file_distance_temp"
-
-
+rm -rf "$output_file_distance_not_sorted"
+rm -rf "$output_file_distance_tmp"
+rm -rf "$file_name-tmp"
+rm -rf "$dfam_hits_tmp"
 #rm -rf "$output_file_copy"
 #rm -rf "$output_file_distance"
 
