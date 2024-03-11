@@ -14,6 +14,11 @@
 
 #### Files and directories #### 
 initial_data=$1
+bigWigSummary_exe=$2
+phylo_bw=$3
+phast_bw=$4
+zoonomia_phylo_bw=$5
+gerp_bw=$6
 
 output_directory=data/conservation
 mkdir -p "$output_directory"
