@@ -2,13 +2,39 @@
 # EXTRACTING FEATURES
 ###########################################################################################################################
 
-configfile: "config.yaml"
-all_rna=["functional-protein-exon2", "functional-protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-exon2-negative-control", "protein-exon3-negative-control", "lncrna-exon1-negative-control", "lncrna-exon2-negative-control", "short-ncrna-negative-control"]
-rna_types=["protein-exon2", "protein-exon3", "lncrna-exon1", "lncrna-exon2", "short-ncrna"]
+##########
+## SET UP 
+##########
 
+configfile: "config.yaml"
+
+all_rna = [
+    "functional-protein-exon2", 
+    "functional-protein-exon3", 
+    "functional-lncrna-exon1", 
+    "functional-lncrna-exon2", 
+    "functional-short-ncrna", 
+    "protein-exon2-negative-control", 
+    "protein-exon3-negative-control", 
+    "lncrna-exon1-negative-control", 
+    "lncrna-exon2-negative-control", 
+    "short-ncrna-negative-control"
+]
+
+rna_types = [
+    "protein-exon2", 
+    "protein-exon3", 
+    "lncrna-exon1", 
+    "lncrna-exon2", 
+    "short-ncrna"
+]
+
+###################
+## RUN ALL FEATURES 
+###################
 rule all_features:
     input:
-        expand("data/{sample}-dataset-features.csv", sample=all_rna)
+        expand("data/{sample_final}-features.csv", sample_final=rna_types)
 
 
 #############
@@ -17,8 +43,13 @@ rule all_features:
 rule run_intrinsic_seq_features:
     input:
         "data/{sample}-dataset.csv"
+    
     output:
-        "data/{sample}-GC.csv"
+        "data/intrinsic/{sample}-GC.csv"
+    
+    params:
+        sample=all_rna
+    
     shell:
         "scripts/intrinsic-seq-features.sh {input} > {output}"
 
@@ -37,6 +68,10 @@ rule run_seq_conservation_features:
 
     output:
         "data/conservation/{sample}-conservation.csv"
+    
+    params:
+        sample=all_rna
+    
     shell:
         "scripts/seq-conservation-features.sh {input} > {output}"
 
@@ -51,7 +86,10 @@ rule run_transcriptome:
 
     output:
         "data/transcriptome/{sample}-transcriptome.csv"
-
+    
+    params:
+        sample=all_rna
+    
     shell:
         "scripts/transcriptome-expression-features.sh {input} > {output}"
 
@@ -68,6 +106,9 @@ rule run_genomic_repeat:
 
     output:
         "data/repeats/{sample}-repeats.csv"
+
+    params:
+        sample=all_rna
 
     shell:
         "bin/genomic-repeat-associated-features.sh {input} > {output}"
@@ -86,6 +127,9 @@ rule run_populatio_variation:
 
     output:
         "data/population/{sample}-variation.csv"
+
+    params:
+        sample=all_rna
 
     shell:
         "bin/population-variation-features.sh {input} > {output}"
@@ -106,12 +150,15 @@ rule run_protein_and_rna_specific_features:
         
     output:
         "data/specific/{sample}-specific.csv"
-       
+
+    params:
+        sample=all_rna
+
     shell:
         "bin/protein-and-rna-specific-features.sh {input} > {output}"
 
 
-#### FINAL FEATURES DATASET #### 
+#### FORMAT FINAL FEATURES DATASET #### 
 rule concatenate_features:
     input:
         "data/{sample}-dataset.csv",
@@ -121,26 +168,28 @@ rule concatenate_features:
         "data/repeats/{sample}-repeats.csv",
         "data/specific/{sample}-specific.csv", 
         "data/population/{sample}-variation.csv"
-
+    
     output:
         "data/{sample}-dataset-features.csv"
+    
+    params:
+        sample=all_rna
+
     shell:
         "paste -d ',' {input} > {output}"
 
-
-## Join negative control with corresponding functional dataset ## 
-
-rule all_join_positive_negative:
-    input:
-        expand("data/{sample}-features.csv", sample=rna_types)
-      
+        
 rule join_positive_negative:
     input:
-        positive="data/*-{sample}-features.csv",
-        negative="data/{sample}-negative-control-features.csv"
+        positive="data/functional-{sample_final}-dataset-features.csv",
+        negative="data/{sample_final}-negative-control-dataset-features.csv"
         
     output:
-        "data/{sample}-features.csv"
-
+        "data/{sample_final}-features.csv"
+    
     shell:
-        "paste -d'\n' {input.positive}{input.negative} > {output}"
+        """
+        tail -n +2 {input.negative} > {output}.tmp &&
+        cat {input.positive} {output}.tmp > {output} &&
+        rm {output}.tmp
+        """
