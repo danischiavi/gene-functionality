@@ -1,16 +1,28 @@
 #!/bin/bash
 #
-# Script Name: slicing-database.sh
+# Script Name: sequences-processing.sh
 #
 # Author: Daniela Schiavinato
-# Last edited: 
+# Last edited: March 2024
 #
-# Description: This script filters the functional long and short-ncRNAs from RNAcentral database and protein-coding-RNA 
-# and extracts the coordinates to generate negative-control
+# Description: 
+
+#   - Generate Functional datasets: 
+#                                 functional-short-ncrna, 
+#                                 functional-lncrna-exon1, functional-lncrna-exon2, 
+#                                 functional-protein-exon2, functioanl-protein-exon3 
+#
+#   - Extracts coordinates to generate negative control dataset downstream using negative-control.sh:
+#                                 protein-coords-negative-control
+#                                 lncrna-coords-negative-control
+#                                 short-ncrna-coords-negative-control
+# 
 
 ###########################################################################################################################
 #### GENERAL SETUP ####
 ###########################################################################################################################
+
+# Input files # 
 rnacentral_coords=$1
 rnacentral_lncrna_seqs=$2
 rnacentral_short_ncrna_seqs=$3
@@ -19,18 +31,21 @@ genome_annotations=$5
 genome_seq=$6
 protein_coding_refseq=$7
 
-# Final Output files 
+# Final Output files #
+# Functional datasets 
 lncrna_exon_one='data/functional-lncrna-exon1-dataset.csv' 
 lncrna_exon_two='data/functional-lncrna-exon2-dataset.csv' 
 short_ncrna='data/functional-short-ncrna-dataset.csv'
 protein_exon_two='data/functional-protein-exon2-dataset.csv'
 protein_exon_three='data/functional-protein-exon3-dataset.csv'
 
+# Coordenates for negative-control generation 
 coding_negative_control='data/protein-coords-negative-control.csv'
 lncrna_negative_control='data/lncrna-coords-negative-control.csv'
 short_negative_control='data/short-ncrna-coords-negative-control.csv'
 
-# Constrains
+
+# Constrains # 
 sample_size=2                        # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
 upper_limit_lncrna='1149'
@@ -72,24 +87,24 @@ gff2Info() {
     local exons=$1
     local genome_seq=$2
 
-    coords_one=$(   awk 'NR==1 {print $1, $4, $5}' "$exons")                                # Required to generate the upstream negative control sequences
-    coords_two=$(   awk 'NR==2 {print $1, $4, $5}' "$exons")                                # Exon two coordinates
-    coords_three=$( awk 'NR==3 {print $1, $4, $5}' "$exons")                                # Exon three coordinates
-    final_end=$(tail -1 "$exons" | awk '{print $1, $4, $5}')                                # Required to generate the downstream negative control sequences
+    coords_one=$(   awk 'NR==1 {print $1, $4, $5}' "$exons")                                                    # Required to generate the upstream negative control sequences
+    coords_two=$(   awk 'NR==2 {print $1, $4, $5}' "$exons")                                                    # Exon two coordinates
+    coords_three=$( awk 'NR==3 {print $1, $4, $5}' "$exons")                                                    # Exon three coordinates
+    final_end=$(tail -1 "$exons" | awk '{print $1, $4, $5}')                                                    # Required to generate the downstream negative control sequences
 
-    chr=$( echo $coords_one | cut -d ' ' -f 1 | tr -d "NC_" | cut -d '.' -f 1 | cut -c5,6 ) # Chromosome variable
-    test=$( echo $chr | cut -c1 )                                                           # Records any zeros in the chromosome variable
-    other=$( echo $chr | cut -c2 )                                                          # If zero is in chromosome variable, only record the single digit (ie: 01 becomes 1).
-    mt_test=$( echo $coords_one | cut -d ' ' -f 1 )                                         # Variable to check if gene is located on the mitochondrial genome.
+    chr=$( echo $coords_one | cut -d ' ' -f 1 | tr -d "NC_" | cut -d '.' -f 1 | cut -c5,6 )                     # Chromosome variable
+    test=$( echo $chr | cut -c1 )                                                                               # Records any zeros in the chromosome variable
+    other=$( echo $chr | cut -c2 )                                                                              # If zero is in chromosome variable, only record the single digit (ie: 01 becomes 1).
+    mt_test=$( echo $coords_one | cut -d ' ' -f 1 )                                                             # Variable to check if gene is located on the mitochondrial genome.
 
     # Reformat chr variable or rename to allow it to be filtered out
-    if [ -z "$chr" ]                                                                        # If chromosome variable empty (genes/mRNA that have been removed)
+    if [ -z "$chr" ]                                                                                            # If chromosome variable empty (genes/mRNA that have been removed)
     then
         chr=26   
-    elif [[ "$mt_test" == "NC_012920.1" ]]                                                  # If gene is encoded on the mitochondrial genome
+    elif [[ "$mt_test" == "NC_012920.1" ]]                                                                      # If gene is encoded on the mitochondrial genome
     then
         chr=25     
-    elif [[ "$test" == "0" ]]                                                               # If chromosome variable begins with zero, then rename as a single digit (ie: 01 becomes 1).
+    elif [[ "$test" == "0" ]]                                                                                   # If chromosome variable begins with zero, then rename as a single digit (ie: 01 becomes 1).
     then
         chr="$other"    
     fi
@@ -116,7 +131,7 @@ gff2Info() {
 	    # Exclude sequences out of length limits 
 	        if ([ "$len_two" -ge "$lower_limit_protein" ] && [ "$len_two" -le "$upper_limit_protein" ]) && ([ "$len_three" -ge "$lower_limit_protein" ] && [ "$len_three" -le "$upper_limit_protein" ]); then 
                 
-                selected_ids+=("$random_id")                            # D: probably is better if its in the while structure below nstead
+                selected_ids+=("$random_id")                            # D: probably is better if its in the while structure below instead
                 protein_count=$(echo "${#selected_ids[@]}") 
 
                 echo RNA$protein_count,Yes,chr$chr,$start_two,$end_two,$seq_two >> "$protein_exon_two"
@@ -204,15 +219,15 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
                             
                             # Coordinates in genome 
                             start_one=$((   $seq_start + $relative_start_one ))                                  
-                            end_one=$((                $start_one + $len_one ))
+                            end_one=$((                $start_one + $len_one - 1))                                   # -1 to make the end coordinate inclusive (to match UCSC browser)
 
                             relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
                             start_two=$((   $seq_start + $relative_start_two ))                                         
-                            end_two=$((                $start_two + $len_two ))
+                            end_two=$((                $start_two + $len_two - 1))
 
                             relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
                             start_last=$(( $seq_start + $relative_start_last )) 
-                            end_last=$((             $start_last + $len_last ))
+                            end_last=$((             $start_last + $len_last - 1))
                         
                             selected_ids+=("$random_id")
                             lncrna_count=$(echo "${#selected_ids[@]}")
@@ -220,9 +235,9 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
                             echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq_one" >> "$lncrna_exon_one"
                             echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq_two" >> "$lncrna_exon_two"  
 
-                            if [ "$start_one" -gt "$end_last" ]; then                                                       # Reverse transcripts can alter order of start/end positions
+                            if [ "$start_one" -gt "$end_last" ]; then                                                 # Reverse transcripts can alter order of start/end positions
                                                                              
-                                echo "$chr,$end_last,$start_one,$len_one,$len_two" >> "$lncrna_negative_control"              # To generate negative control sequences that are the same length as exons two and three
+                                echo "$chr,$end_last,$start_one,$len_one,$len_two" >> "$lncrna_negative_control"      # To generate negative control sequences that are the same length as exons two and three
                         
                             else
 
