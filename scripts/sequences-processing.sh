@@ -46,7 +46,7 @@ short_negative_control='data/short-ncrna-coords-negative-control.csv'
 
 
 # Constrains # 
-sample_size=2                        # Number of sequences for each type of RNA 
+sample_size=1000                     # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
 upper_limit_lncrna='1149'
 lower_limit_short='71' 
