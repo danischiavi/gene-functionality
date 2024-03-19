@@ -61,7 +61,6 @@ rule run_seq_conservation_features:
     input:
         initial_data="data/{sample}-dataset.csv",
         bigWigSummary_exe=config["bigWigSummary_exe"],
-        phylo_bw=config["phylo_bw"], 
         phast_bw=config["phast_bw"], 
         zoonomia_phylo_bw=config["zoonomia_phylo_bw"], 
         gerp_bw=config["gerp_bw"] 
@@ -189,7 +188,10 @@ rule join_positive_negative:
     
     shell:
         """
-        tail -n +2 {input.negative} > {output}.tmp &&
+        awk 'NR>1' {input.negative} | cut -d',' -f1-6,8- > {output}.tmp &&
         cat {input.positive} {output}.tmp > {output} &&
+        cut -d',' -f2,4,7,8,9,12- {output} > {output}.final &&                              ##CHANGE COLUMNS!!
+        mv {output}.final {output} &&
         rm {output}.tmp
         """
+
