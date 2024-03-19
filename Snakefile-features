@@ -163,7 +163,7 @@ rule concatenate_features:
         "data/transcriptome/{sample}-transcriptome.csv",
         "data/repeats/{sample}-repeats.csv",
         "data/specific/{sample}-specific.csv", 
-        "data/population/{sample}-variation.csv"
+        "data/population/{sample}-population.csv"
     
     output:
         "data/{sample}-dataset-features.csv"
@@ -174,7 +174,10 @@ rule concatenate_features:
     shell:
         "paste -d ',' {input} > {output}"
 
-        
+
+# Removes column "Distance" and header from negative control files
+# Joins functional file with its corresponding negative control
+# Removes columns "ID","Chromosome","End" and "Sequence"       
 rule join_positive_negative:
     input:
         positive="data/functional-{sample_final}-dataset-features.csv",
@@ -187,7 +190,7 @@ rule join_positive_negative:
         """
         awk 'NR>1' {input.negative} | cut -d',' -f1-6,8- > {output}.tmp &&
         cat {input.positive} {output}.tmp > {output} &&
-        cut -d',' -f2,4,7,8,9,12- {output} > {output}.final &&                              ##CHANGE COLUMNS!!
+        cut -d',' -f2,4,7- {output} > {output}.final &&                              ##CHANGE COLUMNS!!
         mv {output}.final {output} &&
         rm {output}.tmp
         """
