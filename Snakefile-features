@@ -119,13 +119,10 @@ rule run_genomic_repeat:
 rule run_populatio_variation:
     input:
         initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa", 
-        chain_file=config["chain_file"], 
-        onekGP_directory=config["onekGP_directory"],
         gnomad_directory=config["gnomad_directory"]
 
     output:
-        "data/population/{sample}-variation.csv"
+        "data/population/{sample}-population.csv"
 
     params:
         sample=all_rna
