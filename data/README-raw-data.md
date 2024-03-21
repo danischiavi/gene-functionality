@@ -1,6 +1,6 @@
-OBTAIN RAW DATA FOR ANALYSIS: 
+# OBTAIN RAW DATA FOR ANALYSIS: 
 
-HUMAN GENOME: 
+# HUMAN GENOME: 
 
     * Download and unzip GFF file for human genome. 15/12/2023
     cd data/raw
@@ -18,8 +18,8 @@ HUMAN GENOME:
     rm data/raw/GRCh38_interim.csv
 
 
-RETRIEVAL OF FUNCTIONAL GENES:
-PROTEIN-CODING-GENES    
+# RETRIEVAL OF FUNCTIONAL GENES:
+# PROTEIN-CODING-GENES    
 * A text file for all protein-coding genes from HGNC (Braschi et al., 2019), called gene_with_protein_product.txt, was downloaded and processed as described below.
 
     # Download text file for all protein-coding genes from HGNC
@@ -32,7 +32,7 @@ PROTEIN-CODING-GENES
 
 
 
-NON-CODING GENES:
+# NON-CODING GENES:
 
 * To obtain the chromosome coordinates for each RNAcentral ncRNA, the Homo sapiens GRCh38 bed file was obtained from the RNAcentral FTP directory, which contains the chromosome coordinates for all human ncRNAs (The RNAcentral Consortium, 2019). 19/12/2024
 
@@ -102,7 +102,7 @@ wget https://hgdownload.gi.ucsc.edu/hubs/GCA/009/914/755/GCA_009914755.4/liftOve
 
 
 
-####Dfam database
+#### Dfam database
 #data/raw
 wget -P data/raw https://www.dfam.org/releases/Dfam_3.8/annotations/hg38/hg38.nrph.hits.gz
 gunzip data/raw/hg38.nrph.hits.gz
@@ -154,15 +154,32 @@ for file in *.bam; do
     fi
 done
 
+## UNIPROT 
 
 # Uniprot database for protein coding annotations 
 10-Feb-2024
+# Raw data Directory 
 cd data/raw 
-wget https://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliSwissprot.bb
-cd ../..
-./bin/bigBedToBed data/raw/unipAliSwissprot.bb data/raw/unipAliSwissprot.bed
-rm -rf data/raw/unipAliSwissprot.bb
 
+#   Download file
+    wget https://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliSwissprot.bb
+
+# Go back to working directory 
+cd ../..
+
+#   Convert bb format to bed
+    ./bin/bigBedToBed data/raw/unipAliSwissprot.bb data/raw/unipAliSwissprot.bed
+(chr Y and M can be removed)
+
+#   Sort by chr first and the start coord matching order of dataset (Bedtools requirment)
+    sort -k1,1V -k2,2n data/raw/unipAliSwissprot.bed > data/raw/unipAliSwissprot-sorted.bed
+
+#   Remove extra files 
+    rm -rf data/raw/unipAliSwissprot.bed
+    rm -rf data/raw/unipAliSwissprot.bb
+
+
+## GENCODE
 wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_45/gencode.v45.annotation.gtf.gz
 gunzip gencode.v45.annotation.gtf.gz 
 
@@ -172,4 +189,13 @@ gunzip gencode.v45.annotation.gtf.gz
 
 cat gencode.v45.annotation.gtf | grep "Mt_rRNA\|Mt_tRNA\|miRNA\|misc_RNA\|rRNA\|scRNA\|snRNA\|snoRNA\|ribozyme\|sRNA\|scaRNA\|lncRNA" | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > gencode-ncrna-annotation.bed
 
+# All gencode #
+cat data/raw/gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > data/raw/gencode-annotation.bed
 
+(chr Y and M can be removed)
+rm -rf data/raw/gencode.v45.annotation.gtf
+
+# GERP mammal score 
+GERP scores for each sequence were extracted from the Ensembl 111-mammal GERP bigWig file using xxx (Quinlan, 2014; Yates et al., 2020).
+
+curl -O https://ftp.ensembl.org/pub/release-111/compara/conservation_scores/91_mammals.gerp_conservation_score/gerp_conservation_scores.homo_sapiens.GRCh38.bw
