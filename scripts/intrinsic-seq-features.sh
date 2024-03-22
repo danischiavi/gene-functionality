@@ -21,7 +21,7 @@ output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/datase
 #### Calculate GC content #### 
 if [ ! -s "$output_file" ]; then
 
-    echo "GC%" > "$output_file" 
+    echo "GC" > "$output_file" 
                                                        
     tail -n +2 "$initial_data"  | while IFS=, read -r _ _ _ _ _ seq; do                
     
