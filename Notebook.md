@@ -1,0 +1,7 @@
+## PROJECT NOTEBOOK 
+
+# TO DO LIST
+
+# IDEAS
+
+# PROGRESS 

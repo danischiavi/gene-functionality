@@ -7,12 +7,11 @@ rnacentral_pre_mirna: "data/raw/rnacentral-pre-mirna-seq.csv"
 genome_annotations: "data/raw/GRCh38_p14_genomic.gff"
 genome_seq: "data/raw/GRCh38_p14_genome.csv"
 protein_coding_refseq: "data/raw/hgnc-protein-coding-RefSeq.txt"
-gencode_bed: "data/raw/gencode-ncrna-annotation.bed" 
+gencode_bed: "data/raw/gencode-annotation.bed" 
 uniprot_bed: "data/raw/unipAliSwissprot.bed"
 
 ## Conservation features ##
 bigWigSummary_exe: "bin/bigWigSummary"
-phylo_bw: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phyloP100way.bw" # UPDATE
 phast_bw: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phastCons100way.bw" # UPDATE
 zoonomia_phylo_bw: "data/raw/hg38.phyloP241mammalian2020v2.bigWig"
 gerp_bw: "data/raw/gerp_conservation_scores.homo_sapiens.GRCh38.bw"
@@ -33,8 +32,6 @@ bigBedToBed_exe: "bin/bigBedToBed"
 cactus_align_url: "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf"
 
 ## Population variation features ## 
-chain_file: "data/raw/hg38ToHg19.over.chain"
-onekGP_directory: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/1000genomes" 
 gnomad_directory: "data/raw/gnomad"
 
 ... 

@@ -46,7 +46,7 @@ rule sequences_processing:
 #       while the protein-coding and lncrnas output two (due number of exons)
 
 #       - Starting with the coordinates for negative control obtain with rule "sequences_processing",
-#       10 sequences are extract for each functional sequence 1000, 10000, 100000, 1000000 and 5000000 
+#       10 sequences are extract for each functional sequence 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 2500000 and 5000000  
 #       nucleotides away upstream and downstream. Sequences with more than 5% ambiguos nucleotides and 
 #       overlapping known genes are filter out 
 

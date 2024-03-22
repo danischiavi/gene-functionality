@@ -110,7 +110,7 @@ rule run_genomic_repeat:
         sample=all_rna
 
     shell:
-        "bin/genomic-repeat-associated-features.sh {input} > {output}"
+        "scripts/genomic-repeat-associated-features.sh {input} > {output}"
 
 
 #######################        
@@ -128,7 +128,7 @@ rule run_populatio_variation:
         sample=all_rna
 
     shell:
-        "bin/population-variation-features.sh {input} > {output}"
+        "scripts/population-variation-features.sh {input} > {output}"
 
 
 ###########################        
@@ -151,7 +151,7 @@ rule run_protein_and_rna_specific_features:
         sample=all_rna
 
     shell:
-        "bin/protein-and-rna-specific-features.sh {input} > {output}"
+        "scripts/protein-and-rna-specific-features.sh {input} > {output}"
 
 
 #### FORMAT FINAL FEATURES DATASET #### 
