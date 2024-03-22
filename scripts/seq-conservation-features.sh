@@ -28,7 +28,7 @@ output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/datase
 #### Extract conservation features for each set of chromosome coordinates #### 
 if [ ! -s "$output_file" ]; then
 
-    echo "phyloP_mean,phyloP_max, phastCons_mean,phastCons_max,GERP_mean,GERP_max" > "$output_file"
+    echo "phyloP_mean,phyloP_max,phastCons_mean,phastCons_max,GERP_mean,GERP_max" > "$output_file"
 
     tail -n +2 "$initial_data"  | while IFS=',' read -r _ _ chr start end _; do
 
