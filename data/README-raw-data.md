@@ -168,14 +168,14 @@ cd data/raw
 cd ../..
 
 #   Convert bb format to bed
-    ./bin/bigBedToBed data/raw/unipAliSwissprot.bb data/raw/unipAliSwissprot.bed
+    ./bin/bigBedToBed data/raw/unipAliSwissprot.bb data/raw/unipAliSwissprot-unsorted.bed
 (chr Y and M can be removed)
 
 #   Sort by chr first and the start coord matching order of dataset (Bedtools requirment)
-    sort -k1,1V -k2,2n data/raw/unipAliSwissprot.bed > data/raw/unipAliSwissprot-sorted.bed
+    sort -k1,1V -k2,2n data/raw/unipAliSwissprot-unsorted.bed | awk 'OFS="\t" {if ($1 != "chrM" && $1 != "chrY") {print}}' > data/raw/unipAliSwissprot.bed
 
 #   Remove extra files 
-    rm -rf data/raw/unipAliSwissprot.bed
+    rm -rf data/raw/unipAliSwissprot-unsorted.bed
     rm -rf data/raw/unipAliSwissprot.bb
 
 
@@ -183,19 +183,16 @@ cd ../..
 wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_45/gencode.v45.annotation.gtf.gz
 gunzip gencode.v45.annotation.gtf.gz 
 
-# Converting GENCODE GTF to bed file:
-# Pipe two filters sequences so only known ncRNAs are included.
-# Pipes three and four reformat the data into a bed file format.
+# Converting GENCODE GTF to bed file: 
+# Including only genes and removing chrM/Y
 
-cat gencode.v45.annotation.gtf | grep "Mt_rRNA\|Mt_tRNA\|miRNA\|misc_RNA\|rRNA\|scRNA\|snRNA\|snoRNA\|ribozyme\|sRNA\|scaRNA\|lncRNA" | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > gencode-ncrna-annotation.bed
+# Download file: Version 45 - Nov 2023  
+cat data/raw/gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($3=="gene" && $1 != "chrM" && $1 != "chrY") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > data/raw/gencode-annotation.bed
 
-# All gencode #
-cat data/raw/gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > data/raw/gencode-annotation.bed
-
-(chr Y and M can be removed)
+# Remove excess file
 rm -rf data/raw/gencode.v45.annotation.gtf
 
-# GERP mammal score 
+## GERP mammal score 
 GERP scores for each sequence were extracted from the Ensembl 111-mammal GERP bigWig file using xxx (Quinlan, 2014; Yates et al., 2020).
 
 curl -O https://ftp.ensembl.org/pub/release-111/compara/conservation_scores/91_mammals.gerp_conservation_score/gerp_conservation_scores.homo_sapiens.GRCh38.bw
