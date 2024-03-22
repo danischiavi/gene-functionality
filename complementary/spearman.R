@@ -1,26 +1,20 @@
-# file <- "/Users/danischiavinato/Desktop/features/protein-exon2-features.csv"
-# file <- "/Users/danischiavinato/Desktop/features/protein-exon3-features.csv"
-# file <- "/Users/danischiavinato/Desktop/features/lncrna-exon1-features.csv"
+# file <- "/Users/danischiavinato/Desktop/data-from-server/20240320/short-features"
+
+
 
 options(repos = "https://cloud.r-project.org")
-install.packages("RVAideMemoire", lib="packages")
-library(RVAideMemoire)
-install.packages("randomForest", lib="packages")
-library(randomForest)
+install.packages("RVAideMemoire")
+install.packages("randomForest")
 #install.packages("tools", lib="packages")
 library(tools)
-
+library(RVAideMemoire)
+library(randomForest)
 
 args <- commandArgs(trailingOnly = TRUE)
 file <- args[1]
 
 # Read input file from Snakemake input file directive
 # file <- input$file
-
-# Format output file 
-filename <- sub("features\\.csv$", "", file)
-output_file <- paste0(filename,"spearman-matrix")
-
 
 # Function declaration to calculate Rho spearman and its confidence intervals 
 spearman_correlation <- function(file){
@@ -43,7 +37,11 @@ spearman_correlation <- function(file){
     rho <- spearman$estimate[[1]]
     ci_inf <- spearman$conf.int[[1]] 
     ci_sup <- spearman$conf.int[[2]]
-    return(c( cor = rho, ci_inf = ci_inf, ci_sup = ci_sup ))
+    
+    correlation_test <- cor.test(functional_numeric, col, method = "spearman")
+    p_value <- correlation_test$p.value
+    
+    return(c(cor = rho, ci_inf = ci_inf, ci_sup = ci_sup, p_value = p_value))
   })
   
   # Return correlation coefficients and confidence intervals as a named list with variable name as the name
@@ -58,6 +56,22 @@ correlation_list[[file]] <- spearman_correlation(file)
   
 correlation_matrix_combined <- do.call(rbind, correlation_list)
 
-# Write the correlation matrix to a CSV file
+# Format output file 
+filename <- sub("features\\$", "", file)
+output_file <- paste0(filename,"-spearman-matrix")
 write.csv(correlation_matrix_combined, file = output_file, row.names = TRUE)
 
+
+
+### RANDOM NUMBER - NEUTRAL PREDICTOR ###
+i=0
+while [ $i -lt 885 ]; do 
+  echo $RANDOM >> random_numbers.tmp
+  (( i++))
+done 
+
+# Paste the generated random numbers as a new column into the existing file
+paste -d ',' random_numbers.tmp $file > lncrna-features
+
+# Clean up temporary file
+rm random_numbers.tmp
