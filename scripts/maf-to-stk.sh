@@ -46,7 +46,7 @@ done
 
 
 ## Remove partial alignments < 50%: determinated by length less than 50% of human's not including '-' and 'N'
-# Pad included partial alignments with 'N' to match human's len for further analysis with tools 
+# Pad included partial alignments with 'N' to match human's len for further analysis with tools (RNAcode, R-scape and RNAalifold) 
 
 len_hg38=$(awk -v partial_id="hg38" '{ if ($1 ~ "^" partial_id) { print length($2) } }' "$output_file".tmp)
 
