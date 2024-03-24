@@ -2,22 +2,22 @@
 
 ## TO DO LIST
 
-() Decide method for negative control and generate datasets
-() Manuscript
+- [] Decide method for negative control and generate datasets
+- [] Manuscript
 
 Estefi 
-() Negative control analysis 
-() Incorporate metgylation marks analysis to the workflow 
-() 
+- [] Negative control analysis 
+- [] Incorporate metgylation marks analysis to the workflow 
+ 
 
 Dani 
-() Review correlated features 
+- [] Review correlated features 
 
 ## IDEAS
 
 Dani
-() snakemake script for analysis 
+- [] snakemake script for analysis 
 
 
 ## PROGRESS 
-(X) 1000 functional sequences 
+- [X] 1000 functional sequences 
