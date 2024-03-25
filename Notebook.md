@@ -15,8 +15,10 @@ Estefi
 
 Dani 
 
-- [ ] Review correlated features 
-
+- [ ] Review correlated features
+- [ ] Finish readme files and project setup
+- [ ] Conda env file 
+ 
 ## IDEAS
 
 Dani
