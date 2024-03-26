@@ -52,7 +52,8 @@ esl_reformat_exe=esl-reformat
 
 if [ ! -e "$output_file_interaction" ]; then
 
-    echo "Interaction_min","Interaction_ave" > "$output_file_interaction"
+    echo "Interaction_ave" > "$output_file_interaction"
+    
     var=$first_rna_id                                                                                             
     last_seq=$last_rna_id               
 
@@ -93,7 +94,7 @@ if [ ! -e "$output_file_interaction" ]; then
             ave_RNAup=$(echo "scale=3; $sum_RNAup/$count_RNAup" | bc )
         fi
 
-        echo "$min_RNAup,$ave_RNAup" >> "$output_file_interaction"
+        echo "$ave_RNAup" >> "$output_file_interaction"
 
         (( var++ ))
    
