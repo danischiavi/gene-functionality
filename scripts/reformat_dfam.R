@@ -18,8 +18,7 @@ for(i in 1:nrow(df2)) {
         index <- intersect(index1, index2)
         
         if (length(index) > 0) {
-        df1[index, 'Dfam_min'] <- df2[i, 4]
-        df1[index, 'Dfam_sum'] <- df2[i, 5]
+        df1[index, 'Dfam_sum'] <- df2[i, 4]
         }
     }
 }

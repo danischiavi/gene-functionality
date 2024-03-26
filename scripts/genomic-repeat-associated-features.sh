@@ -97,7 +97,7 @@ fi
 
 if [ ! -s "$output_file_distance" ]; then
 
-    echo "Dfam_min,Dfam_sum" > "$output_file_distance"
+    echo "repeat_distance" > "$output_file_distance"
 
     ## Temporary files ## 
     downstream_output="$file_name"-dfam-downstream.bed
@@ -140,15 +140,8 @@ if [ ! -s "$output_file_distance" ]; then
 
         sum=$(( $downstream+$upstream ))
 
-        if [[ "$upstream" -lt "$downstream" ]]; then                                        # Taking into account forward and reverse strand
-                                               
-            echo "$chr,$start,$end,$upstream,$sum" >> "$output_file_distance_not_sorted"
+        echo "$chr,$start,$end,$sum" >> "$output_file_distance_not_sorted"
 
-        else
-
-            echo "$chr,$start,$end,$downstream,$sum" >> "$output_file_distance_not_sorted"   
-
-        fi
 
     done < "$combined_output"
 
