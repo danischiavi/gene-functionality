@@ -6,6 +6,9 @@
 
 - [ ] Manuscript
 
+- [ ] Review copy-number justification as feature 
+
+
 Estefi 
 
 - [ ] Negative control analysis 
@@ -15,7 +18,7 @@ Estefi
 
 Dani 
 
-- [ ] Review correlated features
+- [X] Review correlated features
 - [ ] Finish readme files and project setup
 - [ ] Conda env file 
 - [ ] Add filter for protein-coding for high-express genes used for RNA:RNA interactions
