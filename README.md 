@@ -1,0 +1,127 @@
+# FEATURES OF FUNCTIONAL HUMAN GENES
+
+## This is the repository for the "Features of Functional Human Genes" paper pipeline, data and results.
+
+
+
+## Simple Access Instructions
+
+
+
+To access the project, create a local project directory. For example:
+
+    mkdir gene-functionality 
+
+Clone this repository to the project directory.
+
+    git clone https://github.com/danischiavi/gene-functionality gene-functionality
+
+This will download the project pipline and curated paper data and results. The data and results corresponding to the paper are located in the XXX directory.
+
+If you want to use any of the scripts, you will need to perform further installation steps.
+
+
+
+## Dependencies
+
+
+
+Most dependencies have been set in the conda environemnt YML file.
+
+Create a new conda environment using the YML file loated in the scripts directory.
+
+    conda env create -f condaEnv.yml
+
+Some software was unavailable for adding to the conda environment and will need to be installed/downloaded manually into the features-of-functioanl-human-genes/bin project directory 
+
+    cd bin
+
+ * #### UCSC binary utilities 
+
+This directory contains Genome Browser and Blat application binaries built for standalone command-line use on various supported Linux and UNIX platforms
+https://hgdownload.soe.ucsc.edu/admin/exe/
+
+ * bigBedToBed
+
+    wget https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigBedToBed 
+
+ * bigWigSummary
+
+    wget https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigSummary 
+
+ * access_py: For Opening Energy calculation 
+ 
+ This is a Wrapper around RNAplfold to compute opening energy of a given sequence. Download the python script to your local machine and move it to the features-of-functioanl-human-genes/bin directory 
+ 
+    https://github.com/bkb3/openen/tree/master
+
+
+* ##### CPC2.py
+
+    cd bin
+    wget https://github.com/gao-lab/CPC2_standalone/archive/refs/tags/v1.0.1.tar.gz 
+    gzip -dc v1.0.1.tar.gz | tar xf - 
+    cd CPC2_standalone-1.0.1
+    cd libs/libsvm
+    gzip -dc libsvm-3.18.tar.gz | tar xf -
+    cd libsvm-3.18
+    make clean && make
+    cd ../../../../..
+
+
+
+## Pipeline Purpose
+
+
+
+This pipeline has been created to evaluate XXX. For the research paper that is relevant to this pipeline, please see: XXX
+
+
+
+
+## How to use this pipeline
+
+
+
+#### The pipeline have the following steps:  
+
+1) Download required Databases as descripted in data/README-data.md file 
+
+2) Generate functional and negative control databases following the ./Snakefile-sequences file.
+For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
+
+    snakemake -s Snakefile-sequences -j "cores" 
+
+3) Obtain features for each dataset following ./Snakefile-features
+For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
+
+    snakemake -s Snakefile-features -j "cores" 
+
+4) Analyze results with scripts/spearman-function-feature.R and scripts/random-forest-analysis.R for main analysis. 
+For complementary analysis see ./complementary directory
+
+
+consist on  multiple scripts which are run using the Snakemake manager system. 
+Databases need to be downloaded manually 
+
+When running the pipeline, always run from the project directory, unless otherwise specified e.g.
+
+scripts/main/D01-runRNAcode.sh
+Start with the scripts in alphabetical and numerical order.
+
+"Now remember to make a species list(s) and place in: speciesLists/.txt that follows this format:
+ "
+
+
+
+## Brief Description of scripts
+
+
+
+xxx
+
+
+## Specifics of scripts
+
+xxx
+
