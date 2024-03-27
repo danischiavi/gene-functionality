@@ -12,7 +12,7 @@
 initial_data=$1
 genome_seq=$2
 gencode_bed=$3 
-uniprot_bed=$4
+rnacentral_bed=$4
 
 file_name=data/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
@@ -132,7 +132,7 @@ single_exon_negative_control() {
 }
 
 ###########################
-# To filter negative control sequences using UniProt and GENCODE
+# To filter negative control sequences using RNAcentral and GENCODE
 
 filter_out_functional(){
     
@@ -151,9 +151,8 @@ filter_out_functional(){
     awk -F',' 'NR > 1 {print $1 "\t" $2 "\t" $3 "\t" $4}' "$negative_coords" > "$bed_coords"
     sort -k1,1V -k2,2n "$bed_coords" | tr ' ' '\t' > "$bed_coords_sorted"
 
-    bedtools intersect -wa -a "$bed_coords_sorted" -b "$uniprot_bed" "$gencode_bed" -v > "$coords_filtered"
+    bedtools intersect -wa -a "$bed_coords_sorted" -b "$rnacentral_bed" "$gencode_bed" -sorted -v > "$coords_filtered"
     # option -sorted could be included for larger dataset (all chr have to have at least 1 sample, otherwise error)
-
     
     ## Format final output file
     while IFS=$'\t' read -r chr start end distance; do
