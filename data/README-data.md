@@ -78,17 +78,17 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
 
         wget ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/22.0/genome_coordinates/bed/homo_sapiens.GRCh38.bed.gz
 
-        gunzip -c homo_sapiens.GRCh38.bed.gz > rnacentral_GRCh38_coordinates.bed && rm homo_sapiens.GRCh38.bed.gz
+        gunzip -c homo_sapiens.GRCh38.bed.gz | sort -k1,1V -k2,2n > rnacentral_GRCh38_coordinates.bed && rm homo_sapiens.GRCh38.bed.gz
 
 
 * #### Non-coding RNA annotations 
 
-    Use the RNAcentral web interface to obtain the ncRNA annotations using the following filtering steps. Download the databases to local machine and copy them to the working directory, uncompress and format to csv for easier manipulation.  
+    Use the [RNAcentral web interface](https://rnacentral.org/) to obtain the ncRNA annotations using the following filtering steps. Download the databases to local machine and copy them to the working directory, uncompress and format to csv for easier manipulation.  
 
     * #### lncRNA 
     Include HGNC database, include lncRNA only (Last access: 28/02/2024) 
 
-        Query: expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Antisense_lncRNA" AND entry_type:"Sequence"
+        Query: expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Antisense_lncRNA" AND entry_type:"Sequence"  --> 2,898 sequences
 
         URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Antisense_lncRNA%22%20AND%20entry_type:%22Sequence%22
 
