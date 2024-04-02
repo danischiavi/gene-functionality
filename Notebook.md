@@ -2,7 +2,11 @@
 
 ## TO DO LIST
 
-- [ ] Decide method for negative control and generate datasets
+- [X] Decide method for negative control 
+
+- [ ] Generate negative control dataset
+
+- [ ] Run all features for all 1000 sequences 
 
 - [ ] Manuscript
 
@@ -11,7 +15,7 @@
 
 Estefi 
 
-- [ ] Negative control analysis 
+- [X] Negative control analysis 
 
 - [ ] Incorporate methylation marks analysis to the workflow 
  
