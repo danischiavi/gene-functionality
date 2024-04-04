@@ -74,11 +74,11 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
 
 * #### Chromosome coordinates for all non-coding RNA:
 
-    Download the Homo sapiens GRCh38 bed file from the RNAcentral FTP directory, which contains the chromosome coordinates for all human ncRNAs (Last access: 19/12/2024)
+    Download the Homo sapiens GRCh38 bed file from the RNAcentral FTP directory, which contains the chromosome coordinates for all human ncRNAs; and filter out patches from RNAcentral coordinates database keeping only coordinates corresponding to chr1-22 and X (Last access: 19/12/2024)
 
         wget ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/22.0/genome_coordinates/bed/homo_sapiens.GRCh38.bed.gz
 
-        gunzip -c homo_sapiens.GRCh38.bed.gz | sort -k1,1V -k2,2n > rnacentral_GRCh38_coordinates.bed && rm homo_sapiens.GRCh38.bed.gz
+        gunzip -c homo_sapiens.GRCh38.bed.gz | sort -k1,1V -k2,2n | grep -E '^chr(1?[0-9]|2[0-2]|X)\b' > rnacentral-GRCh38-coords.bed && rm homo_sapiens.GRCh38.bed.gz
 
 
 * #### Non-coding RNA annotations 
@@ -122,8 +122,7 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
 ## Negative control
 The chromosome coordinates and sequences for the final negative control protein-coding, short ncRNA and lncRNA genes are available in [data](data/) (ADD LINK TO GITHUB!!!)
 
-Both Swiss-Prot and GENCODE annotations are used to filter negative control sequences which overlap with annotated genes.  
-
+The coordinates for the negative control datasets are extracted from regions of the genome lacking known annotated genes. Both GENCODE and RNAcentral databases are used to determinate this genes complement regions. 
 
 #### GENCODE database
 
@@ -142,32 +141,20 @@ Remove excess file:
     rm -rf gencode.v45.annotation.gtf
 
 
-#### UniProtKB/Swiss-Prot database
+#### Genes Complement 
 
-Download Swiss-Prot annotations of known protein-coding genes (Last access: 10/02/2024):
+Obtain genes complement using bedtools complement. The length of the human chromosomes was used as genome reference. 
 
-    wget https://hgdownload.soe.ucsc.edu/gbdb/hg38/uniprot/unipAliSwissprot.bb
+    gencode_bed="data/raw/gencode-annotation.bed"
+    rnacentral_bed="data/raw/rnacentral-GRCh38-coords.bed"
+    chromo_len="data/raw/chromosomes-len.bed"
 
-Go to working directory 
+    bedtools complement -i "$gencode_bed" -g "$chromo_len" > data/raw/gencode-complement
+    bedtools complement -i "$rnacentral_bed" -g "$chromo_len" > data/raw/rnacentral-complement
 
-    cd ../..
+Merge both files, sort and remove duplicated entries
 
-Convert bb format to bed
-    
-    ./bin/bigBedToBed data/raw/unipAliSwissprot.bb data/raw/unipAliSwissprot-unsorted.bed
-
-Go to data/raw directory 
-
-    cd data/raw
-
-Sort by chr first and the start coord matching order of dataset (Bedtools requirement) and remove chrM/Y
-
-    sort -k1,1V -k2,2n unipAliSwissprot-unsorted.bed | awk 'OFS="\t" {if ($1 != "chrM" && $1 != "chrY") {print}}' > unipAliSwissprot.bed
-
-Remove extra files 
-
-    rm -rf unipAliSwissprot-unsorted.bed
-    rm -rf unipAliSwissprot.bb
+    cat data/raw/gencode-complement data/raw/rnacentral-complement | sort -k1,1V -k2,2n | uniq > data/raw/genes-complement.bed && rm data/raw/rnacentral-complement && rm data/raw/gencode-complement
 
 
 # Databases for Features 
