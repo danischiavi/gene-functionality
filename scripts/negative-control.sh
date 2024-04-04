@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #
 # Notes: 
@@ -11,8 +10,7 @@
 #### Variables and files ####
 initial_data=$1
 genome_seq=$2
-gencode_bed=$3 
-rnacentral_bed=$4
+genes_complement=$3
 
 file_name=data/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
@@ -51,10 +49,8 @@ ambiguity_percent() {
 multiple_exons_negative_control() {
 
     local distance_to_seq=$1
-    
-                                                                                             # Variables extract from initial_data file
+                                                                                             
     distance_between_exons=$(( "$end_seq" - "$start_seq" - "$first_len" - "$last_len" ))                                                    
-
 
     # UPSTREAM
     last_exon_left_end=$((     "$start_seq" - "$distance_to_seq" ))
@@ -66,13 +62,13 @@ multiple_exons_negative_control() {
 
     if [[ "$last_exon_left_end" -gt 0 ]] && [[ "$last_exon_left_start" -gt 0 ]]; then                                                                 # Filter out if negative coord
                              
-        echo "$chr,$last_exon_left_start,$last_exon_left_end,$distance_to_seq" >> "$last_negative_coords"
+        echo "$chr,$last_exon_left_start,$last_exon_left_end,$distance_to_seq,$last_len" >> "$last_negative_coords"
 
     fi
 
     if [[ "$first_exon_left_end" -gt 0 ]] && [[ "$first_exon_left_start" -gt 0 ]]; then 
             
-        echo "$chr,$first_exon_left_start,$first_exon_left_end,$distance_to_seq" >> "$first_negative_coords"
+        echo "$chr,$first_exon_left_start,$first_exon_left_end,$distance_to_seq,$first_len" >> "$first_negative_coords"
 
     fi
    
@@ -87,14 +83,14 @@ multiple_exons_negative_control() {
 
     if [[ "$first_exon_right_start" -gt 0 ]] && [[ "$first_exon_right_end" -gt 0 ]]; then 
   
-        echo "$chr,$first_exon_right_start,$first_exon_right_end,$distance_to_seq" >> "$first_negative_coords"
+        echo "$chr,$first_exon_right_start,$first_exon_right_end,$distance_to_seq,$first_len" >> "$first_negative_coords"
     
     fi
     
 
     if [[ "$last_exon_right_start" -gt 0 ]] && [[ "$last_exon_right_end" -gt 0 ]]; then 
   
-        echo "$chr,$last_exon_right_start,$last_exon_right_end,$distance_to_seq" >> "$last_negative_coords"
+        echo "$chr,$last_exon_right_start,$last_exon_right_end,$distance_to_seq,$last_len" >> "$last_negative_coords"
         
     fi
 
@@ -113,7 +109,7 @@ single_exon_negative_control() {
     
     if [[ "$left_end" -gt 0 ]] && [[ "$left_start" -gt 0 ]]; then 
     
-        echo "$chr,$left_start,$left_end,$distance_to_seq" >> "$single_negative_coords"
+        echo "$chr,$left_start,$left_end,$distance_to_seq,$len" >> "$single_negative_coords"
     
     fi
 
@@ -141,38 +137,49 @@ filter_out_functional(){
     local negative_control=$3
 
     ## Temporary files
-    coords_filtered="$file_name"-coords-filtered
-    bed_coords="$file_name"-"$exon"-coords.bed
+    closest_coords="$file_name"-"$exon"-closest.bed
     bed_coords_sorted="$file_name"-"$exon"-coords-sorted.bed
 
-    
+    # Format and sort coordinates for bedtools 
+    awk -F',' 'NR > 1 {print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5}' "$negative_coords" | sort -k1,1V -k2,2n | tr ' ' '\t' > "$bed_coords_sorted"
+   
+    # Find the closest gene complement region to negative control coordinates 
+    bedtools closest -a "$bed_coords_sorted" -b "$genes_complement" -D ref | awk -F'\t' '!seen[$7,$8]++' > "$closest_coords"
 
-    ######## Reformat data for bedtools
-    awk -F',' 'NR > 1 {print $1 "\t" $2 "\t" $3 "\t" $4}' "$negative_coords" > "$bed_coords"
-    sort -k1,1V -k2,2n "$bed_coords" | tr ' ' '\t' > "$bed_coords_sorted"
 
-    bedtools intersect -wa -a "$bed_coords_sorted" -b "$rnacentral_bed" "$gencode_bed" -sorted -v > "$coords_filtered"
-    # option -sorted could be included for larger dataset (all chr have to have at least 1 sample, otherwise error)
-    
     ## Format final output file
-    while IFS=$'\t' read -r chr start end distance; do
+    while IFS=$'\t' read -r chr _ _ distance len _ start end closestdistance; do
 
         chromo=$( echo "$chr" | tr -d "chr" )
+
+        if [ "$closestdistance" -ge 0 ]; then                   # if closest upstream initial negative control coord
+        
+            end=$(( "$start" + "$len" ))
+        
+        else                                                    # if closest downstream initial negative control coord
+
+            start=$(( "$end" - "$len" ))
+        
+        fi
+        
+        # Calculate distance to gene border 
+        distance_gene=$(( "$distance" + "$closestdistance" ))
+
+        # Extract sequence from genome 
         seq=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$start"-"$end" )
 
         # Remove negative control sequences that with an ambiguity percent > 5
         if [ -n "$seq" ] && [[ $( ambiguity_percent "$seq" ) -lt 5 ]]; then  
   
             (( count++ ))
-            echo "RNA$count,No,$chr,$start,$end,$seq,$distance" >> "$negative_control"
+            echo "RNA$count,No,$chr,$start,$end,$seq,$distance_gene" >> "$negative_control"
         
         fi
    
-    done < "$coords_filtered"
+    done < "$closest_coords"
 
-    rm -rf "$bed_coords"
+    #rm -rf "$bed_coords_sorted"
     
-
 }
 
 ###########################
@@ -181,7 +188,7 @@ filter_out_functional(){
 #### EXTRACT NEGATIVE CONTROLS ####
 ###########################################################################################################################
 
-distances_to_seq=("1000" "5000" "10000" "50000" "100000" "500000" "1000000" "25000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
+distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
 
 num_fields=$( awk -F',' '{print NF}' "$initial_data" | sort -nu | tail -n 1 )              # To define if it's single or multiple exon sequences
 
