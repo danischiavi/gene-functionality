@@ -40,6 +40,8 @@ rule all_features:
 #############
 ## GC content 
 #############
+# Calculated by dividing the number of guanine and cytosine nucleotides by total sequence length
+
 rule run_intrinsic_seq_features:
     input:
         "data/{sample}-dataset.csv"
@@ -57,6 +59,17 @@ rule run_intrinsic_seq_features:
 ###############
 ## Conservation 
 ###############
+# The maximum phyloP and phastCons scores for each sequence are extracted from its corresponding bigWig files using ```bigWigSummary``` (Haeussler et al., 2019). 
+# # Parameters used for running bigWigSummary
+# -type=mean reports the mean score
+# -type=max reports the maximum score
+# $chr $start $end is the chromosome coordiantes for the sequence
+# 1 causes the score across the whole sequence to be reported
+
+#bigWigSummary -type=mean hg38.phyloP100way.bw $chr $start $end 1
+#bigWigSummary -type=max  hg38.phyloP100way.bw $chr $start $end 1
+# PPG: WHERE IS $start/$end DEFINED?
+
 rule run_seq_conservation_features:
     input:
         initial_data="data/{sample}-dataset.csv",
@@ -78,6 +91,8 @@ rule run_seq_conservation_features:
 ################
 ## Transcriptome
 ################
+#Read counts were calculated using ```samtools view -c``` and maximum read depth was calculated using ```samtools depth -r``` (Li et al., 2009).
+
 rule run_transcriptome:
     input:
         "data/{sample}-dataset.csv", 
@@ -96,6 +111,19 @@ rule run_transcriptome:
 ##################        
 ## Genomic repeats 
 ##################
+# Parameters used to run mmsweq
+#Distances to the nearest repetitive elements were calculated from a file of non-redundant hits of repetitive DNA elements in the human genome obtained from Dfam v3.1 (Hubley et al., 2016). Once this was converted to bed file format, the distance to the nearest hit was calculated using ```bedtools closest```  (Quinlan, 2014). 
+# # Parameters used for running bedtools:
+# bedtools closest reports the either overlapping or the nearest sequence in input 
+# -a $input_bed is the sequences of interest, converted to a bed file
+# -b dfam-hg38-nrph.bed is the Dfam non-redundent repetitive DNA elements
+# -io ignores overlaps, as some functional ncRNAs are considered repetitive DNA elements
+# -D ref reports distance with respect to the reference genome
+# -iu ignores upstream to report closest downstream element
+# -id ignores downstream to report closest upstream element
+
+bedtools closest -a $input_bed -b dfam-hg38-sorted.bed -io -D ref -iu 
+bedtools closest -a $input_bed -b dfam-hg38.sorted.bed -io -D ref -id 
 rule run_genomic_repeat:
     input:
         initial_data="data/{sample}-dataset.csv",
@@ -116,6 +144,9 @@ rule run_genomic_repeat:
 #######################        
 ## Population variation
 #######################
+# SNP frequencies, which were used to caluculate the average minor allele frequency, were calculated using ```vcftools``` (Danecek et al., 2011). All chromosome SNP data from the Genome Aggregation Database (gnomAD) v3 was downloaded as a local copy, with the 
+# SNPs for each region extracted using ```tabix -f -h``` (Karczewski et al. 2020; Li et al., 2009).
+
 rule run_populatio_variation:
     input:
         initial_data="data/{sample}-dataset.csv",
@@ -190,7 +221,7 @@ rule join_positive_negative:
         """
         awk 'NR>1' {input.negative} | cut -d',' -f1-6,8- > {output}.tmp &&
         cat {input.positive} {output}.tmp > {output} &&
-        cut -d',' -f2,4,7- {output} > {output}.final &&                              ##CHANGE COLUMNS!!
+        cut -d',' -f2,7- {output} > {output}.final &&                             
         mv {output}.final {output} &&
         rm {output}.tmp
         """

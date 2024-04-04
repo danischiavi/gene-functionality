@@ -49,14 +49,15 @@ rule sequences_processing:
 #       10 sequences are extract for each functional sequence 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 2500000 and 5000000  
 #       nucleotides away upstream and downstream. Sequences with more than 5% ambiguos nucleotides and 
 #       overlapping known genes are filter out 
-
+# Both Swiss-Prot and GENCODE annotations are used to filter negative control sequences which overlap with annotated genes.  
+# which was done using ```bedtools intersect``` (Haeussler et al., 2019; Harrow et al., 2012; Quinlan, 2014).
 ##################################################
 rule negative_control_multiple_exons:
     input:
         initial_data="data/{sample}-coords-negative-control.csv",
         genome_seq=config["genome_seq"],
         gencode_bed=config["gencode_bed"],
-        uniprot_bed=config["uniprot_bed"]
+        rnacentral_bed=config["rnacentral_coords"]
         
     output:
         "data/{sample}-first-negative-control.csv",
@@ -72,7 +73,7 @@ rule negative_control_single_exon:
         initial_data="data/short-ncrna-coords-negative-control.csv",
         genome_seq=config["genome_seq"],
         gencode_bed=config["gencode_bed"],
-        uniprot_bed=config["uniprot_bed"]
+        rnacentral_bed=config["rnacentral_coords"]
     
     output:
         "data/short-ncrna-negative-control-dataset.csv"
