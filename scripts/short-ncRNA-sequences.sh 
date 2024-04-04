@@ -1,0 +1,135 @@
+#!/bin/bash
+#
+# Script Name: non-coding-sequences.sh
+#
+# Author: Daniela Schiavinato
+# Last edited: April 2024
+#
+# Description: 
+
+#   - Generate Functional datasets: 
+#                                 functional-short-ncrna, 
+#                                 functional-lncrna-exon1, functional-lncrna-exon2, 
+#
+#   - Extracts coordinates to generate negative control dataset downstream using negative-control.sh:                     
+#                                 lncrna-coords-negative-control,
+#                                 short-ncrna-coords-negative-control
+# 
+
+###########################################################################################################################
+#### GENERAL SETUP ####
+###########################################################################################################################
+
+##### Input files ##### 
+rnacentral_coords=$1
+rnacentral_short_ncrna_seqs=$2
+rnacentral_pre_mirna_seqs=$3
+
+#### Final Output files #####
+# Functional datasets 
+short_ncrna='data/functional-short-ncrna-dataset.csv'
+# Coordenates for negative-control generation 
+short_negative_control='data/short-ncrna-coords-negative-control.csv'
+
+##### Constrains ##### 
+sample_size=1000                     # Number of sequences for each type of RNA 
+lower_limit_short='71'               # Given by the size distribution analysis (10&90% percentile)
+upper_limit_short='142'
+
+
+###########################################################################################################################
+#### FUNCTION DECLARATION ####
+###########################################################################################################################
+
+# Set variables to filter out ncRNA sequences from the RNAcentral database
+set_variables() {                                         
+    
+    local id=$1
+    
+    seq=$(  grep -m 1 "$id" "$rnacentral_short_ncrna_seqs" | cut -f 2 )
+    meta=$( grep -m 1 "$id" "$rnacentral_coords" )
+                                       
+    IFS=$'\t ' read -r chr zero_start end _ <<< "$meta"                                                 # zero_start: 0-start bed format  
+
+    # Remove if no sequence available     
+    if [ -n "$seq" ] && [ "$chr" != 'chrM' ] && [ "$chr" != 'chrY' ]; then                                  
+                                                
+        len=$(( end-zero_start ))  
+            
+        if [ "$len" -ge "$lower_limit_short" ] && [ "$len" -le "$upper_limit_short" ]; then  
+           
+            start=$((zero_start + 1))                                                                   # add 1 to change coordinate from 0-start
+            selected_ids+=("$random_id")
+            short_count="${#selected_ids[@]}"
+                                                             
+            echo "RNA$short_count,Yes,$chr,$start,$end,$seq" >> "$short_ncrna"
+
+            if [ "$start" -gt "$end" ]; then                                                            # Reverse transcripts can alter order of start/end positions
+                
+                echo "$chr,$end,$start,$len" >> "$short_negative_control"
+
+            else
+
+                echo "$chr,$start,$end,$len" >> "$short_negative_control"
+
+            fi
+        fi 
+    fi
+}
+
+###########################################################################################################################
+#### EXTRACT SEQUENCES ####
+###########################################################################################################################
+
+# Populate arrays with non-coding-sequences IDs column for searching within all ncrna RNAcentral database 
+declare -a "IDs_ncrna=()"  
+mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
+
+
+if [ ! -s "$short_ncrna" ]; then 
+
+    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$short_ncrna"
+    echo "Chromosome,Start,End,Length" >> "$short_negative_control" 
+
+    declare -a "IDs_short_ncrna=()"
+    mapfile -t IDs_short_ncrna < <(cut -f 1 -d $'\t' "$rnacentral_short_ncrna_seqs" | awk '{print $1}')
+    
+    declare -a "IDs_pre_mirna=()"
+    mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | awk '{print $1}')
+
+    declare -a "selected_ids=()"
+    short_count=0
+    short_total="${#IDs_short_ncrna[@]}"
+
+    while [ "$short_count" -lt "$sample_size" ]; do
+    
+        if [ "$short_count" -le "$short_total" ]; then
+
+            random_id=$(printf "%s\n" "${IDs_short_ncrna[@]}" | shuf -n 1)                                   
+        
+            if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
+
+                if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+
+                    set_variables "$random_id"
+                     
+                fi 
+
+            fi   
+
+        else 
+
+            random_id=$(printf "%s\n" "${IDs_pre_mirna[@]}" | shuf -n 1)
+                                           
+            if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
+
+                if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+
+                    set_variables "$random_id" 
+        
+                fi
+            fi    
+        fi
+    done
+fi
+
