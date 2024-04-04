@@ -73,39 +73,76 @@ https://hgdownload.soe.ucsc.edu/admin/exe/
 This pipeline has been created to evaluate XXX. For the research paper that is relevant to this pipeline, please see: XXX
 
 
-
-
 ## How to use this pipeline
 
+When running the pipeline, always run from the project directory, unless otherwise specified.
 
+1) Download required Databases as descripted in [data/README-data.md file](LINK)  
 
-#### The pipeline have the following steps:  
-
-When running the pipeline, always run from the project directory, unless otherwise specified e.g.
-
-1) Download required Databases as descripted in data/README-data.md file 
-
-2) Generate functional and negative control databases following the ./Snakefile-sequences file.
-For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
+2) Generate functional and negative control databases following the [Snakefile-sequences file](LINK).For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
 
         snakemake -s Snakefile-sequences -j "cores" 
 
-3) Obtain features for each dataset following ./Snakefile-features
-For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
+3) Obtain features for each dataset following [Snakefile-features file](LINK). For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
 
         snakemake -s Snakefile-features -j "cores" 
 
-4) Analyze results with scripts/spearman-function-feature.R and scripts/random-forest-analysis.R for main analysis. 
-For complementary analysis see ./complementary directory
+4) Analyze results with [scripts/spearman-function-feature.R](link) and [scripts/random-forest-analysis.R](link) for the main analysis. For complementary analysis see the [complementary directory](link)
 
 
 ## Brief Description of scripts
 
+#### sequences-precessing.sh
 
-xxx
+#### negative-control.sh 
+
+#### intrinsic-seq-features.sh
+
+Calculates the percentage of G+C content of each sequence, counting the number of each nucleotide. 
+
+#### seq-conservation-features.sh
+
+Extracts the maximum PhyloP and PhastCons conservation scores for each sequence. These scores are extracted from Zoonomia resources. 
+
+#### transcriptome-expression-features.sh
+
+Calculates the RPKM for each sequence. For this, the reads and total reads of small RNA-Seq datasetsfrom 71 human tissue and 140 human primary-cell samples were obtained from ENCODE. 
+
+#### genomic-repeats-associated-features.sh
+
+Calculates the genomic copy number of each sequence on the human genome version GRCh38. Also, calculates the distance to the closest non-overlapping transposable DNA elements in the human genome obtained from Dfam vxxx.
+
+#### population-variation-features.sh
+
+Calculates Minor Allele Frequency (MAF) and the Single Nucleotide Polymorphisms (SNPs) density. For this, the SNPs count for each sequence is extracted from gnomAD v3 database. 
 
 
-## Specifics of scripts
+#### protein-and-rna-specific-features.sh
 
-xxx
+- Calculates the Fickett score of each sequence to analyse coding potential. Also, calculates a coding score based on a multiple sequence alignment 241way from Zoonomia resoures.  
+
+- Calculates maximum covariance score to analyse the structure. Also, calculates the Minumum Free Energy and the accesibility.  
+
+- Calculates the average interaction free energy between the sequences and a curated database of 34 human ncRNA sequences from RNAcentral v15
+
+
+#### spearman-function-feature.R
+
+Calculates a Spearman correlation between each feature and functionality. The correlation matrix for each dataset is generated with the confidence intervals calculated using a bootstrap approach (N=1,000).
+
+#### random-forest-analysis.R
+
+Generates a Random forests with 1,000 trees, using 70% training data and 30% test data. A bootstrap approach is used to simulate a further 100 classification models to assess performance variation due to sampling biases. 
+
+#### Others 
+
+* maf-to-stk.sh
+
+    Converts multiple sequence alignment MAF files to Stockholm. This is used withing the protein-and-rna-specific-features.sh script. 
+
+* reformat_dfam.R 
+
+    Reformats the order (sorted) of the distances to transposable DNA elements calculated with genomic-repeats-associated-features.sh script to match the order of the sequences. 
+
+
 
