@@ -121,7 +121,7 @@ single_exon_negative_control() {
 
     if [[ "$right_start" -gt 0 ]] && [[ "$right_end" -gt 0 ]]; then 
 
-        echo "$chr,$right_start,$right_end,$distance_to_seq" >> "$single_negative_coords"
+        echo "$chr,$right_start,$right_end,$distance_to_seq,$len" >> "$single_negative_coords"
     
     fi
 
