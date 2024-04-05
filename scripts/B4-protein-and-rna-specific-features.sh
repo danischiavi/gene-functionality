@@ -46,7 +46,7 @@ esl_reformat_exe=esl-reformat
 
 ############################################################################################################################
 
-# RNA:RNA interactions - Minimum and Average interaction energy 
+# RNA:RNA interactions - Average interaction energy 
 
 ############################################################################################################################
 
