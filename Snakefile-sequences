@@ -15,28 +15,47 @@ rule all:
 #         
 ##################################################
 
-rule sequences_processing:
+rule protein_coding_sequences:
     input: 
-        rnacentral_coords=config["rnacentral_coords"],
-        rnacentral_lncrna_seq=config["rnacentral_lncrna_seq"], 
-        rnacentral_short_ncrna=config["rnacentral_short_ncrna"],
-        rnacentral_pre_mirna=config["rnacentral_pre_mirna"],
         genome_annotations=config["genome_annotations"],
         genome_seq=config["genome_seq"],
         protein_coding_refseq=config["protein_coding_refseq"]
+        
+    output:
+        "data/functional-protein-exon2-dataset.csv",
+        "data/functional-protein-exon3-dataset.csv",
+        "data/protein-coords-negative-control.csv"
+    
+    shell:
+        "scripts/A0-protein-coding-sequences.sh {input} > {output}"
 
+
+rule lncrna_sequences:
+    input: 
+        rnacentral_coords=config["rnacentral_coords"],
+        rnacentral_lncrna_seq=config["rnacentral_lncrna_seq"]
+        
     output:
         "data/functional-lncrna-exon1-dataset.csv",
         "data/functional-lncrna-exon2-dataset.csv",
-        "data/lncrna-coords-negative-control.csv",
-        "data/functional-protein-exon2-dataset.csv",
-        "data/functional-protein-exon3-dataset.csv",
-        "data/protein-coords-negative-control.csv",
+        "data/lncrna-coords-negative-control.csv"
+        
+    shell:
+        "scripts/A1-lncRNA-sequences.sh {input} > {output}"
+
+
+rule short_ncrna_sequences:
+    input: 
+        rnacentral_coords=config["rnacentral_coords"],
+        rnacentral_short_ncrna=config["rnacentral_short_ncrna"],
+        rnacentral_pre_mirna=config["rnacentral_pre_mirna"]
+        
+    output:
         "data/functional-short-ncrna-dataset.csv",
         "data/short-ncrna-coords-negative-control.csv"
     
     shell:
-        "scripts/sequences-processing.sh {input} > {output}"
+        "scripts/A2-short-ncRNA-sequences.sh {input} > {output}"    
 
 
 ##################################################
@@ -64,7 +83,7 @@ rule negative_control_multiple_exons:
         "data/{sample}-last-negative-control.csv"
 
     shell:
-        "scripts/negative-control.sh {input} > {output}"
+        "scripts/A3-negative-control.sh {input} > {output}"
 
         
 
@@ -79,7 +98,7 @@ rule negative_control_single_exon:
         "data/short-ncrna-negative-control-dataset.csv"
        
     shell:
-        "scripts/negative-control.sh {input} > {output}"
+        "scripts/A3-negative-control.sh {input} > {output}"
 
 
 ##################################################
