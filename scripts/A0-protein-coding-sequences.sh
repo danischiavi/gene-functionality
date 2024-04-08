@@ -151,12 +151,13 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
         local unsorted_file=$1
         local output_file=$2
 
-        awk -F ',' 'NR == 1 {print; next} {print $0 | "sort -t, -k3,3 -k4,4n -k5,5n"}' "$unsorted_file" > protein-id-column
+        awk -F ',' 'NR > 1 {print $1}' "$unsorted_file" > protein-id-column
         awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$unsorted_file" | sort -t ',' -k2,2 -k3,3n -k4,4n > protein-sorted_columns
-        paste -d ',' protein-id-column protein-sorted_columns > "$output_file"
+        (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' protein-id-column protein-sorted_columns) > "$output_file"
 
         rm -rf protein-id-column
         rm -rf protein-sorted_columns
+        rm -rf "$unsorted_file"
 
     }
 
