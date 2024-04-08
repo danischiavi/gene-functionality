@@ -28,6 +28,11 @@ lncrna_exon_two='data/functional-lncrna-exon2-dataset.csv'
 # Coordenates for negative-control generation 
 lncrna_negative_control='data/lncrna-coords-negative-control.csv'
 
+#### Temporary files ####
+lncrna_exon_one_unsorted='data/functional-lncrna-exon1-unsorted.csv' 
+lncrna_exon_two_unsorted='data/functional-lncrna-exon2-unsorted.csv'  
+lncrna_negative_control_unsorted='data/lncrna-coords-negative-unsorted.csv'
+
 ##### Constrains ##### 
 sample_size=1000                     # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
@@ -88,16 +93,16 @@ set_variables() {
                 selected_ids+=("$random_id")
                 lncrna_count=$(echo "${#selected_ids[@]}")
             
-                echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq_one" >> "$lncrna_exon_one"
-                echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq_two" >> "$lncrna_exon_two"  
+                echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq_one" >> "$lncrna_exon_one_unsorted"
+                echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq_two" >> "$lncrna_exon_two_unsorted"  
 
                 if [ "$start_one" -gt "$end_last" ]; then                                                 # Reverse transcripts can alter order of start/end positions
                                                                              
-                    echo "$chr,$end_last,$start_one,$len_one,$len_two" >> "$lncrna_negative_control"      # To generate negative control sequences that are the same length as exons two and three
+                    echo "$chr,$end_last,$start_one,$len_one,$len_two" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three
                         
                 else
 
-                    echo "$chr,$start_one,$end_last,$len_one,$len_two" >> "$lncrna_negative_control"
+                    echo "$chr,$start_one,$end_last,$len_one,$len_two" >> "$lncrna_negative_control_unsorted"
                 fi
             fi
         fi
@@ -114,9 +119,9 @@ mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
 
 if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then 
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_one"
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_two"
-    echo "Chromosome,Start,End,Length_exon1,Length_exon2" >> "$lncrna_negative_control" 
+    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_one_unsorted"
+    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_two_unsorted"
+    echo "Chromosome,Start,End,Length_exon1,Length_exon2" >> "$lncrna_negative_control_unsorted" 
 
     declare -a "IDs_lncrna=()"
     mapfile -t IDs_lncrna < <(cut -f 1 -d $'\t' "$rnacentral_lncrna_seqs" | awk '{print $1}')
@@ -137,6 +142,30 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
             fi
         fi
     done
+
+        # Sort sequences and remove temporary files 
+    sort_functional(){
+
+        local unsorted_file=$1
+        local output_file=$2
+
+        awk -F ',' 'NR == 1 {print; next} {print $0 | "sort -t, -k3,3 -k4,4n -k5,5n"}' "$unsorted_file" > lncrna-id-column
+        awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$unsorted_file" | sort -t ',' -k2,2 -k3,3n -k4,4n > lncrna-sorted_columns
+        paste -d ',' lncrna-id-column lncrna-sorted_columns > "$output_file"
+
+        rm -rf lncrna-id-column
+        rm -rf lncrna-sorted_columns
+
+    }
+
+    sort_functional "$lncrna_exon_one_unsorted" "$lncrna_exon_one"
+    sort_functional "$lncrna_exon_two_unsorted" "$lncrna_exon_two"
+
+    # Sort coordenates for negative control 
+    awk 'NR == 1 {print $0; next} {print $0 | "sort -t, -k1,1 -k2,2n -k3,3n"}' "$lncrna_negative_control_unsorted" > "$lncrna_negative_control"
+
+    rm -rf "$lncrna_negative_control_unsorted"
+
 fi
 
 

@@ -146,7 +146,6 @@ filter_out_functional(){
     # Find the closest gene complement region to negative control coordinates 
     bedtools closest -a "$bed_coords_sorted" -b "$genes_complement" -D ref | awk -F'\t' '!seen[$7,$8]++' > "$closest_coords"
 
-
     ## Format final output file
     while IFS=$'\t' read -r chr _ _ distance len _ start end closestdistance; do
 

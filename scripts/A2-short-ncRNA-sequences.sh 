@@ -31,6 +31,10 @@ short_ncrna='data/functional-short-ncrna-dataset.csv'
 # Coordenates for negative-control generation 
 short_negative_control='data/short-ncrna-coords-negative-control.csv'
 
+##### Temporary files ####
+short_ncrna_unsorted='data/functional-short-ncrna-unsorted.csv'
+short_negative_control_unsorted='data/short-ncrna-coords-negative-unsorted.csv'
+
 ##### Constrains ##### 
 sample_size=1000                     # Number of sequences for each type of RNA 
 lower_limit_short='71'               # Given by the size distribution analysis (10&90% percentile)
@@ -58,19 +62,24 @@ set_variables() {
             
         if [ "$len" -ge "$lower_limit_short" ] && [ "$len" -le "$upper_limit_short" ]; then  
            
-            start=$((zero_start + 1))                                                                   # add 1 to change coordinate from 0-start
+            # add 1 to change coordinate from 0-start
+            start=$((zero_start + 1))  
+
+            # Add random id to selected_ids arrray to keep track                                                                  
             selected_ids+=("$random_id")
             short_count="${#selected_ids[@]}"
-                                                             
-            echo "RNA$short_count,Yes,$chr,$start,$end,$seq" >> "$short_ncrna"
+
+            # Output functional dataset
+            echo "RNA$short_count,Yes,$chr,$start,$end,$seq" >> "$short_ncrna_unsorted"                                                 
+            
 
             if [ "$start" -gt "$end" ]; then                                                            # Reverse transcripts can alter order of start/end positions
                 
-                echo "$chr,$end,$start,$len" >> "$short_negative_control"
+                echo "$chr,$end,$start,$len" >> "$short_negative_control_unsorted"
 
             else
 
-                echo "$chr,$start,$end,$len" >> "$short_negative_control"
+                echo "$chr,$start,$end,$len" >> "$short_negative_control_unsorted"
 
             fi
         fi 
@@ -88,8 +97,8 @@ mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
 
 if [ ! -s "$short_ncrna" ]; then 
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$short_ncrna"
-    echo "Chromosome,Start,End,Length" >> "$short_negative_control" 
+    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$short_ncrna_unsorted"
+    echo "Chromosome,Start,End,Length" >> "$short_negative_control_unsorted" 
 
     declare -a "IDs_short_ncrna=()"
     mapfile -t IDs_short_ncrna < <(cut -f 1 -d $'\t' "$rnacentral_short_ncrna_seqs" | awk '{print $1}')
@@ -99,23 +108,31 @@ if [ ! -s "$short_ncrna" ]; then
 
     declare -a "selected_ids=()"
     short_count=0
-    short_total="${#IDs_short_ncrna[@]}"
 
     while [ "$short_count" -lt "$sample_size" ]; do
+
+        short_leftover="${#IDs_short_ncrna[@]}"
     
-        if [ "$short_count" -le "$short_total" ]; then
+        if [ "$short_leftover" -gt 0 ]; then
 
-            random_id=$(printf "%s\n" "${IDs_short_ncrna[@]}" | shuf -n 1)                                   
+            random_id=$(printf "%s\n" "${IDs_short_ncrna[@]}" | shuf -n 1)
+
+            # Find index of random id
+            for index in "${!IDs_short_ncrna[@]}"; do                                                     
+                if [[ "${IDs_short_ncrna[$index]}" == "$random_id" ]]; then
+                    del_index=$index
+                    break
+                fi
+            done
+
+            # Remove random id from short_ncrna array to avoid repeats and make downstream selection faster 
+            IDs_short_ncrna=( "${IDs_short_ncrna[@]:0:$del_index}" "${IDs_short_ncrna[@]:$((del_index + 1))}" )                                   
         
-            if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
+            if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
 
-                if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
-
-                    set_variables "$random_id"
+                set_variables "$random_id"
                      
-                fi 
-
-            fi   
+            fi 
 
         else 
 
@@ -128,8 +145,23 @@ if [ ! -s "$short_ncrna" ]; then
                     set_variables "$random_id" 
         
                 fi
-            fi    
-        fi
+        
+            fi
+        fi    
     done
+ 
+    # Sort sequences and remove temporary files 
+    awk -F ',' 'NR == 1 {print; next} {print $0 | "sort -t, -k3,3 -k4,4n -k5,5n"}' "$short_ncrna_unsorted" > short-id-column
+    awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$short_ncrna_unsorted" | sort -t ',' -k2,2 -k3,3n -k4,4n > short-sorted_columns
+    paste -d ',' short-id-column short-sorted_columns > "$short_ncrna"
+
+    rm -rf short-id-column
+    rm -rf short-sorted_columns
+
+    # Sort coordenates for negative control 
+    awk 'NR == 1 {print $0; next} {print $0 | "sort -t, -k1,1 -k2,2n -k3,3n"}' "$short_negative_control_unsorted"  > "$short_negative_control" 
+
+    rm -rf "$short_negative_control_unsorted" 
+
 fi
 

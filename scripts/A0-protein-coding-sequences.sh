@@ -30,6 +30,11 @@ protein_exon_three='data/functional-protein-exon3-dataset.csv'
 # Coordenates for negative-control generation 
 coding_negative_control='data/protein-coords-negative-control.csv'
 
+#### Temporary ####
+protein_exon_two_unsorted='data/functional-protein-exon2-unsorted.csv'
+protein_exon_three_unsorted='data/functional-protein-exon3-unsorted.csv'
+coding_negative_control_unsorted='data/protein-coords-negative-unsorted.csv'
+
 ##### Constrains ##### 
 sample_size=1000
 lower_limit_protein='61'
@@ -93,17 +98,17 @@ gff2Info() {
                 selected_ids+=("$random_id")                            # D: probably is better if its in the while structure below instead
                 protein_count=$(echo "${#selected_ids[@]}") 
 
-                echo RNA$protein_count,Yes,chr$chr,$start_two,$end_two,$seq_two >> "$protein_exon_two"
-                echo RNA$protein_count,Yes,chr$chr,$start_three,$end_three,$seq_three >> "$protein_exon_three"
+                echo "RNA$protein_count,Yes,chr$chr,$start_two,$end_two,$seq_two" >> "$protein_exon_two_unsorted"
+                echo "RNA$protein_count,Yes,chr$chr,$start_three,$end_three,$seq_three" >> "$protein_exon_three_unsorted"
     
                 if [ "$start_one" -gt "$end_final" ]; then                                                       # Reverse transcripts can alter order of start/end positions
                
 		            # To generate negative control sequences that are the same length as exons two and three
-                    echo chr$chr,$end_final,$start_one,$len_two,$len_three >> "$coding_negative_control"
+                    echo "chr$chr,$end_final,$start_one,$len_two,$len_three" >> "$coding_negative_control_unsorted"
                 
                 else
 
-                    echo chr$chr,$start_one,$end_final,$len_two,$len_three >> "$coding_negative_control"
+                    echo "chr$chr,$start_one,$end_final,$len_two,$len_three" >> "$coding_negative_control_unsorted"
                 
                 fi
             fi 
@@ -119,9 +124,9 @@ gff2Info() {
 
 if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_two"
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_three"
-    echo "Chromosome,Start,End,Length_exon2,Length_exon3" >> "$coding_negative_control"
+    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_two_unsorted"
+    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_three_unsorted"
+    echo "Chromosome,Start,End,Length_exon2,Length_exon3" >> "$coding_negative_control_unsorted"
 
     declare -a "selected_ids=()"
     protein_count=0
@@ -138,4 +143,29 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
             
         fi
     done 
+
+
+    # Sort sequences and remove temporary files 
+    sort_functional(){
+
+        local unsorted_file=$1
+        local output_file=$2
+
+        awk -F ',' 'NR == 1 {print; next} {print $0 | "sort -t, -k3,3 -k4,4n -k5,5n"}' "$unsorted_file" > protein-id-column
+        awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$unsorted_file" | sort -t ',' -k2,2 -k3,3n -k4,4n > protein-sorted_columns
+        paste -d ',' protein-id-column protein-sorted_columns > "$output_file"
+
+        rm -rf protein-id-column
+        rm -rf protein-sorted_columns
+
+    }
+
+    sort_functional "$protein_exon_two_unsorted" "$protein_exon_two"
+    sort_functional "$protein_exon_three_unsorted" "$protein_exon_three"
+
+    # Sort coordenates for negative control 
+    awk 'NR == 1 {print $0; next} {print $0 | "sort -t, -k1,1 -k2,2n -k3,3n"}' "$coding_negative_control_unsorted" > "$coding_negative_control"
+
+    rm -rf "$coding_negative_control_unsorted"
+
 fi
