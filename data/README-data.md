@@ -78,7 +78,7 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
 
         wget ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/22.0/genome_coordinates/bed/homo_sapiens.GRCh38.bed.gz
 
-        gunzip -c homo_sapiens.GRCh38.bed.gz | sort -k1,1V -k2,2n | grep -E '^chr(1?[0-9]|2[0-2]|X)\b' > rnacentral-GRCh38-coords.bed && rm homo_sapiens.GRCh38.bed.gz
+        gunzip -c homo_sapiens.GRCh38.bed.gz | sort -k1,1V -k2,2n | grep -E '^chr(1?[0-9]|2[0-2]|X)\b' | awk -F'\t' '!seen[$1,$2,$3]++' > rnacentral-GRCh38-coords.bed && rm homo_sapiens.GRCh38.bed.gz
 
 
 * #### Non-coding RNA annotations 
@@ -243,7 +243,7 @@ Download Dfam database:
 
 Format file to removes the header (pipe 1), obtain Chr, Start and End columns (pipe 2) and remove alternate chromosome, incomplete scaffolds and chromosomes Y/Mt (pipe 3):
 
-    cat hg38.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1V -k2,2n > dfam-hg38-sorted.bed
+    cat hg38.nrph.hits | perl -lane 'next if(/^#|\S+_random|^chrY|^chrM|^chrUn|^chr\S+alt/);  if($F[9]>$F[10]){print "$F[0]\t$F[10]\t$F[9]"}else{print "$F[0]\t$F[9]\t$F[10]"}' | sort -k1,1 -k2,2n -k3,3n > dfam-hg38-sorted.bed
 
 
 ## Population variation 

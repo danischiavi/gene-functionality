@@ -1,6 +1,6 @@
 ---
 ## Sequences Processing & Negative control ## 
-rnacentral_coords: "data/raw/rnacentral_GRCh38_coordinates.bed"
+rnacentral_coords: "data/raw/rnacentral-GRCh38-coords.bed"
 rnacentral_lncrna_seq: "data/raw/rnacentral-lncrna-seq.csv"
 rnacentral_short_ncrna: "data/raw/rnacentral-short-ncrna-seq.csv"
 rnacentral_pre_mirna: "data/raw/rnacentral-pre-mirna-seq.csv"
@@ -8,7 +8,7 @@ genome_annotations: "data/raw/GRCh38_p14_genomic.gff"
 genome_seq: "data/raw/GRCh38_p14_genome.csv"
 protein_coding_refseq: "data/raw/hgnc-protein-coding-RefSeq.txt"
 gencode_bed: "data/raw/gencode-annotation.bed" 
-uniprot_bed: "data/raw/unipAliSwissprot.bed"
+genes_complement: "data/raw/genes-complement.bed"
 
 ## Conservation features ##
 bigWigSummary_exe: "bin/bigWigSummary"

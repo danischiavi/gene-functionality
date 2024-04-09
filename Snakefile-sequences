@@ -58,6 +58,8 @@ rule short_ncrna_sequences:
         "scripts/A2-short-ncRNA-sequences.sh {input} > {output}"    
 
 
+
+
 ##################################################
 # Generate Negative control: 
 
@@ -145,3 +147,4 @@ rule csv_to_fasta:
 
 
 ##################################################
+

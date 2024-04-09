@@ -53,7 +53,7 @@ rule run_intrinsic_seq_features:
         sample=all_rna
     
     shell:
-        "scripts/intrinsic-seq-features.sh {input} > {output}"
+        "scripts/B0-intrinsic-seq-features.sh {input} > {output}"
 
 
 ###############
@@ -79,7 +79,7 @@ rule run_seq_conservation_features:
         gerp_bw=config["gerp_bw"] 
 
     output:
-        "data/conservation/{sample}-conservation.csv"
+        "data/B1-conservation/{sample}-conservation.csv"
     
     params:
         sample=all_rna
@@ -99,7 +99,7 @@ rule run_transcriptome:
         encode_folder=config["encode_folder"]
 
     output:
-        "data/transcriptome/{sample}-transcriptome.csv"
+        "data/B2-transcriptome/{sample}-transcriptome.csv"
     
     params:
         sample=all_rna
@@ -122,8 +122,7 @@ rule run_transcriptome:
 # -iu ignores upstream to report closest downstream element
 # -id ignores downstream to report closest upstream element
 
-bedtools closest -a $input_bed -b dfam-hg38-sorted.bed -io -D ref -iu 
-bedtools closest -a $input_bed -b dfam-hg38.sorted.bed -io -D ref -id 
+
 rule run_genomic_repeat:
     input:
         initial_data="data/{sample}-dataset.csv",
@@ -138,7 +137,7 @@ rule run_genomic_repeat:
         sample=all_rna
 
     shell:
-        "scripts/genomic-repeat-associated-features.sh {input} > {output}"
+        "scripts/B3-genomic-repeat-associated-features.sh {input} > {output}"
 
 
 #######################        
@@ -159,7 +158,7 @@ rule run_populatio_variation:
         sample=all_rna
 
     shell:
-        "scripts/population-variation-features.sh {input} > {output}"
+        "scripts/B5-population-variation-features.sh {input} > {output}"
 
 
 ###########################        
@@ -182,7 +181,7 @@ rule run_protein_and_rna_specific_features:
         sample=all_rna
 
     shell:
-        "scripts/protein-and-rna-specific-features.sh {input} > {output}"
+        "scripts/B4-protein-and-rna-specific-features.sh {input} > {output}"
 
 
 #### FORMAT FINAL FEATURES DATASET #### 

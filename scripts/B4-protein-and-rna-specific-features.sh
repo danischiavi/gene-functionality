@@ -16,7 +16,8 @@ interaction_database=$3
 access_file=$4
 cpc2_file=$5
 bigBedToBed_exe=$6
-cactus_align_url=$7
+
+cactus_align_url="http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf"
 
 first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')
 last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA') 
@@ -62,7 +63,7 @@ if [ ! -e "$output_file_interaction" ]; then
     RNAup_output="$file_name"-RNAup-output
     kcal_mol_RNAup="$file_name"-kcal-mol-RNAup
 
-    while [ $var -le $last_seq ]; do
+    while [ "$var" -le "$last_seq" ]; do
 
         cat <(grep -w -A 1 ">RNA$var" "$initial_fasta") "$interaction_database" > "$RNAup_input"
     
@@ -120,7 +121,7 @@ if [ ! -e "$output_file_MFE" ]; then
     RNAfold_output="$file_name"RNAfold-output
 
     #### MFE calculation
-    "$RNAfold_exe" < $initial_fasta >> "$RNAfold_output" 2>>errors.log
+    "$RNAfold_exe" < "$initial_fasta" >> "$RNAfold_output" 2>>errors.log
 
     # Extract the data from output file & replace empty lines with zero                                
     grep "(" "$RNAfold_output" | rev | cut -d "(" -f 1 | rev | tr -d ")" | tr -d " " | awk '!NF{$0="0"}1' >> "$output_file_MFE"      
@@ -136,9 +137,9 @@ if [ ! -e "$output_file_accesibility" ]; then
     echo Accessibility > "$output_file_accesibility"
 
     #### Accessibility calculation
-    for sequence in $( grep -v ">" $initial_fasta ); do
+    for sequence in $( grep -v ">" "$initial_fasta" ); do
 
-        access=$( timeout 60m python3 "$access_file" -s $sequence 2>>errors.log ) 
+        access=$( timeout 60m python3 "$access_file" -s "$sequence" 2>>errors.log ) 
         exit_status=$?
 
         if [ -z "$access" ]; then                           # If no value calculated, record NA

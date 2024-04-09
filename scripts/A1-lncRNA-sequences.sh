@@ -155,7 +155,7 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 
         rm -rf lncrna-id-column
         rm -rf lncrna-sorted_columns
-        rm -rf "$unsorted_file"
+        #rm -rf "$unsorted_file"
 
     }
 

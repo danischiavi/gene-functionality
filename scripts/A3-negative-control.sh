@@ -144,7 +144,7 @@ filter_out_functional(){
     awk -F',' 'NR > 1 {print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5}' "$negative_coords" | sort -k1,1V -k2,2n | tr ' ' '\t' > "$bed_coords_sorted"
    
     # Find the closest gene complement region to negative control coordinates 
-    bedtools closest -a "$bed_coords_sorted" -b "$genes_complement" -D ref | awk -F'\t' '!seen[$7,$8]++' > "$closest_coords"
+    bedtools closest -a "$bed_coords_sorted" -b "$genes_complement" -D ref -t first | awk -F'\t' '!seen[$7,$8]++' > "$closest_coords"
 
     ## Format final output file
     while IFS=$'\t' read -r chr _ _ distance len _ start end closestdistance; do

@@ -18,7 +18,7 @@
 
 ############################################################################################################################
 
-#### Files and directories #### 
+#### General Set Up #### 
 initial_data=$1
 initial_fasta=$2
 human_genome_mmseqs=$3
@@ -37,11 +37,7 @@ output_file_copy="$file_name"-copy-number.csv
 output_file_distance="$file_name"-dfam-distance.csv
 
 # Final output file 
-output_file_repeats="$file_name"-repeats.csv 
-
-##### Variables #####
-mmseqs_exe=mmseqs        
-bedtools_exe=bedtools
+output_file_repeats="$file_name"-repeats.csv         
 
 ############################################################################################################################
 
@@ -58,7 +54,7 @@ if [ ! -s "$output_file_copy" ]; then
 
     if [ ! -e "$mmseqs_output" ]; then
 
-        "$mmseqs_exe" easy-search "$initial_fasta" "$human_genome_mmseqs" "$mmseqs_output" "$file_name-tmp" --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue >/dev/null 2>>errors.log                              # max-seq not to be limited by default 600; search-type 3 for nucleotides; format-output to extract only required values 
+        mmseqs easy-search "$initial_fasta" "$human_genome_mmseqs" "$mmseqs_output" "$file_name-tmp" --max-seqs 20000000000000000 --search-type 3 --format-output query,target,evalue >/dev/null 2>>errors.log                              # max-seq not to be limited by default 600; search-type 3 for nucleotides; format-output to extract only required values 
     
     fi
 
@@ -66,11 +62,12 @@ if [ ! -s "$output_file_copy" ]; then
 
     echo "copy_number" > "$output_file_copy"
 
-    var=$first_rna_id
-    last_seq=$last_rna_id
+    var="$first_rna_id"
+    last_seq="$last_rna_id"
 
     while [ "$var" -le "$last_seq" ]; do
     
+        # shellcheck disable=SC2126
         total_mmseqs=$( grep -w "RNA$var" "$mmseqs_output" | wc -l) 
 
         if [ -z "$total_mmseqs" ] || [[ "$total_mmseqs" == 0 ]]; then 
@@ -111,13 +108,14 @@ if [ ! -s "$output_file_distance" ]; then
     awk -F'\t' 'NR==FNR{chrom[$1]; next} $1 in chrom' "$initial_data_tmp" "$dfam_hits" > "$dfam_hits_tmp"
 
     # Upstrean hits
-    $bedtools_exe closest -a "$initial_data_tmp" -b "$dfam_hits_tmp" -io -iu -D ref  > "$downstream_output" 2>>errors.log 
+    bedtools closest -a "$initial_data_tmp" -b "$dfam_hits_tmp" -io -iu -D ref -t first > "$downstream_output" 2>>errors.log 
     # -io : ignore features in B that overlap A
     # -iu : ignore upstream Ignore features in B that are upstream of features in A. Required -D option  
     # -D: report the closest feature in B, and its distance to A as an extra column
+    # Report the first tie that occurred in the B file
 
     # Downstream hits
-    $bedtools_exe closest -a "$initial_data_tmp" -b "$dfam_hits_tmp" -io -id -D ref  > "$upstream_output" 2>>errors.log
+    bedtools closest -a "$initial_data_tmp" -b "$dfam_hits_tmp" -io -id -D ref -t first > "$upstream_output" 2>>errors.log
 
     # Combine outputs 
     paste <( cut -f 1,2,3,7 "$downstream_output" ) <( cut -f 7 "$upstream_output" ) --delimiters '\t' > "$combined_output"
@@ -130,7 +128,7 @@ if [ ! -s "$output_file_distance" ]; then
         [ -z "$downstream" ] && downstream=0                                                # Implies that no region up or downstream, rather than data missing.
         [ -z "$upstream" ] && upstream=0 
 
-        sum=$(( $downstream+$upstream ))
+        sum=$(( downstream+upstream ))
 
         echo "$sum" >> "$output_file_distance"
 
