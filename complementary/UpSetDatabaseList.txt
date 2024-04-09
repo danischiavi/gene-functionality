@@ -1,0 +1,6 @@
+../data/UpSet/chr22/gencodev44.bed
+../data/UpSet/chr22/gencodev45.bed
+../data/UpSet/chr22/hgnc.bed
+../data/UpSet/chr22/ncbi.bed
+../data/UpSet/chr22/rnacentral.bed
+../data/UpSet/chr22/uniprot.bed

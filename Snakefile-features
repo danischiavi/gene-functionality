@@ -20,7 +20,12 @@ all_rna = [
     "lncrna-exon2-negative-control", 
     "short-ncrna-negative-control"
 ]
-
+all_histones = [
+    "H3k36me3", 
+    "H3k27ac", 
+    "H3k9me3", 
+    "H3k27me3", 
+]
 rna_types = [
     "protein-exon2", 
     "protein-exon3", 
@@ -183,6 +188,57 @@ rule run_protein_and_rna_specific_features:
     shell:
         "scripts/B4-protein-and-rna-specific-features.sh {input} > {output}"
 
+########################        
+## Histone modifications 
+########################
+rule run_histone_features:
+    input:
+        initial_data="data/{sample}-dataset.csv"
+
+    output:
+        "{sample}-histone-feature.csv"
+        
+    params:
+        sample=all_rna,
+        histone_name=all_histones
+
+    shell:
+        "scripts/histone_processing.sh {input} {histone_name} {output}"
+
+
+##########################       
+## Chromatin accessibility 
+##########################
+rule run_chromatin_accessibility_features:
+    input:
+        initial_data="data/{sample}-dataset.csv"
+
+    output:
+        "{sample}-chrm_acc-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/chrm_acc_processing.sh {input} {output}"
+
+
+################################        
+## Methylome
+################################
+rule run_methylome_features:
+    input:
+        initial_data="data/{sample}-dataset.csv"
+
+    output:
+        "{sample}-methylome-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/methylome_processing.sh {input} {output}"
+
 
 #### FORMAT FINAL FEATURES DATASET #### 
 rule concatenate_features:
@@ -193,13 +249,15 @@ rule concatenate_features:
         "data/transcriptome/{sample}-transcriptome.csv",
         "data/repeats/{sample}-repeats.csv",
         "data/specific/{sample}-specific.csv", 
-        "data/population/{sample}-population.csv"
-    
+        "data/population/{sample}-population.csv",
+        "data/histone_feature/{histone_name}_{sample}-histone-feature.csv",
+        "data/chrm_acc_feature/chrm_acc_{sample}-chrm_acc-feature.csv",
+        "data/methylome_feature/{sample}-methylome-feature.csv"
     output:
         "data/{sample}-dataset-features.csv"
     
     params:
-        sample=all_rna
+        sample=all_rna, histone_name=all_histones
 
     shell:
         "paste -d ',' {input} > {output}"

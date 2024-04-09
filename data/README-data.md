@@ -13,6 +13,7 @@
         * [Genomic Repeats](#genomic-repeats)
         * [Specific RNA and Protein-Coding ](#specific-rna-and-protein-coding)
         * [Population Variation](#population-variation)
+        * [Epigenetic marks analysis](#epigenetic-marks-analysis)
 
 * [References](#references)
 
@@ -257,6 +258,15 @@ Download SNP data from the Genome Aggregation Database (gnomAD) for each chromos
     gsutil cp gs://gcp-public-data--gnomad/release/4.0/vcf/genomes/gnomad.genomes.v4.0.sites.chr*.vcf.bgz.tbi
 
 
+  ## Epigenetic marks analysis
+
+Download epigenetic marks from IHEC portal. For this, use the following commands xxx 
+
+    cd scripts/
+    
+    ./download_epigenetic_data.sh ../listOfCodes.txt # Download and create appropiate folders in data/
+
+The script will download all files specified in listOfCodes.txt
 
 ## Go back to Working directory 
 
