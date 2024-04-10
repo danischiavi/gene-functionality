@@ -13,9 +13,7 @@
 initial_data=$1
 initial_fasta=$2
 interaction_database=$3
-access_file=$4
-cpc2_file=$5
-bigBedToBed_exe=$6
+bigBedToBed_exe=$4
 
 cactus_align_url="http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf"
 
