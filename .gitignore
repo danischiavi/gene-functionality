@@ -1,3 +1,5 @@
 cheatsheet.txt
 .DS_Store
 bin/.DS_Store
+others/draft
+scripts/low-complexity.sh
