@@ -169,28 +169,6 @@ if [ ! -e "$output_file_accesibility" ]; then
 
 fi
 
-
-############################################################################################################################
-
-# Coding Potential - Fickett Score
-
-############################################################################################################################
-if [ ! -s "$output_file_fickett" ]; then
-
-    ## Temporary files
-    echo "Fickett_score" > "$output_file_fickett"
-    cpc2_output="$file_name"cpc2-output
-
-    ## (python script so cannot be added to $PATH)
-    python3 "$cpc2_file" -i "$initial_fasta" -o "$cpc2_output" >/dev/null 2>>errors.log        
-
-    # Extract data
-    awk 'NR > 1 {printf "%.2f\n", $4}' "$cpc2_output".txt >> "$output_file_fickett"                             # Ficket score in field 4 of output file
-
-    rm -rf "$cpc2_output".txt
-
-fi
-
 ############################################################################################################################
 
  # RNAalifold scores, MFE, RNAcode score  - RNAalifold; R-scape; RNAcode - MSA: 241way cactus alignment (zoonomia)
