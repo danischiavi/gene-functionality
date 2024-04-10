@@ -20,17 +20,13 @@ If you want to use any of the scripts, you will need to perform further installa
 
 ## Dependencies
 
-
-
 Most dependencies have been set in the conda environemnt YML file.
 
 Create a new conda environment using the YML file loated in the scripts directory.
 
     conda env create -f condaEnv.yml
 
-Some software was unavailable for adding to the conda environment and will need to be installed/downloaded manually into the features-of-functioanl-human-genes/bin project directory 
-
-    cd bin
+Some software was unavailable for adding to the conda environment and will need to be installed/downloaded manually into the **./bin** project directory 
 
  * #### UCSC binary utilities 
 
@@ -45,37 +41,16 @@ https://hgdownload.soe.ucsc.edu/admin/exe/
 
         wget https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigSummary 
 
- * #### access_py: For Opening Energy calculation 
  
- This is a Wrapper around RNAplfold to compute opening energy of a given sequence. Download the python script to your local machine and move it to the features-of-functioanl-human-genes/bin directory 
- 
-    https://github.com/bkb3/openen/tree/master
-
-
-* ##### CPC2.py
-
-        cd bin
-        wget https://github.com/gao-lab/CPC2_standalone/archive/refs/tags/v1.0.1.tar.gz 
-        gzip -dc v1.0.1.tar.gz | tar xf - 
-        cd CPC2_standalone-1.0.1
-        cd libs/libsvm
-        gzip -dc libsvm-3.18.tar.gz | tar xf -
-        cd libsvm-3.18
-        make clean && make
-        cd ../../../../..
-
-
 
 ## Pipeline Purpose
-
-
 
 This pipeline has been created to evaluate XXX. For the research paper that is relevant to this pipeline, please see: XXX
 
 
 ## How to use this pipeline
 
-When running the pipeline, always run from the project directory, unless otherwise specified.
+When running the pipeline, always run from the **project directory**, unless otherwise specified.
 
 1) Download required Databases as descripted in [data/README-data.md file](LINK)  
 
@@ -85,64 +60,63 @@ When running the pipeline, always run from the project directory, unless otherwi
 
 3) Obtain features for each dataset following [Snakefile-features file](LINK). For this, run the following command on the Working directory of the project replacing "cores" for the number of cores you want to use  
 
-        snakemake -s Snakefile-features -j "cores" 
+        snakemake -s Snakefile-features -j "cores"
 
 4) Analyze results with [scripts/spearman-function-feature.R](link) and [scripts/random-forest-analysis.R](link) for the main analysis. For complementary analysis see the [complementary directory](link)
 
 
-## Brief Description of scripts
+## Brief description of scripts
 
-#### sequences-precessing.sh
+* #### A0-protein-coding-sequences.sh
 
-#### negative-control.sh 
+* #### A1-lncRNA-sequences.sh
 
-#### intrinsic-seq-features.sh
+* #### A2-short-ncRNA-sequences.sh
+
+* #### A3-negative-control.sh 
+
+* #### B0-intrinsic-seq-features.sh
 
 Calculates the percentage of G+C content of each sequence, counting the number of each nucleotide. 
 
-#### seq-conservation-features.sh
+* #### B1-seq-conservation-features.sh
 
 Extracts the maximum PhyloP and PhastCons conservation scores for each sequence. These scores are extracted from Zoonomia resources. 
 
-#### transcriptome-expression-features.sh
+* #### B2-transcriptome-expression-features.sh
 
 Calculates the RPKM for each sequence. For this, the reads and total reads of small RNA-Seq datasetsfrom 71 human tissue and 140 human primary-cell samples were obtained from ENCODE. 
 
-#### genomic-repeats-associated-features.sh
+* #### B3-genomic-repeats-associated-features.sh
 
 Calculates the genomic copy number of each sequence on the human genome version GRCh38. Also, calculates the distance to the closest non-overlapping transposable DNA elements in the human genome obtained from Dfam vxxx.
 
-#### population-variation-features.sh
+* #### B4-protein-and-rna-specific-features.sh
+
+Calculates coding potential using RNAcode based on a multiple sequence alignment 241way from Zoonomia resoures.  
+
+Calculates maximum covariance score to analyse the structure. Also, calculates the Minumum Free Energy.  
+
+Calculates the average interaction free energy between the sequences and a curated database of 34 human ncRNA sequences from RNAcentral v15
+
+* #### B5-population-variation-features.sh
 
 Calculates Minor Allele Frequency (MAF) and the Single Nucleotide Polymorphisms (SNPs) density. For this, the SNPs count for each sequence is extracted from gnomAD v3 database. 
 
 
-#### protein-and-rna-specific-features.sh
-
-- Calculates the Fickett score of each sequence to analyse coding potential. Also, calculates a coding score based on a multiple sequence alignment 241way from Zoonomia resoures.  
-
-- Calculates maximum covariance score to analyse the structure. Also, calculates the Minumum Free Energy and the accesibility.  
-
-- Calculates the average interaction free energy between the sequences and a curated database of 34 human ncRNA sequences from RNAcentral v15
-
-
-#### spearman-function-feature.R
+* #### C0-spearman-function-feature.R
 
 Calculates a Spearman correlation between each feature and functionality. The correlation matrix for each dataset is generated with the confidence intervals calculated using a bootstrap approach (N=1,000).
 
-#### random-forest-analysis.R
+* #### C1-random-forest-analysis.R
 
 Generates a Random forests with 1,000 trees, using 70% training data and 30% test data. A bootstrap approach is used to simulate a further 100 classification models to assess performance variation due to sampling biases. 
 
 #### Others 
 
-* maf-to-stk.sh
+* B4.1-maf-to-stk.sh
 
     Converts multiple sequence alignment MAF files to Stockholm. This is used withing the protein-and-rna-specific-features.sh script. 
-
-* reformat_dfam.R 
-
-    Reformats the order (sorted) of the distances to transposable DNA elements calculated with genomic-repeats-associated-features.sh script to match the order of the sequences. 
 
 
 
