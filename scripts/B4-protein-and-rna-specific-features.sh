@@ -131,44 +131,6 @@ if [ ! -e "$output_file_MFE" ]; then
 
 fi
 
-
-if [ ! -e "$output_file_accesibility" ]; then 
-
-    echo Accessibility > "$output_file_accesibility"
-
-    #### Accessibility calculation
-    for sequence in $( grep -v ">" "$initial_fasta" ); do
-
-        access=$( timeout 60m python3 "$access_file" -s "$sequence" 2>>errors.log ) 
-        exit_status=$?
-
-        if [ -z "$access" ]; then                           # If no value calculated, record NA
-                                                                
-            echo 'NA' >> "$output_file_accesibility"
-
-        elif [[ "$access" == "THIS happened"* ]]; then      # If error occurred, record NA
-                                                     
-            echo 'NA' >> "$output_file_accesibility"
-        
-        elif [[ "$access" == 'inf' ]]; then                 # If error occurred, record NA
-                                                     
-            echo 'NA' >> "$output_file_accesibility"
-
-        elif [ "$exit_status" -eq "124" ]; then             # If calculation timed out, record NA
-                                                          
-            echo 'NA' >> "$output_file_accesibility"
-
-        else
-            echo "$access" >> "$output_file_accesibility"
-
-        fi
-
-    done
-
-    sed -i 's/nan/NA/g' "$output_file_accesibility"         # make NA readable by R
-
-fi
-
 ############################################################################################################################
 
  # RNAalifold scores, MFE, RNAcode score  - RNAalifold; R-scape; RNAcode - MSA: 241way cactus alignment (zoonomia)
