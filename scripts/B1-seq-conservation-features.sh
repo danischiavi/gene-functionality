@@ -15,7 +15,6 @@
 #### Files and directories #### 
 initial_data=$1
 bigWigSummary_exe=$2
-phast_bw=$3
 zoonomia_phylo_bw=$4
 
 output_directory=data/conservation
@@ -27,21 +26,14 @@ output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/datase
 #### Extract conservation features for each set of chromosome coordinates #### 
 if [ ! -s "$output_file" ]; then
 
-    echo "phyloP_max,phastCons_max" > "$output_file"
+    echo "phyloP_max" > "$output_file"
 
     tail -n +2 "$initial_data"  | while IFS=',' read -r _ _ chr start end _; do
 
         #### PhyloP (pp) values: 241-way mammalian alignment ####
         echo "zoonomia_max=$(   $bigWigSummary_exe -type=max $zoonomia_phylo_bw $chr $start $end 1 2>&1 )" >> errors.log
         
-        zoonomia_max=$(   $bigWigSummary_exe -type=max $zoonomia_phylo_bw $chr $start $end 1 2>&1 )
-        
-        
-        ##### phastCons (pc) values: 100way-alignment #####
-        echo "max_pc =   $bigWigSummary_exe -type=max $phast_bw $chr $start $end 1 2>&1" >> errors.log
-       
-        max_pc=$(   $bigWigSummary_exe -type=max $phast_bw $chr $start $end 1 2>&1 )
-	
+        zoonomia_max=$(   $bigWigSummary_exe -type=max "$zoonomia_phylo_bw" "$chr" "$start" "$end" 1 2>&1 )
 
         ## Convert any missing data to NA
         missing_value() {
@@ -55,11 +47,10 @@ if [ ! -s "$output_file" ]; then
             echo "$var"
         }
 
-        max_pc=$(missing_value "$max_pc")
         zoonomia_max=$(missing_value "$zoonomia_max")
 
         ## Values to output file 
-        echo "$zoonomia_max,$max_pc" >> "$output_file"
+        echo "$zoonomia_max" >> "$output_file"
 
     done
 
