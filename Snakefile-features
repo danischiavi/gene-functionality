@@ -43,16 +43,19 @@ rule all_features:
 
 
 #############
-## GC content 
+## Intrinsic features 
 #############
-# Calculated by dividing the number of guanine and cytosine nucleotides by total sequence length
-
+# GC percentage: divide number of guanine and cytosine nucleotides by total sequence length
+#
+# Sequence Low complexity Density: Find regions of low sequence complexity with dustmasker (XXX reference and version!). 
+# Density is calculated as the ratio between nucleotides in the low complexity regions and total nucleotides on sequence
+                                  
 rule run_intrinsic_seq_features:
     input:
         "data/{sample}-dataset.csv"
     
     output:
-        "data/intrinsic/{sample}-GC.csv"
+        "data/intrinsic/{sample}-intrinsic.csv"
     
     params:
         sample=all_rna
@@ -64,39 +67,32 @@ rule run_intrinsic_seq_features:
 ###############
 ## Conservation 
 ###############
-# The maximum phyloP and phastCons scores for each sequence are extracted from its corresponding bigWig files using ```bigWigSummary``` (Haeussler et al., 2019). 
+# The maximum phyloP score for each sequence is extracted from its corresponding bigWig files using ```bigWigSummary``` (Haeussler et al., 2019). 
 # # Parameters used for running bigWigSummary
-# -type=mean reports the mean score
 # -type=max reports the maximum score
-# $chr $start $end is the chromosome coordiantes for the sequence
+# $chr $start $end are the chromosome coordiantes for the sequence extracted from the input dataset (initial_data)
 # 1 causes the score across the whole sequence to be reported
-
-#bigWigSummary -type=mean hg38.phyloP100way.bw $chr $start $end 1
-#bigWigSummary -type=max  hg38.phyloP100way.bw $chr $start $end 1
-# PPG: WHERE IS $start/$end DEFINED?
 
 rule run_seq_conservation_features:
     input:
         initial_data="data/{sample}-dataset.csv",
         bigWigSummary_exe=config["bigWigSummary_exe"],
-        phast_bw=config["phast_bw"], 
-        zoonomia_phylo_bw=config["zoonomia_phylo_bw"], 
-        gerp_bw=config["gerp_bw"] 
+        zoonomia_phylo_bw=config["zoonomia_phylo_bw"] 
 
     output:
-        "data/B1-conservation/{sample}-conservation.csv"
+        "data/conservation/{sample}-conservation.csv"
     
     params:
         sample=all_rna
     
     shell:
-        "scripts/seq-conservation-features.sh {input} > {output}"
+        "scripts/B1-seq-conservation-features.sh {input} > {output}"
 
 
 ################
 ## Transcriptome
 ################
-#Read counts were calculated using ```samtools view -c``` and maximum read depth was calculated using ```samtools depth -r``` (Li et al., 2009).
+# Read counts were calculated using ```samtools view -c``` and maximum read depth was calculated using ```samtools depth -r``` (Li et al., 2009).
 
 rule run_transcriptome:
     input:
@@ -104,20 +100,20 @@ rule run_transcriptome:
         encode_folder=config["encode_folder"]
 
     output:
-        "data/B2-transcriptome/{sample}-transcriptome.csv"
+        "data/transcriptome/{sample}-transcriptome.csv"
     
     params:
         sample=all_rna
     
     shell:
-        "scripts/transcriptome-expression-features.sh {input} > {output}"
+        "scripts/B2-transcriptome-expression-features.sh {input} > {output}"
 
 
 ##################        
 ## Genomic repeats 
 ##################
-# Parameters used to run mmsweq
-#Distances to the nearest repetitive elements were calculated from a file of non-redundant hits of repetitive DNA elements in the human genome obtained from Dfam v3.1 (Hubley et al., 2016). Once this was converted to bed file format, the distance to the nearest hit was calculated using ```bedtools closest```  (Quinlan, 2014). 
+# Parameters used to run mmseqs
+# Distances to the nearest repetitive elements were calculated from a file of non-redundant hits of repetitive DNA elements in the human genome obtained from Dfam v3.1 (Hubley et al., 2016). Once this was converted to bed file format, the distance to the nearest hit was calculated using ```bedtools closest```  (Quinlan, 2014). 
 # # Parameters used for running bedtools:
 # bedtools closest reports the either overlapping or the nearest sequence in input 
 # -a $input_bed is the sequences of interest, converted to a bed file
@@ -145,6 +141,27 @@ rule run_genomic_repeat:
         "scripts/B3-genomic-repeat-associated-features.sh {input} > {output}"
 
 
+###########################        
+## Protein and RNA specific 
+###########################
+rule run_protein_and_rna_specific_features:
+    input:
+        initial_data="data/{sample}-dataset.csv",
+        initial_fasta="data/{sample}-seq.fa",
+        interaction_database=config["interaction_database"],
+        bigBedToBed_exe=config["bigBedToBed_exe"]
+        
+        
+    output:
+        "data/specific/{sample}-specific.csv"
+
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/B4-protein-and-rna-specific-features.sh {input} > {output}"
+
+
 #######################        
 ## Population variation
 #######################
@@ -165,28 +182,6 @@ rule run_populatio_variation:
     shell:
         "scripts/B5-population-variation-features.sh {input} > {output}"
 
-
-###########################        
-## Protein and RNA specific 
-###########################
-rule run_protein_and_rna_specific_features:
-    input:
-        initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa",
-        interaction_database=config["interaction_database"],
-        access_file=config["access_file"],
-        cpc2_file=config["cpc2_file"],
-        bigBedToBed_exe=config["bigBedToBed_exe"]
-        
-        
-    output:
-        "data/specific/{sample}-specific.csv"
-
-    params:
-        sample=all_rna
-
-    shell:
-        "scripts/B4-protein-and-rna-specific-features.sh {input} > {output}"
 
 ########################        
 ## Histone modifications 
@@ -244,7 +239,7 @@ rule run_methylome_features:
 rule concatenate_features:
     input:
         "data/{sample}-dataset.csv",
-        "data/intrinsic/{sample}-GC.csv",
+        "data/intrinsic/{sample}-intrinsic.csv",
         "data/conservation/{sample}-conservation.csv",
         "data/transcriptome/{sample}-transcriptome.csv",
         "data/repeats/{sample}-repeats.csv",
