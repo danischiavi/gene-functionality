@@ -20,12 +20,14 @@ all_rna = [
     "lncrna-exon2-negative-control", 
     "short-ncrna-negative-control"
 ]
+
 all_histones = [
     "H3k36me3", 
     "H3k27ac", 
     "H3k9me3", 
-    "H3k27me3", 
+    "H3k27me3" 
 ]
+
 rna_types = [
     "protein-exon2", 
     "protein-exon3", 
@@ -52,7 +54,7 @@ rule all_features:
                                   
 rule run_intrinsic_seq_features:
     input:
-        "data/{sample}-dataset.csv"
+        "data/datasets/{sample}-dataset.csv"
     
     output:
         "data/intrinsic/{sample}-intrinsic.csv"
@@ -75,7 +77,7 @@ rule run_intrinsic_seq_features:
 
 rule run_seq_conservation_features:
     input:
-        initial_data="data/{sample}-dataset.csv",
+        initial_data="data/datasets/{sample}-dataset.csv",
         bigWigSummary_exe=config["bigWigSummary_exe"],
         zoonomia_phylo_bw=config["zoonomia_phylo_bw"] 
 
@@ -96,7 +98,7 @@ rule run_seq_conservation_features:
 
 rule run_transcriptome:
     input:
-        "data/{sample}-dataset.csv", 
+        "data/datasets/{sample}-dataset.csv", 
         encode_folder=config["encode_folder"]
 
     output:
@@ -126,8 +128,8 @@ rule run_transcriptome:
 
 rule run_genomic_repeat:
     input:
-        initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa", 
+        initial_data="data/datasets/{sample}-dataset.csv",
+        initial_fasta="data/datasets/{sample}-seq.fa", 
         human_genome_mmseqs=config["human_genome_mmseqs"],
         dfam_hits=config["dfam_hits"]   
 
@@ -146,8 +148,8 @@ rule run_genomic_repeat:
 ###########################
 rule run_protein_and_rna_specific_features:
     input:
-        initial_data="data/{sample}-dataset.csv",
-        initial_fasta="data/{sample}-seq.fa",
+        initial_data="data/datasets/{sample}-dataset.csv",
+        initial_fasta="data/datasets/{sample}-seq.fa",
         interaction_database=config["interaction_database"],
         bigBedToBed_exe=config["bigBedToBed_exe"]
         
@@ -170,7 +172,7 @@ rule run_protein_and_rna_specific_features:
 
 rule run_populatio_variation:
     input:
-        initial_data="data/{sample}-dataset.csv",
+        initial_data="data/datasets/{sample}-dataset.csv",
         gnomad_directory=config["gnomad_directory"]
 
     output:
@@ -188,7 +190,7 @@ rule run_populatio_variation:
 ########################
 rule run_histone_features:
     input:
-        initial_data="data/{sample}-dataset.csv"
+        initial_data="data/datasets/{sample}-dataset.csv"
 
     output:
         "{sample}-histone-feature.csv"
@@ -206,7 +208,7 @@ rule run_histone_features:
 ##########################
 rule run_chromatin_accessibility_features:
     input:
-        initial_data="data/{sample}-dataset.csv"
+        initial_data="data/datasets/{sample}-dataset.csv"
 
     output:
         "{sample}-chrm_acc-feature.csv"
@@ -223,7 +225,7 @@ rule run_chromatin_accessibility_features:
 ################################
 rule run_methylome_features:
     input:
-        initial_data="data/{sample}-dataset.csv"
+        initial_data="data/datasets/{sample}-dataset.csv"
 
     output:
         "{sample}-methylome-feature.csv"
@@ -238,7 +240,7 @@ rule run_methylome_features:
 #### FORMAT FINAL FEATURES DATASET #### 
 rule concatenate_features:
     input:
-        "data/{sample}-dataset.csv",
+        "data/datasets/{sample}-dataset.csv",
         "data/intrinsic/{sample}-intrinsic.csv",
         "data/conservation/{sample}-conservation.csv",
         "data/transcriptome/{sample}-transcriptome.csv",

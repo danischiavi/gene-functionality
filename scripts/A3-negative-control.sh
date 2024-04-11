@@ -12,7 +12,7 @@ initial_data=$1
 genome_seq=$2
 genes_complement=$3
 
-file_name=data/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
+file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
 # Temporary files
 first_negative_coords="$file_name"-first-negative-coords.csv

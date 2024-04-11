@@ -23,15 +23,15 @@ rnacentral_lncrna_seqs=$2
 
 #### Final Output files #####
 # Functional datasets 
-lncrna_exon_one='data/functional-lncrna-exon1-dataset.csv' 
-lncrna_exon_two='data/functional-lncrna-exon2-dataset.csv' 
+lncrna_exon_one='data/datasets/functional-lncrna-exon1-dataset.csv' 
+lncrna_exon_two='data/datasets/functional-lncrna-exon2-dataset.csv' 
 # Coordenates for negative-control generation 
-lncrna_negative_control='data/lncrna-coords-negative-control.csv'
+lncrna_negative_control='data/datasets/lncrna-coords-negative-control.csv'
 
 #### Temporary files ####
-lncrna_exon_one_unsorted='data/functional-lncrna-exon1-unsorted.csv' 
-lncrna_exon_two_unsorted='data/functional-lncrna-exon2-unsorted.csv'  
-lncrna_negative_control_unsorted='data/lncrna-coords-negative-unsorted.csv'
+lncrna_exon_one_unsorted='data/datasets/functional-lncrna-exon1-unsorted.csv' 
+lncrna_exon_two_unsorted='data/datasets/functional-lncrna-exon2-unsorted.csv'  
+lncrna_negative_control_unsorted='data/datasets/lncrna-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
 sample_size=1000                     # Number of sequences for each type of RNA 

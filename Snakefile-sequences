@@ -1,9 +1,26 @@
+##################################################
+#### SNAKEMAKE FILE: SEQUENCES ####
+##################################################
+# General Set Up
+# config.yaml file contains the paths to the databases files 
+# rule all starts the running of all the rules above for each dataset by calling the output of tha last rule
+##################################################
 configfile: "config.yaml"
 
 rule all:
     input:
-        expand("data/{sample}-seq.fa", sample=["functional-protein-exon2", "functional-protein-exon3", "functional-lncrna-exon1", "functional-lncrna-exon2", "functional-short-ncrna", "protein-exon2-negative-control", "protein-exon3-negative-control", "lncrna-exon1-negative-control", "lncrna-exon2-negative-control", "short-ncrna-negative-control"])
-
+        expand("data/datasets/{sample}-seq.fa", sample=[
+            "functional-protein-exon2", 
+            "functional-protein-exon3", 
+            "functional-lncrna-exon1", 
+            "functional-lncrna-exon2", 
+            "functional-short-ncrna", 
+            "protein-exon2-negative-control", 
+            "protein-exon3-negative-control", 
+            "lncrna-exon1-negative-control", 
+            "lncrna-exon2-negative-control", 
+            "short-ncrna-negative-control"
+        ])
 
 ##################################################
 # Extract 1000 sequences for each type of RNA: protein coding exon 2 & 3, lncrna exon 1 & 2, short-ncrna; 
@@ -15,7 +32,7 @@ rule all:
 #         - from chromosome Y and mitochrondia; 
 # - with less than 4 exons 
 # - with length sorter than 61 nt and longer than 272 nt  
-#  - with unknown nucleotides (N)  
+# - with unknown nucleotides (N)  
 ##################################################
 
 rule protein_coding_sequences:
@@ -25,9 +42,9 @@ rule protein_coding_sequences:
         protein_coding_refseq=config["protein_coding_refseq"]
         
     output:
-        "data/functional-protein-exon2-dataset.csv",
-        "data/functional-protein-exon3-dataset.csv",
-        "data/protein-coords-negative-control.csv"
+        "data/datasets/functional-protein-exon2-dataset.csv",
+        "data/datasets/functional-protein-exon3-dataset.csv",
+        "data/datasets/protein-coords-negative-control.csv"
     
     shell:
         "scripts/A0-protein-coding-sequences.sh {input} > {output}"
@@ -39,9 +56,9 @@ rule lncrna_sequences:
         rnacentral_lncrna_seq=config["rnacentral_lncrna_seq"]
         
     output:
-        "data/functional-lncrna-exon1-dataset.csv",
-        "data/functional-lncrna-exon2-dataset.csv",
-        "data/lncrna-coords-negative-control.csv"
+        "data/datasets/functional-lncrna-exon1-dataset.csv",
+        "data/datasets/functional-lncrna-exon2-dataset.csv",
+        "data/datasets/lncrna-coords-negative-control.csv"
         
     shell:
         "scripts/A1-lncRNA-sequences.sh {input} > {output}"
@@ -54,8 +71,8 @@ rule short_ncrna_sequences:
         rnacentral_pre_mirna=config["rnacentral_pre_mirna"]
         
     output:
-        "data/functional-short-ncrna-dataset.csv",
-        "data/short-ncrna-coords-negative-control.csv"
+        "data/datasets/functional-short-ncrna-dataset.csv",
+        "data/datasets/short-ncrna-coords-negative-control.csv"
     
     shell:
         "scripts/A2-short-ncRNA-sequences.sh {input} > {output}"    
@@ -78,14 +95,14 @@ rule short_ncrna_sequences:
 ##################################################
 rule negative_control_multiple_exons:
     input:
-        initial_data="data/{sample}-coords-negative-control.csv",
+        initial_data="data/datasets/{sample}-coords-negative-control.csv",
         genome_seq=config["genome_seq"],
         gencode_bed=config["gencode_bed"],
         rnacentral_bed=config["rnacentral_coords"]
         
     output:
-        "data/{sample}-first-negative-control.csv",
-        "data/{sample}-last-negative-control.csv"
+        "data/datasets/{sample}-first-negative-control.csv",
+        "data/datasets/{sample}-last-negative-control.csv"
 
     shell:
         "scripts/A3-negative-control.sh {input} > {output}"
@@ -94,13 +111,13 @@ rule negative_control_multiple_exons:
 
 rule negative_control_single_exon:
     input:
-        initial_data="data/short-ncrna-coords-negative-control.csv",
+        initial_data="data/datasets/short-ncrna-coords-negative-control.csv",
         genome_seq=config["genome_seq"],
         gencode_bed=config["gencode_bed"],
         rnacentral_bed=config["rnacentral_coords"]
     
     output:
-        "data/short-ncrna-negative-control-dataset.csv"
+        "data/datasets/short-ncrna-negative-control-dataset.csv"
        
     shell:
         "scripts/A3-negative-control.sh {input} > {output}"
@@ -110,16 +127,16 @@ rule negative_control_single_exon:
 # Rename lncrna and protein-rna negative control files to match corresponding functional dataset 
 rule rename_negative_control_files:
     input:
-        protein_first = "data/protein-first-negative-control.csv",
-        protein_last = "data/protein-last-negative-control.csv",
-        lncrna_first = "data/lncrna-first-negative-control.csv",
-        lncrna_last = "data/lncrna-last-negative-control.csv"
+        protein_first = "data/datasets/protein-first-negative-control.csv",
+        protein_last = "data/datasets/protein-last-negative-control.csv",
+        lncrna_first = "data/datasets/lncrna-first-negative-control.csv",
+        lncrna_last = "data/datasets/lncrna-last-negative-control.csv"
     
     output:
-        protein_exon2 = "data/protein-exon2-negative-control-dataset.csv",
-        protein_exon3 = "data/protein-exon3-negative-control-dataset.csv",
-        lncrna_exon1 = "data/lncrna-exon1-negative-control-dataset.csv",
-        lncrna_exon2 = "data/lncrna-exon2-negative-control-dataset.csv"
+        protein_exon2 = "data/datasets/protein-exon2-negative-control-dataset.csv",
+        protein_exon3 = "data/datasets/protein-exon3-negative-control-dataset.csv",
+        lncrna_exon1 = "data/datasets/lncrna-exon1-negative-control-dataset.csv",
+        lncrna_exon2 = "data/datasets/lncrna-exon2-negative-control-dataset.csv"
     
     shell:
         """
@@ -135,9 +152,9 @@ rule rename_negative_control_files:
 # Generate functional FASTA file from CSV file
 rule csv_to_fasta:
     input:
-        csv="data/{sample}-dataset.csv"
+        csv="data/datasets/{sample}-dataset.csv"
     output:
-        fasta="data/{sample}-seq.fa"
+        fasta="data/datasets/{sample}-seq.fa"
     
     shell:                                      
         """

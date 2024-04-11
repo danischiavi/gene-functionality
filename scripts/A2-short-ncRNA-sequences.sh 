@@ -27,13 +27,13 @@ rnacentral_pre_mirna_seqs=$3
 
 #### Final Output files #####
 # Functional datasets 
-short_ncrna='data/functional-short-ncrna-dataset.csv'
+short_ncrna='data/datasets/functional-short-ncrna-dataset.csv'
 # Coordenates for negative-control generation 
-short_negative_control='data/short-ncrna-coords-negative-control.csv'
+short_negative_control='data/datasets/short-ncrna-coords-negative-control.csv'
 
 ##### Temporary files ####
-short_ncrna_unsorted='data/functional-short-ncrna-unsorted.csv'
-short_negative_control_unsorted='data/short-ncrna-coords-negative-unsorted.csv'
+short_ncrna_unsorted='data/datasets/functional-short-ncrna-unsorted.csv'
+short_negative_control_unsorted='data/datasets/short-ncrna-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
 sample_size=1000                     # Number of sequences for each type of RNA 

@@ -25,15 +25,15 @@ protein_coding_refseq=$3
 
 #### Final Output files #####
 # Functional datasets 
-protein_exon_two='data/functional-protein-exon2-dataset.csv'
-protein_exon_three='data/functional-protein-exon3-dataset.csv'
+protein_exon_two='data/datasets/functional-protein-exon2-dataset.csv'
+protein_exon_three='data/datasets/functional-protein-exon3-dataset.csv'
 # Coordenates for negative-control generation 
-coding_negative_control='data/protein-coords-negative-control.csv'
+coding_negative_control='data/datasets/protein-coords-negative-control.csv'
 
 #### Temporary ####
-protein_exon_two_unsorted='data/functional-protein-exon2-unsorted.csv'
-protein_exon_three_unsorted='data/functional-protein-exon3-unsorted.csv'
-coding_negative_control_unsorted='data/protein-coords-negative-unsorted.csv'
+protein_exon_two_unsorted='data/datasets/functional-protein-exon2-unsorted.csv'
+protein_exon_three_unsorted='data/datasets/functional-protein-exon3-unsorted.csv'
+coding_negative_control_unsorted='data/datasets/protein-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
 sample_size=1000
