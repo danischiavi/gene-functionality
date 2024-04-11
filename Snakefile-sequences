@@ -12,7 +12,10 @@ rule all:
 #       mitocondrial or Ychr RNA 
 #       length XXXX 
 #       number of exons: at least 2 for lncrna and protein-coding-rna 
-#         
+#         - from chromosome Y and mitochrondia; 
+# - with less than 4 exons 
+# - with length sorter than 61 nt and longer than 272 nt  
+#  - with unknown nucleotides (N)  
 ##################################################
 
 rule protein_coding_sequences:

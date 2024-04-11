@@ -12,9 +12,7 @@ genes_complement: "data/raw/genes-complement.bed"
 
 ## Conservation features ##
 bigWigSummary_exe: "bin/bigWigSummary"
-phast_bw: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/hg38.phastCons100way.bw" # UPDATE
 zoonomia_phylo_bw: "data/raw/hg38.phyloP241mammalian2020v2.bigWig"
-gerp_bw: "data/raw/gerp_conservation_scores.homo_sapiens.GRCh38.bw"
 
 ## Transcriptome expression features ##
 encode_folder: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/ENCODE"
@@ -26,8 +24,6 @@ dfam_hits: "data/raw/dfam-hg38-sorted.bed"
 
 ## Protein-and-specific-rna-features ##
 interaction_database: "data/raw/curated-interaction-database.fa"
-access_file: "bin/access_py.py"                           #Not sure if this is the right place to store the path to these scripts
-cpc2_file: "bin/CPC2_standalone-1.0.1/bin/CPC2.py"
 bigBedToBed_exe: "bin/bigBedToBed"
 cactus_align_url: "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf"
 

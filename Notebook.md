@@ -34,7 +34,7 @@ Dani
 Dani
 
 - [ ] snakemake script for analysis 
-
+- Extract gnomad data directly from a server ? (902G)
 
 ## PROGRESS 
 
