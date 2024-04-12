@@ -30,7 +30,7 @@ tabix_exe=tabix
 
 ############################################################################################################################
 
-# Obtain VCF Files from gnomAD and calculate features
+# Obtain VCF Files from gnomAD local database and calculate features
 
 ############################################################################################################################
 VCF_directory_gnomAD="$file_name"-gnomAD-VCF
@@ -109,8 +109,8 @@ if [ ! -s "$output_file" ]; then
     
     done < "$coordinates"
 
-    ## Zip VCF files for further analyses
-    zip -r "$VCF_directory_gnomAD".zip "$VCF_directory_gnomAD" &> /dev/null && rm -rf "$VCF_directory_gnomAD" 
+    ## Remove vcf directory 
+    rm -rf "$VCF_directory_gnomAD" 
 
 fi
 
