@@ -31,7 +31,7 @@ output_complexity="${output_directory}/$(basename "${initial_data%.*}" | sed 's/
 
 if [ ! -s "$output_gc" ]; then
 
-    echo "GC_percent" > "$output_file" 
+    echo "GC_percentage" > "$output_gc" 
                                                        
     tail -n +2 "$initial_data"  | while IFS=, read -r _ _ _ _ _ seq; do                
     
@@ -101,7 +101,7 @@ if [ ! -s "$output_complexity" ]; then
                 sum=0
                 seq_len=$(echo -n "$seq" | awk '{print length}')
 
-                tail -n +2 TEST1 | while read -r line; do
+                tail -n +2 "$dust_output" | while read -r line; do
 
                     start=$(echo "$line" | awk '{print $1}')
                     end=$(echo "$line" | awk '{print $3}')
@@ -129,6 +129,9 @@ if [ ! -s "$output_complexity" ]; then
         (( var++ ))
    
     done
+
+    rm -rf "$dust_input"
+    rm -rf "$dust_output"
 fi
 
 
