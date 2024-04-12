@@ -17,7 +17,7 @@ Estefi
 
 - [X] Negative control analysis 
 - [X] Incorporate epigenetics marks analysis to the workflow 
-- [ ] intrinsic feature: di-nucleotide analysis
+- [X] intrinsic feature: di-nucleotide analysis
 
 
 Dani 
@@ -38,17 +38,24 @@ Dani
 
 ## PROGRESS 
 
-* 2024/04/05: Divided sequence-processing.sh script into 3 (one for each type of RNA) so they can be run in parallel. 
+* 2024/04/05 - Dani: 
+                    Divided sequence-processing.sh script into 3 (one for each type of RNA) so they can be run in parallel. 
 
-* 2024/04/05: Short-ncRNA dataset had many repeated sequences due to duplicated, but different ID, sequences in RNAcentral dataset --> Removed them from RNAcentral dataset and extracted new sequences 
+* 2024/04/05 - Dani: 
+                    Short-ncRNA dataset had many repeated sequences due to duplicated, but different ID, sequences in RNAcentral dataset --> Removed them from RNAcentral dataset and extracted new sequences 
 
-* 2024/04/09: 1000 functional sequences with negative controls ready to analyse  --> new order of the dataset: by chr, start, end   
+* 2024/04/09 - Dani: 
+                    1000 functional sequences with negative controls ready to analyse  --> new order of the dataset: by chr, start, end   
 
-* 2024/04/10: Remove Fickett score (CPC2): we're already calculating the coding potential with RNAcode --> DJ work showed better results with RNAcode 
-              Remove Accessibility (RNApfold): feature showed perfect spearman correlation with MFE (rho=-1) --> doesn't meet feature criteria: redundant
-              Remove phasCons score: redundant with phyloP
-              Add low complexity sequence density feature to intrinsic-features.sh script 
+* 2024/04/10 - Dani: 
+                    Remove Fickett score (CPC2): we're already calculating the coding potential with RNAcode --> DJ work showed better results with RNAcode 
+                    Remove Accessibility (RNApfold): feature showed perfect spearman correlation with MFE (rho=-1) --> doesn't meet feature criteria: redundant
+                    Remove phasCons score: redundant with phyloP
+                    Add low complexity sequence density feature to intrinsic-features.sh script 
               
+* 2024/04/12 - Dani: 
+                    update population script to remove the vcf files for each sequences after using it, since it's the process of extracting them from the local database is quite quick and it's not worth to store them in case of needed again (already storing the database)
+
 
 
 
