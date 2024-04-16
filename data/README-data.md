@@ -166,14 +166,6 @@ Download the bigWig file from the Zoonomia project resouces (reference) (Last ac
 
     wget https://cgl.gi.ucsc.edu/data/cactus/241-mammalian-2020v2-hub/Homo_sapiens/241-mammalian-2020v2.bigWig 
 
-### phastCons 
---> probably will be removed it from project 
-
-#### GERP mammal score 
-Download the bigWig file from Ensembl 111-mammal resource (Quinlan, 2014; Yates et al., 2020 ????) (Last access: 30/12/2023)
-
-    curl -O https://ftp.ensembl.org/pub/release-111/compara/conservation_scores/91_mammals.gerp_conservation_score/gerp_conservation_scores.homo_sapiens.GRCh38.bw
-
 
 ## Transcriptome expression
 The links for the ENCODE total and small RNA-Seq data (BAM files) for [primary-cell](data/encode-primary-cell-rnaseq.txt) and [tissue](data/encode-tissue-rnaseq.txt) samples are available in the [data](data/) folder (ENCODE Project Consortium, 2012), with all the RNA-Seq data kept in sample specific folders. 
