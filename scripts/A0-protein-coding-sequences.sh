@@ -23,6 +23,8 @@ genome_annotations=$1
 genome_seq=$2
 protein_coding_refseq=$3
 
+mkdir -p data/datasets
+
 #### Final Output files #####
 # Functional datasets 
 protein_exon_two='data/datasets/functional-protein-exon2-dataset.csv'
@@ -36,7 +38,7 @@ protein_exon_three_unsorted='data/datasets/functional-protein-exon3-unsorted.csv
 coding_negative_control_unsorted='data/datasets/protein-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
-sample_size=1000
+sample_size=10
 lower_limit_protein='61'
 upper_limit_protein='272'
 
@@ -88,7 +90,7 @@ gff2Info() {
 	
         len_two=$(( end_two - start_two ))                                                                        # Length of exons
         len_three=$(( end_three - start_three ))          
-        
+
         # Exclude empty and with any unknown nucleotides (N) sequences
         if [ -n "$seq_two" ] && [ -n "$seq_three" ] && [[ "$seq_two" != *"N"* ]] && [[ "$seq_three" != *"N"* ]]; then
        
@@ -101,15 +103,18 @@ gff2Info() {
 
                 echo "RNA$protein_count,Yes,chr$chr,$start_two,$end_two,$seq_two" >> "$protein_exon_two_unsorted"
                 echo "RNA$protein_count,Yes,chr$chr,$start_three,$end_three,$seq_three" >> "$protein_exon_three_unsorted"
-    
-                if [ "$start_one" -gt "$end_final" ]; then                                                       # Reverse transcripts can alter order of start/end positions
-               
+
+                # Reverse transcripts can alter order of start/end positions
+                if [ "$start_one" -gt "$end_final" ]; then                              # Negative strand                                                     
+                    
+                    distance_exons=$(( start_two - end_three ))
 		            # To generate negative control sequences that are the same length as exons two and three
-                    echo "chr$chr,$end_final,$start_one,$len_two,$len_three" >> "$coding_negative_control_unsorted"
+                    echo "chr$chr,$end_final,$start_one,$len_two,$len_three,$distance_exons" >> "$coding_negative_control_unsorted"
                 
                 else
 
-                    echo "chr$chr,$start_one,$end_final,$len_two,$len_three" >> "$coding_negative_control_unsorted"
+                    distance_exons=$(( start_three - end_two ))        
+                    echo "chr$chr,$start_one,$end_final,$len_two,$len_three,$distance_exons" >> "$coding_negative_control_unsorted"
                 
                 fi
             fi 
@@ -125,9 +130,9 @@ gff2Info() {
 
 if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_two_unsorted"
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$protein_exon_three_unsorted"
-    echo "Chromosome,Start,End,Length_exon2,Length_exon3" >> "$coding_negative_control_unsorted"
+    echo "ID,Functional,Chromosome,Start_gene,End_gene,Sequence" > "$protein_exon_two_unsorted"
+    echo "ID,Functional,Chromosome,Start_gene,End_gene,Sequence" > "$protein_exon_three_unsorted"
+    echo "Chromosome,Start,End,Length_exon2,Length_exon3,Distance_between_exons" > "$coding_negative_control_unsorted"
 
     declare -a "selected_ids=()"
     protein_count=0

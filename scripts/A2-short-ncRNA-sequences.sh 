@@ -26,6 +26,8 @@ rnacentral_short_ncrna_seqs=$2
 rnacentral_pre_mirna_seqs=$3
 
 #### Final Output files #####
+mkdir -p data/datasets
+
 # Functional datasets 
 short_ncrna='data/datasets/functional-short-ncrna-dataset.csv'
 # Coordenates for negative-control generation 

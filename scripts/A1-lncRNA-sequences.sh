@@ -22,6 +22,8 @@ rnacentral_coords=$1
 rnacentral_lncrna_seqs=$2
 
 #### Final Output files #####
+mkdir -p data/datasets
+
 # Functional datasets 
 lncrna_exon_one='data/datasets/functional-lncrna-exon1-dataset.csv' 
 lncrna_exon_two='data/datasets/functional-lncrna-exon2-dataset.csv' 
