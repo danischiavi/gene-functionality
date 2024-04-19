@@ -12,6 +12,9 @@ initial_data=$1
 genome_seq=$2
 genes_complement=$3
 
+distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
+distance_between_exons=100
+
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
 # Temporary files
@@ -20,9 +23,9 @@ last_negative_coords="$file_name"-last-negative-coords.csv
 single_negative_coords="$file_name"-negative-coords.csv
 
 # Output files
-single_negative_control="$file_name"-negative-control-dataset.csv   # File for short-ncrna is the final negative control dataset
-first_negative_control="$file_name"-first-negative-control.csv      # File for lncrna and protein will be rename after this script to associated with the corresponding exon  
-last_negative_control="$file_name"-last-negative-control.csv
+negative_control_single="$file_name"-negative-control-dataset.csv   # File for short-ncrna is the final negative control dataset
+negative_control_first="$file_name"-first-negative-control.csv      # File for lncrna and protein will be rename after this script to associated with the corresponding exon  
+negative_control_last="$file_name"-last-negative-control.csv
 
 ###########################################################################################################################
 #### FUNCTION DECLARATION ####
@@ -48,169 +51,301 @@ ambiguity_percent() {
 #### For sequences with more than 1 exon #### 
 multiple_exons_negative_control() {
 
-    local distance_to_seq=$1
-                                                                                             
-    distance_between_exons=$(( "$end_seq" - "$start_seq" - "$first_len" - "$last_len" ))                                                    
+    # Temporary files                                                                                                                                     
+    closest_input_unsorted="$file_name"-closest-input-unsorted
+    closest_input="$file_name"-closest-input
+    closest_output="$file_name"-closest-output
+    closest_output_filtered="$file_name"-closest-output-filtered
 
-    # UPSTREAM
-    last_exon_left_end=$((     "$start_seq" - "$distance_to_seq" ))
-    last_exon_left_start=$(( "$last_exon_left_end" - "$last_len" ))                                                                         # length based on exons's length
+    len_region=$(( first_len + distance_between_exons + last_len ))
+
+    for d in "${distances_to_seq[@]}"; do                                                       # Defined on line 15
     
-    first_exon_left_end=$(( "$last_exon_left_start" - "$distance_between_exons" ))                              
-    first_exon_left_start=$(( "$first_exon_left_end" - "$first_len" ))
-
-
-    if [[ "$last_exon_left_end" -gt 0 ]] && [[ "$last_exon_left_start" -gt 0 ]]; then                                                                 # Filter out if negative coord
-                             
-        echo "$chr,$last_exon_left_start,$last_exon_left_end,$distance_to_seq,$last_len" >> "$last_negative_coords"
-
-    fi
-
-    if [[ "$first_exon_left_end" -gt 0 ]] && [[ "$first_exon_left_start" -gt 0 ]]; then 
-            
-        echo "$chr,$first_exon_left_start,$first_exon_left_end,$distance_to_seq,$first_len" >> "$first_negative_coords"
-
-    fi
-   
-
-    ## DOWNSTREAM
-    first_exon_right_start=$(( "$end_seq" + "$distance_to_seq" ))
-    first_exon_right_end=$(( "$first_exon_right_start" + "$first_len" ))                                
-
-    last_exon_right_start=$(( "$first_exon_right_end" + "$distance_between_exons" ))
-    last_exon_right_end=$((  "$last_exon_right_start" + "$last_len" ))
-
-
-    if [[ "$first_exon_right_start" -gt 0 ]] && [[ "$first_exon_right_end" -gt 0 ]]; then 
-  
-        echo "$chr,$first_exon_right_start,$first_exon_right_end,$distance_to_seq,$first_len" >> "$first_negative_coords"
-    
-    fi
-    
-
-    if [[ "$last_exon_right_start" -gt 0 ]] && [[ "$last_exon_right_end" -gt 0 ]]; then 
-  
-        echo "$chr,$last_exon_right_start,$last_exon_right_end,$distance_to_seq,$last_len" >> "$last_negative_coords"
+    # Upstream
+        initial_end_up=$(( start_gene - d ))
+        initial_start_up=$(( initial_end_up - len_region ))
         
+        if [ "$initial_end_up" -gt 0 ] && [ "$initial_start_up" -gt 0 ]; then
+            echo -e "$chr\t$initial_start_up\t$initial_end_up" >> "$closest_input_unsorted" 
+        fi
+
+    # Downstream
+        initial_start_down=$(( end_gene + d ))
+        initial_end_down=$(( initial_start_down + len_region ))
+
+        if [ "$initial_end_down" -gt 0 ] && [ "$initial_start_down" -gt 0 ]; then
+            echo -e "$chr\t$initial_start_down\t$initial_end_down" >> "$closest_input_unsorted" 
+        fi
+    done
+
+    if [ -s "$closest_input_unsorted" ]; then 
+
+        sort -k1,1 -k2,2n -k3,3n "$closest_input_unsorted" > "$closest_input" 
+
+        # Find 
+        bedtools closest -a "$closest_input" -b "$genes_complement" -D ref -t first  > "$closest_output"
+
+        # Remove closest regions which are repeated more than 2 times and don't have enough nucleotides to extract sequences for both exons 
+        awk -v len_region="$len_region" -F'\t' 'BEGIN {OFS="\t"} {
+            key = $4 "\t" $5 "\t" $6  # Create a key using values from columns 5 and 6
+            count[key]++     # Increment the count for this key
+            if (count[key] <= 2 && $6 - $5 >= len_region) {  # Check if count is less than or equal to 2 and the region length condition is met
+                print $0, $6 - $5  # Print the line along with the calculated region length
+            }
+        }' "$closest_output" > "$closest_output_filtered"
+
+        declare -a "start_coords=()"
+
+        ## Format final output file
+        while IFS=$'\t' read -r chr initial_start _ _ start end _ len_closest_region; do
+
+            chromo=$( echo "$chr" | tr -d "chr" )
+
+            if [[ ! "${start_coords[@]}" =~ "$start" ]]; then
+            
+                start_coords+=("$start")
+
+                if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
+        
+                    # First exon
+                    start_first="$start"
+                    end_first=$(( start + first_len ))
+
+                    # Last exon
+                    start_last=$(( end_first + distance_between_exons ))
+                    end_last=$(( start_last + last_len ))
+        
+                else                                                    # if closest is upstream initial coords
+                                                                    
+                    # Last exon
+                    end_last="$end"
+                    start_last=$(( end_last - last_len ))
+
+                    # First exon
+                    end_first=$(( start_last - distance_between_exons )) 
+                    start_first=$(( end_first - first_len ))
+        
+                fi
+
+            else 
+
+                leftover=$(( len_closest_region - len_region ))
+
+                if [ "$leftover" -gt "$len_region" ]; then                 # If region is big enough to extract other non-overlapping negative control
+
+                    if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
+        
+                        # Last exon
+                        end_last="$end"
+                        start_last=$(( end_last - last_len ))
+                
+                        # First exon
+                        end_first=$(( start_last - distance_between_exons ))
+                        start_first=$(( end_first - first_len ))
+                
+                    else                                                    # if closest is upstream initial coords
+
+                        # First exon
+                        start_first="$start" 
+                        end_first=$(( start_first + first_len )) 
+            
+                        # Last exon
+                        start_last=$(( end_first + distance_between_exons ))
+                        end_last=$(( start_last + last_len ))
+                    fi
+                fi
+
+            fi
+            
+            # Calculate distance to gene border 
+
+            if [ "$start_first" -ge "$start_gene" ]; then           # if negative control is downstream gene
+
+                distance_gene_first=$(( start_first - end_gene ))
+                distance_gene_last=$(( start_last - end_gene )) 
+
+            else                                                    # if negative control is upstream gene
+
+                distance_gene_first=$(( start_gene - start_first ))
+                distance_gene_last=$(( start_gene - start_last )) 
+            
+            fi
+
+            # Extract sequence from genome and reject if it has an ambiguity percent > 5
+        
+            seq_first=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$start_first"-"$end_first" )
+        
+            if [ -n "$seq_first" ] && [[ $( ambiguity_percent "$seq_first" ) -lt 5 ]]; then                     
+
+                (( count_first++ ))
+                echo "RNA$count_first,No,$chr,$start_first,$end_first,$seq_first,$distance_gene_first" >> "$negative_control_first"
+        
+            fi
+
+            seq_last=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$start_last"-"$end_last" )
+        
+            if [ -n "$seq_last" ] && [[ $( ambiguity_percent "$seq_last" ) -lt 5 ]]; then  
+
+                (( count_last++ ))
+                echo "RNA$count_last,No,$chr,$start_last,$end_last,$seq_last,$distance_gene_last" >> "$negative_control_last"
+        
+            fi
+
+        done < "$closest_output_filtered"
     fi
 
+    rm -rf "$closest_input_unsorted"
+    rm -rf "$closest_input"
+    rm -rf "$closest_output"
+    rm -rf "$closest_output_filtered"
 }
+  
 
 #### For sequences with single exon (short-ncRNA) 
 single_exon_negative_control() {
 
-    local distance_to_seq=$1
-    
-    chromo=$( echo "$chr" | tr -d "chr" )
+    # Temporary files                                                                                                                                     
+    closest_input_unsorted="$file_name"-closest-input-unsorted
+    closest_input="$file_name"-closest-input
+    closest_output="$file_name"-closest-output
+    closest_output_filtered="$file_name"-closest-output-filtered
 
-    # UPSTREAM
-    left_end=$(( "$start_seq" - "$distance_to_seq" ))
-    left_start=$(( "$left_end" - "$len" ))                                                              
+    len_region="$len"
+
+    for d in "${distances_to_seq[@]}"; do                                                       # Defined on line 15
     
-    if [[ "$left_end" -gt 0 ]] && [[ "$left_start" -gt 0 ]]; then 
+    # Upstream
+        initial_end_up=$(( start_gene - d ))
+        initial_start_up=$(( initial_end_up - len_region ))
+        
+        if [ "$initial_end_up" -gt 0 ] && [ "$initial_start_up" -gt 0 ]; then
+            echo -e "$chr\t$initial_start_up\t$initial_end_up" >> "$closest_input_unsorted" 
+        fi
+
+    # Downstream
+        initial_start_down=$(( end_gene + d ))
+        initial_end_down=$(( initial_start_down + len_region ))
+
+        if [ "$initial_end_down" -gt 0 ] && [ "$initial_start_down" -gt 0 ]; then
+            echo -e "$chr\t$initial_start_down\t$initial_end_down" >> "$closest_input_unsorted" 
+        fi
+
+    done
+
+    if [ -s "$closest_input_unsorted" ]; then 
     
-        echo "$chr,$left_start,$left_end,$distance_to_seq,$len" >> "$single_negative_coords"
+        sort -k1,1 -k2,2n -k3,3n "$closest_input_unsorted" > "$closest_input" 
+
+        # Find 
+        bedtools closest -a "$closest_input" -b "$genes_complement" -D ref -t first  > "$closest_output"
+
+        # Remove closest regions which are repeated more than 2 times and don't have enough nucleotides to extract sequences for both exons 
+        awk -v len_region="$len_region" -F'\t' 'BEGIN {OFS="\t"} {
+            key = $4 "\t" $5 "\t" $6  # Create a key using values from columns 5 and 6
+            count[key]++     # Increment the count for this key
+            if (count[key] <= 2 && $6 - $5 >= len_region) {  # Check if count is less than or equal to 2 and the region length condition is met
+                print $0, $6 - $5  # Print the line along with the calculated region length
+            }
+        }' "$closest_output" > "$closest_output_filtered"
+
+        declare -a "start_coords=()"
+
+        ## Format final output file
+        while IFS=$'\t' read -r chr initial_start _ _ start end _ len_closest_region; do
+
+            chromo=$( echo "$chr" | tr -d "chr" )
+
+            if [[ ! "${start_coords[@]}" =~ "$start" ]]; then
+            
+                start_coords+=("$start")
+
+                if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
+        
+                    start_single="$start"
+                    end_single=$(( start_single + len ))
+
+        
+                else                                                    # if closest is upstream initial coords
+                                                        
+                    end_single="$end"
+                    start_single=$(( end_single - len ))
+        
+                fi
+
+            else 
+
+                leftover=$(( len_closest_region - len_region ))
+
+                if [ "$leftover" -gt "$len_region" ]; then                 # If region is big enough to extract other non-overlapping negative control
+
+                    if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
+        
+                        end_single="$end"
+                        start_single=$(( end_single - len ))
+                
+                    else                                                    # if closest is upstream initial coords
+
+                        start_single="$start" 
+                        end_single=$(( start_single + len )) 
+            
+                    fi
+                fi
+
+            fi
+            
+            # Calculate distance to gene border 
+
+            if [ "$start_single" -ge "$start_gene" ]; then           # if negative control is downstream gene
+
+                distance_gene=$(( start_single - end_gene )) 
+
+            else                                                    # if negative control is upstream gene
+
+                distance_gene=$(( start_gene - start_single ))
     
+            fi
+
+            # Extract sequence from genome and reject if it has an ambiguity percent > 5
+        
+            seq=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$start_single"-"$end_single" )
+        
+            if [ -n "$seq" ] && [[ $( ambiguity_percent "$seq" ) -lt 5 ]]; then                     
+
+                (( count_single++ ))
+                echo "RNA$count_single,No,$chr,$start_single,$end_single,$seq,$distance_gene" >> "$negative_control_single"
+        
+            fi
+
+        done < "$closest_output_filtered"
     fi
 
-
-    # DOWNSTREAM                       
-    right_start=$(( "$end_seq" + "$distance_to_seq" ))
-    right_end=$(( "$right_start" + "$len" ))                                
-                              
-
-    if [[ "$right_start" -gt 0 ]] && [[ "$right_end" -gt 0 ]]; then 
-
-        echo "$chr,$right_start,$right_end,$distance_to_seq,$len" >> "$single_negative_coords"
-    
-    fi
-
+    rm -rf "$closest_input_unsorted"
+    rm -rf "$closest_input"
+    rm -rf "$closest_output"
+    rm -rf "$closest_output_filtered"
 }
-
-###########################
-# To filter negative control sequences using RNAcentral and GENCODE
-
-filter_out_functional(){
     
-    local negative_coords=$1
-    local exon=$2
-    local negative_control=$3
-
-    ## Temporary files
-    closest_coords="$file_name"-"$exon"-closest.bed
-    bed_coords_sorted="$file_name"-"$exon"-coords-sorted.bed
-
-    # Format and sort coordinates for bedtools 
-    awk -F',' 'NR > 1 {print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5}' "$negative_coords" | sort -k1,1V -k2,2n | tr ' ' '\t' > "$bed_coords_sorted"
-   
-    # Find the closest gene complement region to negative control coordinates 
-    bedtools closest -a "$bed_coords_sorted" -b "$genes_complement" -D ref -t first | awk -F'\t' '!seen[$7,$8]++' > "$closest_coords"
-
-    ## Format final output file
-    while IFS=$'\t' read -r chr _ _ distance len _ start end closestdistance; do
-
-        chromo=$( echo "$chr" | tr -d "chr" )
-
-        if [ "$closestdistance" -ge 0 ]; then                   # if closest upstream initial negative control coord
-        
-            end=$(( "$start" + "$len" ))
-        
-        else                                                    # if closest downstream initial negative control coord
-
-            start=$(( "$end" - "$len" ))
-        
-        fi
-        
-        # Calculate distance to gene border 
-        distance_gene=$(( "$distance" + "$closestdistance" ))
-
-        # Extract sequence from genome 
-        seq=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$start"-"$end" )
-
-        # Remove negative control sequences that with an ambiguity percent > 5
-        if [ -n "$seq" ] && [[ $( ambiguity_percent "$seq" ) -lt 5 ]]; then  
-  
-            (( count++ ))
-            echo "RNA$count,No,$chr,$start,$end,$seq,$distance_gene" >> "$negative_control"
-        
-        fi
-   
-    done < "$closest_coords"
-
-    #rm -rf "$bed_coords_sorted"
-    
-}
-
 ###########################
 
 ###########################################################################################################################
 #### EXTRACT NEGATIVE CONTROLS ####
 ###########################################################################################################################
 
-distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
-
-num_fields=$( awk -F',' '{print NF}' "$initial_data" | sort -nu | tail -n 1 )              # To define if it's single or multiple exon sequences
-
+num_fields=$( awk -F',' '{print NF}' "$initial_data" | sort -nu | tail -n 1 )                  # To define if it's single or multiple exon sequences
 
 # Single exon sequences # 
 if [[ "$num_fields" -eq 4 ]]; then                                                                      
 
     if [ ! -s "$single_negative_coords" ]; then 
 
-        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_seq end_seq len; do   
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$negative_control_single"
+        count_single=$(( $(wc -l < "$initial_data") - 1 ))                                     # Start counting from last functional seq  
+        
+        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene len; do   
 
-            for position in "${distances_to_seq[@]}"; do single_exon_negative_control "$position"; done
+            single_exon_negative_control
 
         done 
-
-    fi
-
-    
-    if [ ! -s "$single_negative_control" ]; then
-
-        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$single_negative_control"
-        count=$(( $(wc -l < "$initial_data") - 1 ))                                     # Start counting from last functional seq  
-        filter_out_functional "$single_negative_coords" 'single' "$single_negative_control"
 
     fi
 
@@ -222,29 +357,17 @@ if [[ "$num_fields" -eq 5 ]]; then
 
     if [ ! -s "$first_negative_coords" ] || [ ! -s "$last_negative_coords" ]; then 
 
-        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_seq end_seq first_len last_len; do  
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_first"
+        count_first=$(( $(wc -l < "$initial_data") ))
 
-            for position in "${distances_to_seq[@]}"; do multiple_exons_negative_control "$position"; done
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_last"
+        count_last=$(( $(wc -l < "$initial_data") ))
+
+        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene first_len last_len; do  
+
+            multiple_exons_negative_control
 
         done 
-
-    fi
-
-
-    if [ ! -s "$first_negative_control" ]; then
-
-        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$first_negative_control"
-        count=$(( $(wc -l < "$initial_data") - 1 ))                                    
-        filter_out_functional "$first_negative_coords" 'first' "$first_negative_control"
-
-    fi
-
-
-    if [ ! -s "$last_negative_control" ]; then
-
-        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$last_negative_control"
-        count=$(( $(wc -l < "$initial_data") - 1 ))                                     
-        filter_out_functional "$last_negative_coords" 'last' "$last_negative_control"
 
     fi
 
