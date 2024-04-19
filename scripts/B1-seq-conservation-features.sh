@@ -17,6 +17,7 @@ initial_data=$1
 bigWigSummary_exe=$2
 zoonomia_phylo_bw=$3
 
+zoonomia_phylo_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-functional-human-genes/data/raw/hg38.phyloP241mammalian2020v2.bigWig
 output_directory=data/conservation
 mkdir -p "$output_directory"
 
