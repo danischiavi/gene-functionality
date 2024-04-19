@@ -12,7 +12,7 @@ initial_data=$1
 genome_seq=$2
 genes_complement=$3
 
-distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
+distances_to_seq=("100" "1000" "10000" "100000" "1000000" "5000000")                             # Distances choosen for negative control (see manuscript for justification)
 distance_between_exons=100
 
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
