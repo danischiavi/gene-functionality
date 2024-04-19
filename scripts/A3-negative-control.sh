@@ -76,89 +76,53 @@ multiple_exons_negative_control() {
         if [ "$initial_end_down" -gt 0 ] && [ "$initial_start_down" -gt 0 ]; then
             echo -e "$chr\t$initial_start_down\t$initial_end_down" >> "$closest_input_unsorted" 
         fi
+
     done
 
     if [ -s "$closest_input_unsorted" ]; then 
 
         sort -k1,1 -k2,2n -k3,3n "$closest_input_unsorted" > "$closest_input" 
 
-        # Find 
+        # Find the closest region of the genes complement 
         bedtools closest -a "$closest_input" -b "$genes_complement" -D ref -t first  > "$closest_output"
 
-        # Remove closest regions which are repeated more than 2 times and don't have enough nucleotides to extract sequences for both exons 
+        # Remove closest regions which are duplicated and don't have enough nucleotides to extract sequences for both exons 
         awk -v len_region="$len_region" -F'\t' 'BEGIN {OFS="\t"} {
-            key = $4 "\t" $5 "\t" $6  # Create a key using values from columns 5 and 6
-            count[key]++     # Increment the count for this key
-            if (count[key] <= 2 && $6 - $5 >= len_region) {  # Check if count is less than or equal to 2 and the region length condition is met
-                print $0, $6 - $5  # Print the line along with the calculated region length
+            key = $4 "\t" $5 "\t" $6  
+            count[key]++     
+            if (count[key] <= 1 && $6 - $5 >= len_region) {  # Check if count is less than or equal to 1 and the region length condition is met
+                print $0, $6 - $5  
             }
         }' "$closest_output" > "$closest_output_filtered"
 
-        declare -a "start_coords=()"
-
         ## Format final output file
-        while IFS=$'\t' read -r chr initial_start _ _ start end _ len_closest_region; do
+        while IFS=$'\t' read -r chr initial_start _ _ start end _ _; do
 
             chromo=$( echo "$chr" | tr -d "chr" )
 
-            if [[ ! "${start_coords[@]}" =~ "$start" ]]; then
-            
-                start_coords+=("$start")
-
-                if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
+            if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
         
-                    # First exon
-                    start_first="$start"
-                    end_first=$(( start + first_len ))
+                # First exon
+                start_first="$start"
+                end_first=$(( start + first_len ))
 
-                    # Last exon
-                    start_last=$(( end_first + distance_between_exons ))
-                    end_last=$(( start_last + last_len ))
+                # Last exon
+                start_last=$(( end_first + distance_between_exons ))
+                end_last=$(( start_last + last_len ))
         
-                else                                                    # if closest is upstream initial coords
+            else                                                    # if closest is upstream initial coords
                                                                     
-                    # Last exon
-                    end_last="$end"
-                    start_last=$(( end_last - last_len ))
+                # Last exon
+                end_last="$end"
+                start_last=$(( end_last - last_len ))
 
-                    # First exon
-                    end_first=$(( start_last - distance_between_exons )) 
-                    start_first=$(( end_first - first_len ))
+                # First exon
+                end_first=$(( start_last - distance_between_exons )) 
+                start_first=$(( end_first - first_len ))
         
-                fi
-
-            else 
-
-                leftover=$(( len_closest_region - len_region ))
-
-                if [ "$leftover" -gt "$len_region" ]; then                 # If region is big enough to extract other non-overlapping negative control
-
-                    if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
-        
-                        # Last exon
-                        end_last="$end"
-                        start_last=$(( end_last - last_len ))
-                
-                        # First exon
-                        end_first=$(( start_last - distance_between_exons ))
-                        start_first=$(( end_first - first_len ))
-                
-                    else                                                    # if closest is upstream initial coords
-
-                        # First exon
-                        start_first="$start" 
-                        end_first=$(( start_first + first_len )) 
-            
-                        # Last exon
-                        start_last=$(( end_first + distance_between_exons ))
-                        end_last=$(( start_last + last_len ))
-                    fi
-                fi
-
             fi
-            
-            # Calculate distance to gene border 
 
+            # Calculate distance to gene border 
             if [ "$start_first" -ge "$start_gene" ]; then           # if negative control is downstream gene
 
                 distance_gene_first=$(( start_first - end_gene ))
@@ -172,7 +136,6 @@ multiple_exons_negative_control() {
             fi
 
             # Extract sequence from genome and reject if it has an ambiguity percent > 5
-        
             seq_first=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$start_first"-"$end_first" )
         
             if [ -n "$seq_first" ] && [[ $( ambiguity_percent "$seq_first" ) -lt 5 ]]; then                     
@@ -236,63 +199,38 @@ single_exon_negative_control() {
     
         sort -k1,1 -k2,2n -k3,3n "$closest_input_unsorted" > "$closest_input" 
 
-        # Find 
+        # Find closest region of genes complement 
         bedtools closest -a "$closest_input" -b "$genes_complement" -D ref -t first  > "$closest_output"
 
-        # Remove closest regions which are repeated more than 2 times and don't have enough nucleotides to extract sequences for both exons 
+        # Remove closest regions which are duplicated and don't have enough nucleotides to extract sequence
         awk -v len_region="$len_region" -F'\t' 'BEGIN {OFS="\t"} {
-            key = $4 "\t" $5 "\t" $6  # Create a key using values from columns 5 and 6
-            count[key]++     # Increment the count for this key
-            if (count[key] <= 2 && $6 - $5 >= len_region) {  # Check if count is less than or equal to 2 and the region length condition is met
-                print $0, $6 - $5  # Print the line along with the calculated region length
+            key = $4 "\t" $5 "\t" $6  
+            count[key]++    
+
+            if (count[key] <= 1 && $6 - $5 >= len_region) {  # Check if count is less than or equal to 1 and the region length condition is met
+                print $0, $6 - $5  
             }
         }' "$closest_output" > "$closest_output_filtered"
 
-        declare -a "start_coords=()"
-
         ## Format final output file
-        while IFS=$'\t' read -r chr initial_start _ _ start end _ len_closest_region; do
+        while IFS=$'\t' read -r chr initial_start _ _ start end _ _; do
 
             chromo=$( echo "$chr" | tr -d "chr" )
 
-            if [[ ! "${start_coords[@]}" =~ "$start" ]]; then
-            
-                start_coords+=("$start")
-
-                if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
+            if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
         
-                    start_single="$start"
-                    end_single=$(( start_single + len ))
+                start_single="$start"
+                end_single=$(( start_single + len ))
 
         
-                else                                                    # if closest is upstream initial coords
+            else                                                    # if closest is upstream initial coords
                                                         
-                    end_single="$end"
-                    start_single=$(( end_single - len ))
+                end_single="$end"
+                start_single=$(( end_single - len ))
         
-                fi
-
-            else 
-
-                leftover=$(( len_closest_region - len_region ))
-
-                if [ "$leftover" -gt "$len_region" ]; then                 # If region is big enough to extract other non-overlapping negative control
-
-                    if [ "$start" -ge "$initial_start" ]; then               # if closest is downstream initial coords
-        
-                        end_single="$end"
-                        start_single=$(( end_single - len ))
-                
-                    else                                                    # if closest is upstream initial coords
-
-                        start_single="$start" 
-                        end_single=$(( start_single + len )) 
-            
-                    fi
-                fi
-
             fi
-            
+
+        
             # Calculate distance to gene border 
 
             if [ "$start_single" -ge "$start_gene" ]; then           # if negative control is downstream gene
