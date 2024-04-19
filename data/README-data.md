@@ -27,25 +27,19 @@ The following databases and files should be stored on the data/raw directory
 ## Human Genome: 
 
 The human genome is obtain from xxxx 
-
-* #### Human genome annotations (Last access: 15/12/2023)
-
-    Download and unzip GFF file
-
-        wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.gff.gz   
-    
-        gunzip GRCh38_latest_genomic.gff.gz
-
-        
-* ####  Human genome sequence (Last access: 15/12/2023)
+       
+* ####  Human genome sequences (Last access: 15/12/2023, assembly name: GRCh38.p14
+assembly accession: GCF_000001405.40))
     
     Download and unzip FNA file 
 
-        wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz   && 
+        wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/annotation_releases/GCF_000001405.40-RS_2023_10/GCF_000001405.40_GRCh38.p14_genomic.fna.gz   && 
     
-        gunzip GRCh38_latest_genomic.fna.gz
+        gunzip GCF_000001405.40_GRCh38.p14_genomic.fna.gz
 
-    Format file to a tab delimited CSV file using the FASTA formatter from [FASTX-Toolkit version 0.0.13](http://hannonlab.cshl.edu/fastx_toolkit/) removing scaffolds and alternative chromosomes, to allow for easier manipulation and parsing
+        rename!
+
+    Format file to a tab delimited CSV file using the FASTA formatter from [FASTX-Toolkit version 0.0.13](http://hannonlab.cshl.edu/fastx_toolkit/) removing scaffolds and alternative chromosomes, to allow for easier manipulation and parsing. ("NC_" RefSeq sequence prefix for chromosome)
 
         fasta_formatter -i GRCh38_p14_genomic.fna -o GRCh38_interim.csv -t 
 
@@ -53,7 +47,16 @@ The human genome is obtain from xxxx
         
         rm GRCh38_interim.csv
 
- 
+* #### Human genome annotations features (Last access: 15/12/2023, assembly name: GRCh38.p14
+assembly accession: GCF_000001405.40)
+
+    Download and unzip GFF file
+
+        wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/annotation_releases/GCF_000001405.40-RS_2023_10/GCF_000001405.40_GRCh38.p14_genomic.gff.gz
+
+        gunzip GCF_000001405.40_GRCh38.p14_genomic.gff.gz
+
+
 ## Protein-coding Genes:   
 
 The IDs for the protein-coding genes are obtain from the Hugo Gene Nomenclature Committee (HGNC) (Braschi et al., 2019)
@@ -100,7 +103,7 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
     * #### Short ncRNA
     Include HGNC database, exclude precursor miRNA/primary transcript, exclude rRNA, exclude lncRNA (Last access: 24/01/2024)
 
-        Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND NOT so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Pre_miRNA" AND NOT so_rna_type_name:"RRNA" AND NOT so_rna_type_name:"MiRNA" AND length:[33 TO 19263]) AND entry_type:"Sequence"
+        Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND NOT so_rna_type_name:"LncRNA" AND NOT so_rna_type_name:"Pre_miRNA" AND NOT so_rna_type_name:"RRNA" AND NOT so_rna_type_name:"MiRNA" AND length:[33 TO 19263]) AND entry_type:"Sequence" --> 956 sequences
 
         URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20NOT%20so_rna_type_name:%22LncRNA%22%20AND%20NOT%20so_rna_type_name:%22Pre_miRNA%22%20AND%20NOT%20so_rna_type_name:%22RRNA%22%20AND%20NOT%20so_rna_type_name:%22MiRNA%22
 
@@ -108,10 +111,10 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
 
         fasta_formatter -i "rnacentral-short-ncrna.fasta" -o "rnacentral-short-ncrna-seq.csv" -t
 
-    * #### Precursor miRNA
+    * #### Pre-miRNA
     Include HGNC database, include precursor miRNA/primary transcript only (Last access: 19/12/2024)
         
-        Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"Pre_miRNA" AND length:[75 TO 180]) AND entry_type:"Sequence"
+        Query: (expert_db:"HGNC" AND TAXONOMY:"9606" AND so_rna_type_name:"Pre_miRNA" AND length:[75 TO 180]) AND entry_type:"Sequence"  --> 1861
 
         URL: https://rnacentral.org/search?q=expert_db:%22HGNC%22%20AND%20TAXONOMY:%229606%22%20AND%20so_rna_type_name:%22Pre_miRNA%22
 
@@ -135,7 +138,7 @@ Download GENCODE annotations of known genes (Last access: 13/11/2023 - version 4
 
 Converting GENCODE GTF to bed file, including only genes and removing chrM/Y:
 
-    cat gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($3=="gene" && $1 != "chrM" && $1 != "chrY") {print $1,$4-1,$5,$10,$16,$7}}' | tr -d '";' > gencode-annotation.bed
+    grep -v "#" gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($1 != "chrM" && $1 != "chrY") {print $1,$4,$5,$7}}' | tr -d '";' > gencode-complement.bed
 
 Remove excess file:
 
@@ -146,16 +149,23 @@ Remove excess file:
 
 Obtain genes complement using bedtools complement. The length of the human chromosomes was used as genome reference. 
 
+    cut -f 1,2,3,6 data/raw/rnacentral-GRCh38-coords.bed > 
     gencode_bed="data/raw/gencode-annotation.bed"
-    rnacentral_bed="data/raw/rnacentral-GRCh38-coords.bed"
+    rnacentral_bed=""
+    genes=data/raw/all-genes.bed
     chromo_len="data/raw/chromosomes-len.bed"
+    
 
-    bedtools complement -i "$gencode_bed" -g "$chromo_len" > data/raw/gencode-complement
-    bedtools complement -i "$rnacentral_bed" -g "$chromo_len" > data/raw/rnacentral-complement
+    cat gencode-complement.bed rnacentral-complement.bed | sort -k1,1 -k2,2n -k3,3n > genes
+    
+    bedtools merge -i genes -s > genes-merged 
+
+    bedtools complement -i genes-merged -g "$chromo_len" > data/raw/genes-complement
+
 
 Merge both files, sort and remove duplicated entries
 
-    cat data/raw/gencode-complement data/raw/rnacentral-complement | sort -k1,1V -k2,2n | uniq > data/raw/genes-complement.bed && rm data/raw/rnacentral-complement && rm data/raw/gencode-complement
+      > data/raw/genes-complement.bed && rm data/raw/rnacentral-complement && rm data/raw/gencode-complement
 
 
 # Databases for Features 
