@@ -1,10 +1,10 @@
 #!/bin/bash
-#
-# Notes: 
-#        initial_data: 
-#        A refers to the first exon of the initial data: Exon 1 for lncRNA and Exon 2 for protein-codingRNA
-#        B refers to the second exon of the initial data: Exon 2 for lncRNA and Exon 3 for protein-codingRNA
-#        single refers to sequences which have a single exon 
+# 
+## This script generates the corresponding negative control dataset for the input file (protein-codingRNA, lncRNA or short-ncRNA)       
+# - Outputs one file for each exon (Exon 2&3 for protein-coding; 1&2 for lncRNA and single exon for short-ncRNA)      
+# - Note that A refers to the exon of a functional seq of the RNA type (Exon 1 for lncRNA and Exon 2 for protein-codingRNA);
+# B to the second exon (Exon 2 for lncRNA and Exon 3 for protein-codingRNA); and
+# single refers to sequences which have a single exon (short-ncRNA)
 #  
 ######## General Idea ########
 # 1) Reading line by line, define a sampling region from the gene to a fix value (first downstream) 
@@ -18,16 +18,21 @@
 
 #### General Set Up ####
 
-# Variables
-initial_data=$1
+## Input files ##
+# Of each genes from were functional seq was selected: chr, start coords of first exon, last coord of last exon, length exonA and length exonB  
+initial_data=$1             
+# csv file with genome sequences for each chromosome 
 genome_seq=$2
+# regions of genome lacking of genes (annotated from RNAcentral and Gencode)
 genes_complement=$3
 
+# distances from genome to find a region to sample the negative control. See manuscript for justification
 distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             
 
+# Name for files
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
-# Temporary files
+## Temporary files ##
 first_negative_coords="$file_name"-exonA-negative-coords.csv
 last_negative_coords="$file_name"-exonB-negative-coords.csv
 single_negative_coords="$file_name"-negative-coords.csv
@@ -39,7 +44,8 @@ closest_input="$file_name"-closest-input
 closest_output="$file_name"-closest-output
 random_output="$file_name"-random-coords
 
-# Final output files
+## Final output files ##
+# Note the output files depends on the initial_data input file 
 negative_control_single="$file_name"-negative-control-dataset.csv   # File for short-ncrna is the final negative control dataset
 negative_control_A="$file_name"-exonA-negative-control.csv          # File for lncrna and protein will be rename after this script to associated with the corresponding exon  
 negative_control_B="$file_name"-exonB-negative-control.csv
@@ -64,7 +70,7 @@ intersect(){
 }
 
 ###########################
-# Determinates percentage of ambiguous nucleotides on sequences (used to filter out if >5%)
+# Determines percentage of ambiguous nucleotides on sequences (used to filter out if >5% within get_sequence())
 ambiguity_percent() {
     
     seq=$1
@@ -135,7 +141,7 @@ multiple_exons_negative_control() {
     flow=$1
     sampling_regions=$2
 
-    len_region=$(( lenA + lenB )) # ?????? 
+    len_region=$(( lenA + lenB )) 
 
     for d in "${distances_to_seq[@]}"; do    
     
@@ -288,10 +294,10 @@ if [[ "$num_fields" -eq 5 ]]; then
 
     if [ ! -s "$first_negative_coords" ] || [ ! -s "$last_negative_coords" ]; then 
 
-        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_first"
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_A"
         countA=$(( $(wc -l < "$initial_data") ))
 
-        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_last"
+        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_B"
         countB=$(( $(wc -l < "$initial_data") ))
 
         tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene lenA lenB; do  
