@@ -20,19 +20,30 @@
 
 ## Input files ##
 # Of each genes from were functional seq was selected: chr, start coords of first exon, last coord of last exon, length exonA and length exonB  
-initial_data=$1             
+initial_data=$1  
+initial_data_seq_numb=$(( $(wc -l < "$initial_data") ))           
 # csv file with genome sequences for each chromosome 
 genome_seq=$2
 # regions of genome lacking of genes (annotated from RNAcentral and Gencode)
 genes_complement=$3
 
 # distances from genome to find a region to sample the negative control. See manuscript for justification
-distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             
+distances_to_seq=("1000" "5000" "10000" "50000" "100000" "500000" "1000000" "5000000")                             
 
 # Name for files
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
 ## Temporary files ##
+A_info="$file_name"-A-info
+B_info="$file_name"-B-info
+A_tmp="$file_name"-A-tmp
+B_tmp="$file_name"-B-tmp
+A_unsorted="$file_name"-A-unsorted
+B_unsorted="$file_name"-B-unsorted
+short_info="$file_name"-short-info
+short_tmp="$file_name"-short-tmp
+short_unsorted="$file_name"-short-unsorted
+
 first_negative_coords="$file_name"-exonA-negative-coords.csv
 last_negative_coords="$file_name"-exonB-negative-coords.csv
 single_negative_coords="$file_name"-negative-coords.csv
@@ -70,20 +81,6 @@ intersect(){
 }
 
 ###########################
-# Determines percentage of ambiguous nucleotides on sequences (used to filter out if >5% within get_sequence())
-ambiguity_percent() {
-    
-    seq=$1
-
-    amb_nucleotides=$( echo "$seq" | grep -o '[RYMKSWBDHVNrymkswbdhvn]' | wc -l )
-    total_nucleotides=$( echo -n "$seq" | wc -c )
-    ambiguity_percent=$(echo "scale=0; ($amb_nucleotides * 100) / $total_nucleotides" | bc)
-
-    echo "$ambiguity_percent"
-
-}
-
-###########################
 # Takes a random sample within a region:  
 # selects a random start and end coordinate for the negative control from a specific region (closest to position=(exon+d))
 sample_random() {
@@ -100,37 +97,6 @@ sample_random() {
 
     # Print sampled region
     echo -e "$chrRandom\t$rand_start\t$rand_end" > "$random_output" 
-}
-
-###########################
-# Extracts the sequence from the genome sequnece file, 
-# calculates the distance of the negative control to the corresponding gene, 
-# outputs the values on the final file 
-get_sequence(){
-
-    chrSeq=$1
-    startSeq=$2
-    endSeq=$3
-    count=$4
-    output_file=$5
-    
-    # Calculate distance to gene border 
-    if [ "$flow" == 'downstream' ]; then distance_gene=$(( startClosest - end_gene )); 
-    elif [ "$flow" == 'upstream' ]; then distance_gene=$(( start_gene - endClosest )); 
-    fi
-
-    # Extract sequence from genome and reject if it has an ambiguity percent > 5
-    chromo=$( echo "$chrSeq" | tr -d "chr" )    
-    seq=$( grep -w "chromosome $chromo" "$genome_seq" | cut -f 2 | cut -c"$startSeq"-"$endSeq" )
-        
-    if [ -n "$seq" ] && [[ $( ambiguity_percent "$seq" ) -lt 5 ]]; then                     
-
-        countId=$(( count + $(wc -l < "$output_file") ))   
-
-        echo "RNA$countId,No,$chrSeq,$startSeq,$endSeq,$seq,$distance_gene" >> "$output_file"
-
-    fi
-
 }
 
 ###########################
@@ -176,8 +142,9 @@ multiple_exons_negative_control() {
             # Redefine variables with random coordinates 
             IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
 
-            get_sequence "$chrClosest" "$startClosest" "$endClosest" "$countA" "$negative_control_A"
+			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countA\t.\t$strand" >> "$A_info"
 
+			(( countA++ ))
 
             #### EXON B ####
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$lenB" 
@@ -185,15 +152,15 @@ multiple_exons_negative_control() {
             # Redefine variables with random coordinates 
             IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
 
-            get_sequence "$chrClosest" "$startClosest" "$endClosest" "$countB" "$negative_control_B"
-            
-           
+            echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countB\t.\t$strand" >> "$B_info"
+
+			(( countB++ ))
         fi
         
     done
 
-    #rm -rf "$closest_input"
-    #rm -rf "$closest_output"
+    rm -rf "$closest_input"
+    rm -rf "$closest_output"
 }
     
 #### For sequences with single exon (short-ncRNA) #### 
@@ -234,7 +201,9 @@ single_exon_negative_control() {
             # Redefine variables with random coordinates 
             IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
 
-            get_sequence "$chrClosest" "$startClosest" "$endClosest" "$countSingle" "$negative_control_single"
+			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countSingle\t.\t$strand" >> "$short_info"
+
+			(( countSingle++ ))
 
         fi
         
@@ -245,6 +214,83 @@ single_exon_negative_control() {
 }
     
 ###########################
+## Format Final file ## 
+reformat_file() {
+
+    local input_file=$1
+    local output_file=$2
+
+    awk -F'\t' '
+    function calc_ambiguity(seq,   i, amb_nucleotides, total_nucleotides, ambiguity_percent) {
+        amb_nucleotides = 0
+        total_nucleotides = length(seq)
+        
+        for (i = 1; i <= total_nucleotides; i++) {
+            if (index("RYMKSWBDHVNrymkswbdhvn", substr(seq, i, 1))) {
+                amb_nucleotides++
+            }
+        }
+        
+        ambiguity_percent = (amb_nucleotides * 100) / total_nucleotides
+        return ambiguity_percent
+    	
+		}
+
+    {
+        split($1, parts, "::")
+        split(parts[2], coords, ":")
+        chromosome = coords[1]
+        split(coords[2], range, "-")
+        start = range[1] + 1 
+        end = substr(range[2], 1, index(range[2], "(") - 1)
+
+        sequence = $2
+        ambiguity = calc_ambiguity(sequence)
+
+        if (ambiguity <= 5) {
+            printf("%s,%s,%s,%s\n", chromosome, start, end, sequence)
+        }
+    }' "$input_file" >> "$output_file"
+
+    #rm -rf "$input_file"
+}
+
+
+###########################
+# Remove duplicates, sort sequences and rename (RNAid) 
+
+sort_output(){
+
+    local file_with_duplicates=$1
+    local output_file=$2
+
+    local file_id="$(basename "${file_with_duplicates%.*}" | sed 's/-dataset//')" 
+    local file_no_duplicates_unsorted="$file_id"-unsorted
+
+	# Remove duplicates 
+    awk -F',' 'BEGIN { OFS="\t" }
+            {
+                key = $1 FS $2 FS $3 FS $4
+                count[key]++
+                if (count[key] <= 1)
+                    print $0
+            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
+
+
+	sort -t ',' -k1,1 -k2,2n -k3,3n "$file_no_duplicates_unsorted" > "$file_id"-sorted-columns
+
+    numb_seqs=$(wc -l < "$file_id"-sorted-columns)
+
+	awk -v start="$initial_data_seq_numb" -v end="$(( initial_data_seq_numb + numb_seqs - 1 ))" '
+    BEGIN {
+        for (i = start; i <= end; i++) {
+            print "RNA" i
+        }
+    }' > "$file_id"-id-column
+
+    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+
+}
 
 ###########################################################################################################################
 #### EXTRACT NEGATIVE CONTROLS ####
@@ -254,7 +300,7 @@ single_exon_negative_control() {
 num_fields=$( awk -F',' '{print NF}' "$initial_data" | sort -nu | tail -n 1 )                      
 
 #### Single exon sequences ####
-if [[ "$num_fields" -eq 4 ]]; then                                                                      
+if [[ "$num_fields" -eq 5 ]]; then                                                                      
 
     if [ ! -s "$single_negative_coords" ]; then 
 
@@ -284,13 +330,24 @@ if [[ "$num_fields" -eq 4 ]]; then
 
         done 
 
-    fi
+		bedtools getfasta -fi "$genome_seq" -bed "$short_info" -fo "$short_tmp" -s -name -tab 
+		# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
+		# -name Use the name field and coordinates for the FASTA header
+		# tab Report extract sequences in a tab-delimited format instead of in FASTA format
+
+		reformat_file "$short_tmp" "$short_unsorted"
+		
+		sort_output "$short_unsorted" "$negative_control_single"
+
+		rm -rf "$short_info" "$short_tmp" "$short_unsorted" 
+    
+	fi
 
 fi
 
 
 # Multiple exons sequences #
-if [[ "$num_fields" -eq 5 ]]; then 
+if [[ "$num_fields" -eq 6 ]]; then 
 
     if [ ! -s "$first_negative_coords" ] || [ ! -s "$last_negative_coords" ]; then 
 
@@ -300,9 +357,9 @@ if [[ "$num_fields" -eq 5 ]]; then
         echo "ID,Functional,Chromosome,Start,End,Sequence,Distance_to_functional" > "$negative_control_B"
         countB=$(( $(wc -l < "$initial_data") ))
 
-        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene lenA lenB; do  
+        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene lenA lenB strand; do  
 
-            len_region=$(( lenA+lenB ))
+            len_region=$(( lenA + lenB ))
             # Temporary files
             sampling_region="$file_name"-sampling-region
             complement_sampling_region="$file_name"-complement-sampling-region
@@ -329,36 +386,17 @@ if [[ "$num_fields" -eq 5 ]]; then
 
     fi
 
+	## Extract sequences from genome ##
+	bedtools getfasta -fi "$genome_seq" -bed "$A_info" -fo "$A_tmp" -s -name -tab  
+	bedtools getfasta -fi "$genome_seq" -bed "$B_info" -fo "$B_tmp" -s -name -tab 
+
+	## Reformat file ## 
+	reformat_file "$A_tmp" "$A_unsorted"
+	reformat_file "$B_tmp" "$B_unsorted"
+
+	sort_output "$A_unsorted" "$negative_control_A" 
+	sort_output "$B_unsorted" "$negative_control_B" 
+
+	rm -rf "$A_info" "$B_info" "$A_tmp" "$B_tmp" "$A_unsorted" "$B_unsorted" 
+
 fi
-
-
-
-# Remove duplicates, sort sequences and rename (RNAid) 
-
-format_output(){
-
-    local file_with_duplicates=$1
-    local output_file=$2
-
-    local file_id="$(basename "${file_with_duplicates%.*}" | sed 's/-dataset//')" 
-    local file_no_duplicates_unsorted="$file_id"-unsorted
-
-    
-
-    awk -F',' 'BEGIN { OFS="\t" }
-            {
-                key = $2 FS $3 FS $4 FS $5 FS $6
-                count[key]++
-                if (count[key] <= 1)
-                    print $0
-            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
-
-
-    awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$file_no_duplicates_unsorted" | sort -t ',' -k2,2 -k3,3n -k4,4n > "$file_id"-sorted-columns
-    
-    numb_seqs=$(wc -l < "$file_id"-sorted-columns)
-    awk -F ',' 'NR > 1 {print $1}' "$file_with_duplicates" | head -n "$numb_seqs" > "$file_id"-id-column
-
-    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
-
-}
