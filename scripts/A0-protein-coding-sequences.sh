@@ -88,7 +88,9 @@ gff2Info() {
 	    if [[ "$chr" == 23 ]]; then chr=X; fi                                                                     # Chromosome X is NC_000023, but should be recorded as X in the final dataset for readability.
         
         end_final=$( echo "$final_end" | cut -d ' ' -f 3 )                                                        # End position of final exon
-	
+		start_two_zero=$(( start_two - 1 ))
+		start_three_zero=$(( start_three -1 ))
+
         len_two=$(( end_two - start_two ))                                                                        # Length of exons
         len_three=$(( end_three - start_three ))          
 
@@ -102,8 +104,8 @@ gff2Info() {
             selected_ids+=("$random_id")                            
             protein_count=$(echo "${#selected_ids[@]}") 
 
-            echo -e "chr$chr\t$start_two\t$end_two\tRNA$protein_count\t.\t$strand" >> "$protein_exon_two_info"
-            echo -e "chr$chr\t$start_three\t$end_three\tRNA$protein_count\t.\t$strand" >> "$protein_exon_three_info"
+            echo -e "chr$chr\t$start_two_zero\t$end_two\tRNA$protein_count\t.\t$strand" >> "$protein_exon_two_info"
+            echo -e "chr$chr\t$start_three_zero\t$end_three\tRNA$protein_count\t.\t$strand" >> "$protein_exon_three_info"
 
             # Reverse transcripts can alter order of start/end positions
             if [ "$start_one" -gt "$end_final" ]; then                              # Negative strand                                                     
@@ -157,8 +159,8 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 	# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
 	# -name Use the name field and coordinates for the FASTA header
 	# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
-	rm -rf "$protein_exon_two_info"
-	rm -rf rm -rf "$protein_exon_three_info"
+	#rm -rf "$protein_exon_two_info"
+	#rm -rf rm -rf "$protein_exon_three_info"
 	
 	## Format Final file ## 
 	reformat_file(){
@@ -172,7 +174,7 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
     		split(parts[2], coords, ":")
     		chromosome = coords[1]
     		split(coords[2], range, "-")
-    		start = range[1]
+    		start = range[1] + 1 
     		end = substr(range[2], 1, index(range[2], "(") - 1)
     
     		Functional = "Yes"
