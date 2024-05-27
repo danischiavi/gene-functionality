@@ -20,6 +20,7 @@
 ##### Input files ##### 
 rnacentral_coords=$1
 rnacentral_lncrna_seqs=$2
+genome_seq=$3
 
 #### Final Output files #####
 mkdir -p data/datasets
@@ -31,12 +32,17 @@ lncrna_exon_two='data/datasets/functional-lncrna-exon2-dataset.csv'
 lncrna_negative_control='data/datasets/lncrna-coords-negative-control.csv'
 
 #### Temporary files ####
+lncrna_exon_one_info='data/datasets/lncrna_exon_one_info'
+lncrna_exon_two_info='data/datasets/lncrna_exon_two_info'
+lncrna_exon_one_tmp='data/datasets/lncrna_exon_one_tmp'
+lncrna_exon_two_tmp='data/datasets/lncrna_exon_two_tmp'
+
 lncrna_exon_one_unsorted='data/datasets/functional-lncrna-exon1-unsorted.csv' 
 lncrna_exon_two_unsorted='data/datasets/functional-lncrna-exon2-unsorted.csv'  
 lncrna_negative_control_unsorted='data/datasets/lncrna-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
-sample_size=1000                     # Number of sequences for each type of RNA 
+sample_size=100                     # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
 upper_limit_lncrna='1149'
 
@@ -48,12 +54,13 @@ upper_limit_lncrna='1149'
 set_variables() {                                         
     
     local id=$1
-    
-    seq=$(  grep -m 1 "$id" "$rnacentral_lncrna_seqs" | cut -f 2 )
+
     meta=$( grep -m 1 "$id" "$rnacentral_coords" )
     chr=$(  echo "$meta" | cut -f 1 )
+	strand=$( echo "$meta" | cut -f 6 )
+
                                          
-    if [ -n "$seq" ] && [ "$chr" != 'chrM' ] && [ "$chr" != 'chrY' ]; then 
+    if [ "$chr" != 'chrM' ] && [ "$chr" != 'chrY' ]; then 
 
         exon_count=$( echo "$meta" | cut -f 10 )
 
@@ -67,44 +74,38 @@ set_variables() {
             if { [ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]; } && { [ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ]; }; then  
                 
             # Coordinates to extract sequence from RNAcentral
-                seq_start_zero=$(echo "$meta" | awk -F'\t' '{print $2}' )                                # 0-start. Function in progress for this (see ./bin/draft)
+                seq_start_zero=$(echo "$meta" | awk -F'\t' '{print $2}' )                                # 0-start
                 seq_start=$((seq_start_zero + 1))
-
-                relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. It's actually zero     
-                start_index_one=$((relative_start_one + 1))                                              # index to extract sequece: +1 to account for the first relative start pos being 0
-                end_index_one=$((relative_start_one + len_one))
-                seq_one=$( echo "$seq" | cut -c $start_index_one-$end_index_one)                         # Sequence of exon 1 extracted from RNAcentral (fasta file converted to csv)
-
-                start_index_two=$((end_index_one + 1))                                                   # Field 12 are the coordinates relative to seq_start but considering the introns,     # which are not present in the downloaded RNAcentral lncrna sequence -> to extract exon seq   # use values relative to exon 1                                          
-                end_index_two=$((end_index_one + len_two))
-                seq_two=$( echo "$seq" | cut -c $start_index_two-$end_index_two)
-                        
+                relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. For exon one is zero     
+                
             # Coordinates in genome 
-                start_one=$((   $seq_start + $relative_start_one ))                                  
-                end_one=$((                $start_one + $len_one - 1))                                   # -1 to make the end coordinate inclusive (to match UCSC browser)
+                start_one=$((   seq_start + relative_start_one ))                                  
+                start_one_zero=$(( start_one - 1 ))
+				end_one=$((             start_one + len_one - 1))                                   	 # -1 to make the end coordinate inclusive (to match UCSC browser)
 
                 relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
-                start_two=$((   $seq_start + $relative_start_two ))                                         
-                end_two=$((                $start_two + $len_two - 1))
+                start_two=$((   seq_start + relative_start_two ))
+				start_two_zero=$(( start_two - 1 ))                                         
+                end_two=$((             start_two + len_two - 1))
 
                 relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
-                start_last=$(( $seq_start + $relative_start_last )) 
-                end_last=$((             $start_last + $len_last - 1))
+                start_last=$(( seq_start + relative_start_last )) 
+                end_last=$((          start_last + len_last - 1))
             
             # RNA count
                 selected_ids+=("$random_id")
                 lncrna_count=$(echo "${#selected_ids[@]}")
-            
-                echo RNA$lncrna_count,Yes,"$chr","$start_one","$end_one","$seq_one" >> "$lncrna_exon_one_unsorted"
-                echo RNA$lncrna_count,Yes,"$chr","$start_two","$end_two","$seq_two" >> "$lncrna_exon_two_unsorted"  
+	
+				echo -e "$chr\t$start_one_zero\t$end_one\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_one_info"
+            	echo -e "$chr\t$start_two_zero\t$end_two\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_two_info" 
 
-                if [ "$start_one" -gt "$end_last" ]; then                                                 # Reverse transcripts can alter order of start/end positions
+                if [ "$start_one" -gt "$end_last" ]; then                                                			# Reverse transcripts can alter order of start/end positions
                                                                              
-                    echo "$chr,$end_last,$start_one,$len_one,$len_two" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three
+                    echo "$chr,$end_last,$start_one,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three
                         
                 else
 
-                    echo "$chr,$start_one,$end_last,$len_one,$len_two" >> "$lncrna_negative_control_unsorted"
+                    echo "$chr,$start_one,$end_last,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"
                 fi
             fi
         fi
@@ -145,7 +146,44 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
         fi
     done
 
-        # Sort sequences and remove temporary files 
+	## Extract sequences from genome ##
+	bedtools getfasta -fi "$genome_seq" -bed "$lncrna_exon_one_info" -fo "$lncrna_exon_one_tmp" -s -name -tab  
+	bedtools getfasta -fi "$genome_seq" -bed "$lncrna_exon_two_info" -fo "$lncrna_exon_two_tmp" -s -name -tab 
+	# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
+	# -name Use the name field and coordinates for the FASTA header
+	# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
+	#rm -rf "$lncrna_exon_one_info"
+	#rm -rf rm -rf "$lncrna_exon_two_info"
+	
+	## Format Final file ## 
+	reformat_file(){
+
+		local input_file=$1
+		local output_file=$2
+
+		awk -F'\t' '{
+    		split($1, parts, "::")
+    		id = parts[1]
+    		split(parts[2], coords, ":")
+    		chromosome = coords[1]
+    		split(coords[2], range, "-")
+    		start = range[1] + 1 
+    		end = substr(range[2], 1, index(range[2], "(") - 1)
+    
+    		Functional = "Yes"
+    		sequence = $2
+
+    		printf("%s,%s,%s,%s,%s,%s\n", id, Functional, chromosome, start, end, sequence)
+		}' "$input_file" >> "$output_file"
+	
+		rm -rf "$input_file"
+	}
+
+	reformat_file "$lncrna_exon_one_tmp" "$lncrna_exon_one_unsorted"
+	reformat_file "$lncrna_exon_two_tmp" "$lncrna_exon_two_unsorted"
+
+
+    # Sort sequences and remove temporary files 
     sort_functional(){
 
         local unsorted_file=$1
