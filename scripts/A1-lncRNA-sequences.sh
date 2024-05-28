@@ -63,59 +63,62 @@ set_variables() {
     local id=$1
 
     meta=$( grep -m 1 "$id" "$rnacentral_coords" )
-    chr=$(  echo "$meta" | cut -f 1 )
-	strand=$( echo "$meta" | cut -f 6 )
 
-                                         
-    if [ "$chr" != 'chrM' ] && [ "$chr" != 'chrY' ]; then 
+	if [ -n "$meta" ]; then
 
-        exon_count=$( echo "$meta" | cut -f 10 )
+    	chr=$(  echo "$meta" | cut -f 1 )
+		strand=$( echo "$meta" | cut -f 6 )
+                             
+    	if [ "$chr" != 'chrM' ] && [ "$chr" != 'chrY' ]; then 
 
-        if [ "$exon_count" -ge 2 ]; then                                                                # Filter for Multiexonic lncrna
+        	exon_count=$( echo "$meta" | cut -f 10 )
+
+        	if [ "$exon_count" -ge 2 ]; then                                                                # Filter for Multiexonic lncrna
                         
-        # Length of the required exons
-            len_one=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $1}')               # Length exons within range
-            len_two=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}') 
-            len_last=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')
+        		# Length of the required exons
+            	len_one=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $1}')               # Length exons within range
+            	len_two=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}') 
+            	len_last=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')
 
-            if { [ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]; } && { [ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ]; }; then  
+            	if { [ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]; } && { [ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ]; }; then  
                 
-            # Coordinates to extract sequence from RNAcentral
-                seq_start_zero=$(echo "$meta" | awk -F'\t' '{print $2}' )                                # 0-start
-                seq_start=$((seq_start_zero + 1))
-                relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. For exon one is zero     
+            	# Coordinates to extract sequence from RNAcentral
+                	seq_start_zero=$(echo "$meta" | awk -F'\t' '{print $2}' )                                # 0-start
+                	seq_start=$((seq_start_zero + 1))
+                	relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. For exon one is zero     
                 
-            # Coordinates in genome 
-                start_one=$((   seq_start + relative_start_one ))                                  
-                start_one_zero=$(( start_one - 1 ))
-				end_one=$((             start_one + len_one - 1))                                   	 # -1 to make the end coordinate inclusive (to match UCSC browser)
+            	# Coordinates in genome 
+                	start_one=$((   seq_start + relative_start_one ))                                  
+                	start_one_zero=$(( start_one - 1 ))
+					end_one=$((             start_one + len_one - 1))                                   	 # -1 to make the end coordinate inclusive (to match UCSC browser)
 
-                relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
-                start_two=$((   seq_start + relative_start_two ))
-				start_two_zero=$(( start_two - 1 ))                                         
-                end_two=$((             start_two + len_two - 1))
+                	relative_start_two=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
+                	start_two=$((   seq_start + relative_start_two ))
+					start_two_zero=$(( start_two - 1 ))                                         
+                	end_two=$((             start_two + len_two - 1))
 
-                relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
-                start_last=$(( seq_start + relative_start_last )) 
-                end_last=$((          start_last + len_last - 1))
+                	relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
+                	start_last=$(( seq_start + relative_start_last )) 
+                	end_last=$((          start_last + len_last - 1))
             
-            # RNA count
-                selected_ids+=("$random_id")
-                lncrna_count=$(echo "${#selected_ids[@]}")
+            	# RNA count
+				
+                	(( lncrna_count ++ ))
 	
-				echo -e "$chr\t$start_one_zero\t$end_one\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_one_info"
-            	echo -e "$chr\t$start_two_zero\t$end_two\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_two_info" 
+					echo -e "$chr\t$start_one_zero\t$end_one\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_one_info"
+            		echo -e "$chr\t$start_two_zero\t$end_two\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_two_info" 
 
-                if [ "$start_one" -gt "$end_last" ]; then                                                			# Reverse transcripts can alter order of start/end positions
+                	if [ "$start_one" -gt "$end_last" ]; then                                                			# Reverse transcripts can alter order of start/end positions
                                                                              
-                    echo "$chr,$end_last,$start_one,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three
+                    	echo "$chr,$end_last,$start_one,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three
                         
-                else
+                	else
 
-                    echo "$chr,$start_one,$end_last,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"
-                fi
-            fi
-        fi
+                    	echo "$chr,$start_one,$end_last,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"
+                	fi
+            	fi
+			fi
+		fi
     fi
 }
 
@@ -188,10 +191,6 @@ sort_output(){
 #### EXTRACT SEQUENCES ####
 ###########################################################################################################################
 
-# Populate arrays with non-coding-sequences IDs column for searching within all ncrna RNAcentral database 
-declare -a "IDs_ncrna=()"  
-mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
-
 if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 
 	if [ ! -s "$lncrna_exon_one_info" ] || [ ! -s "$lncrna_exon_two_info" ]; then  
@@ -210,14 +209,11 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 
         		if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
        
-            		if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
-    
-                		set_variables "$random_id" 
+	   				selected_ids+=("$random_id")
+                	set_variables "$random_id" 
 
-            		fi
         		fi
 			fi
-		
     	done
 	fi
 
