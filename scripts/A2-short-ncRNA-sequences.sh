@@ -130,7 +130,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("%s,%s,%s,%s\n", chromosome, start, end, sequence)
+            printf("Yes,%s,%s,%s,%s\n", chromosome, start, end, sequence)
         }
     }' "$input_file" >> "$output_file"
 
@@ -142,27 +142,14 @@ reformat_file() {
 
 sort_output(){
 
-    local file_with_duplicates=$1
+    local input_file=$1
     local output_file=$2
 
-    local file_id="$(basename "${file_with_duplicates%.*}" | sed 's/-dataset//')" 
-    local file_no_duplicates_unsorted="$file_id"-unsorted
+	local file_id=data/datasets/"$(basename "${input_file%.*}" | sed 's/-unsorted.csv//')" 
 
-	# Remove duplicates 
-    awk -F',' 'BEGIN { OFS="\t" }
-            {
-                key = $1 FS $2 FS $3 FS $4
-                count[key]++
-                if (count[key] <= 1)
-                    print $0
-            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
+	sort -t ',' -k2,2 -k3,3n -k4,4n "$input_file" > "$file_id"-sorted-columns
 
-
-	sort -t ',' -k1,1 -k2,2n -k3,3n "$file_no_duplicates_unsorted" > "$file_id"-sorted-columns
-
-    numb_seqs=$(wc -l < "$file_id"-sorted-columns)
-
-	awk -v start="$initial_data_seq_numb" -v end="$(( initial_data_seq_numb + numb_seqs - 1 ))" '
+	awk -v start=1 -v end="$sample_size" '
     BEGIN {
         for (i = start; i <= end; i++) {
             print "RNA" i
@@ -171,6 +158,7 @@ sort_output(){
 
     (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
+	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }
 
 ###########################################################################################################################
@@ -184,82 +172,95 @@ mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
 
 if [ ! -s "$short_ncrna" ]; then 
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$short_ncrna_unsorted"
-    echo "Chromosome,Start,End,Length" >> "$short_negative_control_unsorted" 
-
-    declare -a "IDs_short_ncrna=()"
-    mapfile -t IDs_short_ncrna < <(cut -f 1 -d $'\t' "$rnacentral_short_ncrna_seqs" | awk '{print $1}')
+	if [ ! -s "$short_info" ]; then
     
-    declare -a "IDs_pre_mirna=()"
-    mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | awk '{print $1}')
-
-    declare -a "selected_ids=()"
-    short_count=0
-
-    while [ "$short_count" -lt "$sample_size" ]; do
-
-        short_leftover="${#IDs_short_ncrna[@]}"
+		declare -a "IDs_short_ncrna=()"
+    	mapfile -t IDs_short_ncrna < <(cut -f 1 -d $'\t' "$rnacentral_short_ncrna_seqs" | awk '{print $1}')
     
-        if [ "$short_leftover" -gt 0 ]; then
+    	declare -a "IDs_pre_mirna=()"
+    	mapfile -t IDs_pre_mirna < <(cut -f 1 -d $'\t' "$rnacentral_pre_mirna_seqs" | awk '{print $1}')
 
-            random_id=$(printf "%s\n" "${IDs_short_ncrna[@]}" | shuf -n 1)
+    	declare -a "selected_ids=()"
+    	short_count=0
 
-            # Find index of random id
-            for index in "${!IDs_short_ncrna[@]}"; do                                                     
-                if [[ "${IDs_short_ncrna[$index]}" == "$random_id" ]]; then
-                    del_index=$index
-                    break
-                fi
-            done
+    	while [ "$short_count" -lt "$sample_size" ]; do
 
-            # Remove random id from short_ncrna array to avoid repeats and make downstream selection faster 
-            IDs_short_ncrna=( "${IDs_short_ncrna[@]:0:$del_index}" "${IDs_short_ncrna[@]:$((del_index + 1))}" )                                   
+        	short_leftover="${#IDs_short_ncrna[@]}"
+    
+        	if [ "$short_leftover" -gt 0 ]; then
 
-			if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
-            	
-				if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+            	random_id=$(printf "%s\n" "${IDs_short_ncrna[@]}" | shuf -n 1)
 
-                	set_variables "$random_id" 
-                     
-            	fi 
-			fi
-
-        else 
-
-            random_id=$(printf "%s\n" "${IDs_pre_mirna[@]}" | shuf -n 1)
-
-			if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
-
-            	if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
-
-                	if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
-
-                    	set_variables "$random_id" 
-        
+            	# Find index of random id
+            	for index in "${!IDs_short_ncrna[@]}"; do                                                     
+                	if [[ "${IDs_short_ncrna[$index]}" == "$random_id" ]]; then
+                    	del_index=$index
+                    	break
                 	fi
+            	done
+
+            	# Remove random id from short_ncrna array to avoid repeats and make downstream selection faster 
+            	IDs_short_ncrna=( "${IDs_short_ncrna[@]:0:$del_index}" "${IDs_short_ncrna[@]:$((del_index + 1))}" )                                   
+
+				if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+            	
+					if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+
+                		set_variables "$random_id" 
+                     
+            		fi 
 				fi
-            fi
-        fi    
-    done
+
+        	else 
+
+            	random_id=$(printf "%s\n" "${IDs_pre_mirna[@]}" | shuf -n 1)
+
+				if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+
+            		if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
+
+                		if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+
+                    		set_variables "$random_id" 
+        
+                		fi
+					fi
+            	fi
+        	fi    
+    	done
+	fi
 	
 	## Extract sequences from genome ##
-	bedtools getfasta -fi "$genome_seq" -bed "$short_info" -fo "$short_tmp" -s -name -tab  
-	# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
-	# -name Use the name field and coordinates for the FASTA header
-	# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
+	if [ ! -s "$short_tmp" ]; then
+
+		bedtools getfasta -fi "$genome_seq" -bed "$short_info" -fo "$short_tmp" -s -name -tab  
+			# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
+			# -name Use the name field and coordinates for the FASTA header
+			# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
 	
-	rm -rf rm -rf "$short_info"
+		
 	
+	fi
+
 	## Format Final file ## 
+	if [ ! -s "$shor_ncrna_unsorted" ]; then
 	
-	reformat_file "$short_tmp" "$short_ncrna_unsorted"
+		reformat_file "$short_tmp" "$short_ncrna_unsorted"	
+		sort_output "$short_ncrna_unsorted" "$short_ncrna" 
 
-	sort_output "$short_ncrna_unsorted" "$short_ncrna" 
-
+	fi
+	
     # Sort coordenates for negative control 
-    awk 'NR == 1 {print $0; next} {print $0 | "sort -t, -k1,1 -k2,2n -k3,3n"}' "$short_negative_control_unsorted"  > "$short_negative_control" 
+	{
+		echo "Chromosome,Start,End,Length,Strand"
+    	sort -t, -k1,1 -k2,2n -k3,3n "$short_negative_control_unsorted"
+	} > "$short_negative_control"
 
+	rm -rf rm -rf "$short_info"
+	rm -rf rm -rf "$short_tmp"
+	rm -rf rm -rf "$short_ncrna_unsorted"
     rm -rf "$short_negative_control_unsorted" 
 
 fi
 
+rm -rf "$int_database_file"

@@ -153,7 +153,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("%s,%s,%s,%s\n", chromosome, start, end, sequence)
+            printf("Yes,%s,%s,%s,%s\n", chromosome, start, end, sequence)
         }
     }' "$input_file" >> "$output_file"
 
@@ -165,27 +165,14 @@ reformat_file() {
 
 sort_output(){
 
-    local file_with_duplicates=$1
+    local input_file=$1
     local output_file=$2
 
-    local file_id="$(basename "${file_with_duplicates%.*}" | sed 's/-dataset//')" 
-    local file_no_duplicates_unsorted="$file_id"-unsorted
+	local file_id=data/datasets/"$(basename "${input_file%.*}" | sed 's/-unsorted.csv//')" 
 
-	# Remove duplicates 
-    awk -F',' 'BEGIN { OFS="\t" }
-            {
-                key = $1 FS $2 FS $3 FS $4
-                count[key]++
-                if (count[key] <= 1)
-                    print $0
-            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
+	sort -t ',' -k2,2 -k3,3n -k4,4n "$input_file" > "$file_id"-sorted-columns
 
-
-	sort -t ',' -k1,1 -k2,2n -k3,3n "$file_no_duplicates_unsorted" > "$file_id"-sorted-columns
-
-    numb_seqs=$(wc -l < "$file_id"-sorted-columns)
-
-	awk -v start="$initial_data_seq_numb" -v end="$(( initial_data_seq_numb + numb_seqs - 1 ))" '
+	awk -v start=1 -v end="$sample_size" '
     BEGIN {
         for (i = start; i <= end; i++) {
             print "RNA" i
@@ -194,6 +181,7 @@ sort_output(){
 
     (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
+	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }
 
 ###########################################################################################################################
@@ -204,58 +192,72 @@ sort_output(){
 declare -a "IDs_ncrna=()"  
 mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
 
-if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then 
+if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_one_unsorted"
-    echo "ID,Functional,Chromosome,Start,End,Sequence" >> "$lncrna_exon_two_unsorted"
-    echo "Chromosome,Start,End,Length_exon1,Length_exon2" >> "$lncrna_negative_control_unsorted" 
-
-    declare -a "IDs_lncrna=()"
-    mapfile -t IDs_lncrna < <(cut -f 1 -d $'\t' "$rnacentral_lncrna_seqs" | awk '{print $1}')
+	if [ ! -s "$lncrna_exon_one_info" ] || [ ! -s "$lncrna_exon_two_info" ]; then  
     
-    declare -a "selected_ids=()"                                                                                    # Keeps track of selected random IDs
-    lncrna_count=0
-
-    while [ "$lncrna_count" -lt "$sample_size" ]; do
+		declare -a "IDs_lncrna=()"
+    	mapfile -t IDs_lncrna < <(cut -f 1 -d $'\t' "$rnacentral_lncrna_seqs" | awk '{print $1}')
     
-        random_id=$(printf "%s\n" "${IDs_lncrna[@]}" | shuf -n 1)                                                   # Select a random ID from the lncrna list
+    	declare -a "selected_ids=()"                                                                                    # Keeps track of selected random IDs
+    	lncrna_count=0
 
-		if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+    	while [ "$lncrna_count" -lt "$sample_size" ]; do
+    
+        	random_id=$(printf "%s\n" "${IDs_lncrna[@]}" | shuf -n 1)                                                   # Select a random ID from the lncrna list
 
-        	if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
+			if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+
+        		if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
        
-            	if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
+            		if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
     
-                	set_variables "$random_id" 
+                		set_variables "$random_id" 
 
-            	fi
-        	fi
-		fi
+            		fi
+        		fi
+			fi
 		
-    done
+    	done
+	fi
 
 	## Extract sequences from genome ##
-	bedtools getfasta -fi "$genome_seq" -bed "$lncrna_exon_one_info" -fo "$lncrna_exon_one_tmp" -s -name -tab  
-	bedtools getfasta -fi "$genome_seq" -bed "$lncrna_exon_two_info" -fo "$lncrna_exon_two_tmp" -s -name -tab 
-	# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
-	# -name Use the name field and coordinates for the FASTA header
-	# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
-	#rm -rf "$lncrna_exon_one_info"
-	#rm -rf rm -rf "$lncrna_exon_two_info"
-	
+	if [ ! -s "$lncrna_exon_one_tmp" ]; then  
+		bedtools getfasta -fi "$genome_seq" -bed "$lncrna_exon_one_info" -fo "$lncrna_exon_one_tmp" -s -name -tab  
+			# -s Force strandedness. If the feature occupies the antisense strand, the sequence will be reverse complemented
+			# -name Use the name field and coordinates for the FASTA header
+			# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
+	fi 
+
+	if [ ! -s "$lncrna_exon_two_tmp" ]; then 
+		bedtools getfasta -fi "$genome_seq" -bed "$lncrna_exon_two_info" -fo "$lncrna_exon_two_tmp" -s -name -tab 
+	fi
+
 	## Format Final file ## 
-	reformat_file "$lncrna_exon_one_tmp" "$lncrna_exon_one_unsorted"
-	reformat_file "$lncrna_exon_two_tmp" "$lncrna_exon_two_unsorted"
+	if [ ! -s "$lncrna_exon_one_unsorted" ]; then 
+		reformat_file "$lncrna_exon_one_tmp" "$lncrna_exon_one_unsorted"
+		sort_output "$lncrna_exon_one_unsorted" "$lncrna_exon_one"
+	fi
 
-    sort_functional "$lncrna_exon_one_unsorted" "$lncrna_exon_one"
-    sort_functional "$lncrna_exon_two_unsorted" "$lncrna_exon_two"
+	if [ ! -s "$lncrna_exon_two_unsorted" ]; then 
+		reformat_file "$lncrna_exon_two_tmp" "$lncrna_exon_two_unsorted"
+		sort_output "$lncrna_exon_two_unsorted" "$lncrna_exon_two"
+	fi
 
+    
     # Sort coordenates for negative control 
-    awk 'NR == 1 {print $0; next} {print $0 | "sort -t, -k1,1 -k2,2n -k3,3n"}' "$lncrna_negative_control_unsorted" > "$lncrna_negative_control"
+	{
+		echo "Chromosome,Start,End,Length_exon1,Length_exon2,Strand"
+    	sort -t, -k1,1 -k2,2n -k3,3n "$lncrna_negative_control_unsorted" 
+	} > "$lncrna_negative_control"
 
+	rm -rf "$lncrna_exon_one_info" "$lncrna_exon_two_info"
+	rm -rf "$lncrna_exon_one_tmp" "$lncrna_exon_two_tmp"
+	rm -rf "$lncrna_exon_one_unsorted" "$lncrna_exon_two_unsorted"		
     rm -rf "$lncrna_negative_control_unsorted"
 
 fi
 
+rm -rf "$int_database_file"
 
 
