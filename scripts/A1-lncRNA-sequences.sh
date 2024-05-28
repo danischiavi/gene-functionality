@@ -21,6 +21,7 @@
 rnacentral_coords=$1
 rnacentral_lncrna_seqs=$2
 genome_seq=$3
+interaction_database=$4
 
 #### Final Output files #####
 mkdir -p data/datasets
@@ -32,10 +33,11 @@ lncrna_exon_two='data/datasets/functional-lncrna-exon2-dataset.csv'
 lncrna_negative_control='data/datasets/lncrna-coords-negative-control.csv'
 
 #### Temporary files ####
-lncrna_exon_one_info='data/datasets/lncrna_exon_one_info'
-lncrna_exon_two_info='data/datasets/lncrna_exon_two_info'
-lncrna_exon_one_tmp='data/datasets/lncrna_exon_one_tmp'
-lncrna_exon_two_tmp='data/datasets/lncrna_exon_two_tmp'
+int_database_file='data/datasets/interaction-database-tmp'
+lncrna_exon_one_info='data/datasets/lncrna-exon-one-info'
+lncrna_exon_two_info='data/datasets/lncrna-exon-two-info'
+lncrna_exon_one_tmp='data/datasets/lncrna-exon-one-tmp'
+lncrna_exon_two_tmp='data/datasets/lncrna-exon-two-tmp'
 
 lncrna_exon_one_unsorted='data/datasets/functional-lncrna-exon1-unsorted.csv' 
 lncrna_exon_two_unsorted='data/datasets/functional-lncrna-exon2-unsorted.csv'  
@@ -45,6 +47,11 @@ lncrna_negative_control_unsorted='data/datasets/lncrna-coords-negative-unsorted.
 sample_size=100                     # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
 upper_limit_lncrna='1149'
+
+## Interaction database ## 
+awk '/^>/ {print substr($1, 2)}' "$interaction_database" > "$int_database_file"
+declare -a "IDs_interaction=()" 
+mapfile -t IDs_interaction < "$int_database_file"
 
 ###########################################################################################################################
 #### FUNCTION DECLARATION ####
@@ -112,6 +119,83 @@ set_variables() {
     fi
 }
 
+
+reformat_file() {
+
+    local input_file=$1
+    local output_file=$2
+
+    awk -F'\t' '
+    function calc_ambiguity(seq,   i, amb_nucleotides, total_nucleotides, ambiguity_percent) {
+        amb_nucleotides = 0
+        total_nucleotides = length(seq)
+        
+        for (i = 1; i <= total_nucleotides; i++) {
+            if (index("RYMKSWBDHVNrymkswbdhvn", substr(seq, i, 1))) {
+                amb_nucleotides++
+            }
+        }
+        
+        ambiguity_percent = (amb_nucleotides * 100) / total_nucleotides
+        return ambiguity_percent
+    	
+		}
+
+    {
+        split($1, parts, "::")
+        split(parts[2], coords, ":")
+        chromosome = coords[1]
+        split(coords[2], range, "-")
+        start = range[1] + 1 
+        end = substr(range[2], 1, index(range[2], "(") - 1)
+
+        sequence = $2
+        ambiguity = calc_ambiguity(sequence)
+
+        if (ambiguity <= 5) {
+            printf("%s,%s,%s,%s\n", chromosome, start, end, sequence)
+        }
+    }' "$input_file" >> "$output_file"
+
+    rm -rf "$input_file"
+
+}
+
+###########################
+
+sort_output(){
+
+    local file_with_duplicates=$1
+    local output_file=$2
+
+    local file_id="$(basename "${file_with_duplicates%.*}" | sed 's/-dataset//')" 
+    local file_no_duplicates_unsorted="$file_id"-unsorted
+
+	# Remove duplicates 
+    awk -F',' 'BEGIN { OFS="\t" }
+            {
+                key = $1 FS $2 FS $3 FS $4
+                count[key]++
+                if (count[key] <= 1)
+                    print $0
+            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
+
+
+	sort -t ',' -k1,1 -k2,2n -k3,3n "$file_no_duplicates_unsorted" > "$file_id"-sorted-columns
+
+    numb_seqs=$(wc -l < "$file_id"-sorted-columns)
+
+	awk -v start="$initial_data_seq_numb" -v end="$(( initial_data_seq_numb + numb_seqs - 1 ))" '
+    BEGIN {
+        for (i = start; i <= end; i++) {
+            print "RNA" i
+        }
+    }' > "$file_id"-id-column
+
+    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+
+}
+
 ###########################################################################################################################
 #### EXTRACT SEQUENCES ####
 ###########################################################################################################################
@@ -135,15 +219,19 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
     while [ "$lncrna_count" -lt "$sample_size" ]; do
     
         random_id=$(printf "%s\n" "${IDs_lncrna[@]}" | shuf -n 1)                                                   # Select a random ID from the lncrna list
-                                             
-        if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
-       
-            if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
-    
-                set_variables "$random_id" 
 
-            fi
-        fi
+		if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+
+        	if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
+       
+            	if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then 
+    
+                	set_variables "$random_id" 
+
+            	fi
+        	fi
+		fi
+		
     done
 
 	## Extract sequences from genome ##
@@ -156,48 +244,8 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 	#rm -rf rm -rf "$lncrna_exon_two_info"
 	
 	## Format Final file ## 
-	reformat_file(){
-
-		local input_file=$1
-		local output_file=$2
-
-		awk -F'\t' '{
-    		split($1, parts, "::")
-    		id = parts[1]
-    		split(parts[2], coords, ":")
-    		chromosome = coords[1]
-    		split(coords[2], range, "-")
-    		start = range[1] + 1 
-    		end = substr(range[2], 1, index(range[2], "(") - 1)
-    
-    		Functional = "Yes"
-    		sequence = $2
-
-    		printf("%s,%s,%s,%s,%s,%s\n", id, Functional, chromosome, start, end, sequence)
-		}' "$input_file" >> "$output_file"
-	
-		rm -rf "$input_file"
-	}
-
 	reformat_file "$lncrna_exon_one_tmp" "$lncrna_exon_one_unsorted"
 	reformat_file "$lncrna_exon_two_tmp" "$lncrna_exon_two_unsorted"
-
-
-    # Sort sequences and remove temporary files 
-    sort_functional(){
-
-        local unsorted_file=$1
-        local output_file=$2
-
-        awk -F ',' 'NR > 1 {print $1}' "$unsorted_file" > lncrna-id-column
-        awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$unsorted_file" | sort -t ',' -k2,2 -k3,3n -k4,4n > lncrna-sorted_columns
-        (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' lncrna-id-column lncrna-sorted_columns) > "$output_file"
-
-        rm -rf lncrna-id-column
-        rm -rf lncrna-sorted_columns
-        #rm -rf "$unsorted_file"
-
-    }
 
     sort_functional "$lncrna_exon_one_unsorted" "$lncrna_exon_one"
     sort_functional "$lncrna_exon_two_unsorted" "$lncrna_exon_two"

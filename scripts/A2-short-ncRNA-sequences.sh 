@@ -25,6 +25,7 @@ rnacentral_coords=$1
 rnacentral_short_ncrna_seqs=$2
 rnacentral_pre_mirna_seqs=$3
 genome_seq=$4
+interaction_database=$5
 
 #### Final Output files #####
 mkdir -p data/datasets
@@ -35,9 +36,9 @@ short_ncrna='data/datasets/functional-short-ncrna-dataset.csv'
 short_negative_control='data/datasets/short-ncrna-coords-negative-control.csv'
 
 ##### Temporary files ####
+int_database_file='data/datasets/interaction-database-tmp'
 short_info='data/datasets/short-info'
 short_tmp='data/datasets/short-tmp'
-
 short_ncrna_unsorted='data/datasets/functional-short-ncrna-unsorted.csv'
 short_negative_control_unsorted='data/datasets/short-ncrna-coords-negative-unsorted.csv'
 
@@ -46,6 +47,10 @@ sample_size=100                     # Number of sequences for each type of RNA
 lower_limit_short='71'               # Given by the size distribution analysis (10&90% percentile)
 upper_limit_short='142'
 
+## Interaction database ## 
+awk '/^>/ {print substr($1, 2)}' "$interaction_database" > "$int_database_file"
+declare -a "IDs_interaction=()" 
+mapfile -t IDs_interaction < "$int_database_file"
 
 ###########################################################################################################################
 #### FUNCTION DECLARATION ####
@@ -92,6 +97,82 @@ set_variables() {
     fi
 }
 
+reformat_file() {
+
+    local input_file=$1
+    local output_file=$2
+
+    awk -F'\t' '
+    function calc_ambiguity(seq,   i, amb_nucleotides, total_nucleotides, ambiguity_percent) {
+        amb_nucleotides = 0
+        total_nucleotides = length(seq)
+        
+        for (i = 1; i <= total_nucleotides; i++) {
+            if (index("RYMKSWBDHVNrymkswbdhvn", substr(seq, i, 1))) {
+                amb_nucleotides++
+            }
+        }
+        
+        ambiguity_percent = (amb_nucleotides * 100) / total_nucleotides
+        return ambiguity_percent
+    	
+		}
+
+    {
+        split($1, parts, "::")
+        split(parts[2], coords, ":")
+        chromosome = coords[1]
+        split(coords[2], range, "-")
+        start = range[1] + 1 
+        end = substr(range[2], 1, index(range[2], "(") - 1)
+
+        sequence = $2
+        ambiguity = calc_ambiguity(sequence)
+
+        if (ambiguity <= 5) {
+            printf("%s,%s,%s,%s\n", chromosome, start, end, sequence)
+        }
+    }' "$input_file" >> "$output_file"
+
+    rm -rf "$input_file"
+
+}
+
+###########################
+
+sort_output(){
+
+    local file_with_duplicates=$1
+    local output_file=$2
+
+    local file_id="$(basename "${file_with_duplicates%.*}" | sed 's/-dataset//')" 
+    local file_no_duplicates_unsorted="$file_id"-unsorted
+
+	# Remove duplicates 
+    awk -F',' 'BEGIN { OFS="\t" }
+            {
+                key = $1 FS $2 FS $3 FS $4
+                count[key]++
+                if (count[key] <= 1)
+                    print $0
+            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
+
+
+	sort -t ',' -k1,1 -k2,2n -k3,3n "$file_no_duplicates_unsorted" > "$file_id"-sorted-columns
+
+    numb_seqs=$(wc -l < "$file_id"-sorted-columns)
+
+	awk -v start="$initial_data_seq_numb" -v end="$(( initial_data_seq_numb + numb_seqs - 1 ))" '
+    BEGIN {
+        for (i = start; i <= end; i++) {
+            print "RNA" i
+        }
+    }' > "$file_id"-id-column
+
+    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+
+}
+
 ###########################################################################################################################
 #### EXTRACT SEQUENCES ####
 ###########################################################################################################################
@@ -133,25 +214,30 @@ if [ ! -s "$short_ncrna" ]; then
 
             # Remove random id from short_ncrna array to avoid repeats and make downstream selection faster 
             IDs_short_ncrna=( "${IDs_short_ncrna[@]:0:$del_index}" "${IDs_short_ncrna[@]:$((del_index + 1))}" )                                   
-        
-            if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
 
-                set_variables "$random_id" 
+			if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+            	
+				if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+
+                	set_variables "$random_id" 
                      
-            fi 
+            	fi 
+			fi
 
         else 
 
             random_id=$(printf "%s\n" "${IDs_pre_mirna[@]}" | shuf -n 1)
-                                           
-            if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
 
-                if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+			if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
 
-                    set_variables "$random_id" 
+            	if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
+
+                	if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
+
+                    	set_variables "$random_id" 
         
-                fi
-        
+                	fi
+				fi
             fi
         fi    
     done
@@ -165,42 +251,10 @@ if [ ! -s "$short_ncrna" ]; then
 	rm -rf rm -rf "$short_info"
 	
 	## Format Final file ## 
-	reformat_file(){
-
-		local input_file=$1
-		local output_file=$2
-
-		awk -F'\t' '{
-    		split($1, parts, "::")
-    		id = parts[1]
-    		split(parts[2], coords, ":")
-    		chromosome = coords[1]
-    		split(coords[2], range, "-")
-    		start = range[1] + 1 
-    		end = substr(range[2], 1, index(range[2], "(") - 1)
-    
-    		Functional = "Yes"
-    		sequence = $2
-
-    		printf("%s,%s,%s,%s,%s,%s\n", id, Functional, chromosome, start, end, sequence)
-		}' "$input_file" >> "$output_file"
 	
-		rm -rf "$input_file"
-	}
-
 	reformat_file "$short_tmp" "$short_ncrna_unsorted"
-	
 
-
-
-    # Sort sequences and remove temporary files 
-    awk -F ',' 'NR > 1 {print $1}' "$short_ncrna_unsorted" > short-id-column
-    awk -F ',' 'NR > 1 {print $2 "," $3 "," $4 "," $5 "," $6}' "$short_ncrna_unsorted" | sort -t ',' -k2,2 -k3,3n -k4,4n > short-sorted-columns
-    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' short-id-column short-sorted-columns) > "$short_ncrna"
-
-    rm -rf short-id-column
-    rm -rf short-sorted-columns
-    rm -rf "$short_ncrna_unsorted"
+	sort_output "$short_ncrna_unsorted" "$short_ncrna" 
 
     # Sort coordenates for negative control 
     awk 'NR == 1 {print $0; next} {print $0 | "sort -t, -k1,1 -k2,2n -k3,3n"}' "$short_negative_control_unsorted"  > "$short_negative_control" 
