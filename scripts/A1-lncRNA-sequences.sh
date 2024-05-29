@@ -46,7 +46,7 @@ lncrna_negative_control_unsorted='data/datasets/lncrna-coords-negative-unsorted.
 ##### Constrains ##### 
 sample_size=1000                     # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
-upper_limit_lncrna='1149'
+upper_limit_lncrna='1500'
 
 ## Interaction database ## 
 awk '/^>/ {print substr($1, 2)}' "$interaction_database" > "$int_database_file"
@@ -182,6 +182,22 @@ sort_output(){
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }
 
+find_index() {
+
+    local value="$1"
+    shift
+    local IDs_lncrna=("$@")
+    
+    for i in "${!IDs_lncrna[@]}"; do
+        if [[ "${IDs_lncrna[$i]}" == "$value" ]]; then
+            echo "$i"
+            return
+        fi
+    done
+    
+    # Return a non-zero status if the value is not found
+    return 1
+}
 ###########################################################################################################################
 #### EXTRACT SEQUENCES ####
 ###########################################################################################################################
@@ -193,21 +209,35 @@ if [ ! -s "$lncrna_exon_one" ] || [ ! -s "$lncrna_exon_two" ]; then
 		declare -a "IDs_lncrna=()"
     	mapfile -t IDs_lncrna < <(cut -f 1 -d $'\t' "$rnacentral_lncrna_seqs" | awk '{print $1}')
     
-    	declare -a "selected_ids=()"                                                                                    # Keeps track of selected random IDs
-    	lncrna_count=0
+    	declare -a "selected_ids=()"   
+		declare -a "possible_ids=()"                                                                                 # Keeps track of selected random IDs
+    	
+		lncrna_count=0
+		
+		# Remove ids from curated interaction database to exclude them on the functional dataset
+		for id in "${IDs_interaction[@]}"; do 
+
+			index=$(find_index "$id" "${IDs_lncrna[@]}")
+			unset 'IDs_lncrna[index]'
+        	IDs_lncrna=("${IDs_lncrna[@]}")
+		
+		done
 
     	while [ "$lncrna_count" -lt "$sample_size" ]; do
-    
-        	random_id=$(printf "%s\n" "${IDs_lncrna[@]}" | shuf -n 1)                                                   # Select a random ID from the lncrna list
 
-			if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
+			if [ "${#IDs_lncrna[@]}" -gt 0 ]; then
+        
+				random_id=$(printf "%s\n" "${IDs_lncrna[@]}" | shuf -n 1)
 
-        		if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then                                                   # Select no repeated IDs
-       
-	   				selected_ids+=("$random_id")
-                	set_variables "$random_id" 
+            	set_variables "$random_id" 
 
-        		fi
+				# Remove random id from array not to be chosen again 
+				index=$(find_index "$random_id" "${IDs_lncrna[@]}")
+				unset 'IDs_lncrna[index]'
+        		IDs_lncrna=("${IDs_lncrna[@]}")
+			else
+				echo "not enogh functional sequences for selected sample size"
+				break  
 			fi
     	done
 	fi
