@@ -21,14 +21,14 @@
 ## Input files ##
 # Of each genes from were functional seq was selected: chr, start coords of first exon, last coord of last exon, length exonA and length exonB  
 initial_data=$1  
-initial_data_seq_numb=$(( $(wc -l < "$initial_data") ))           
+initial_data_seq_numb=$(( $(wc -l < "$initial_data") + 1 ))           
 # csv file with genome sequences for each chromosome 
 genome_seq=$2
 # regions of genome lacking of genes (annotated from RNAcentral and Gencode)
 genes_complement=$3
 
 # distances from genome to find a region to sample the negative control. See manuscript for justification
-distances_to_seq=("1000" "10000" "100000" "100000" "1000000" "5000000")                             
+distances_to_seq=("1000" "5000" "10000" "50000" "100000" "500000" "1000000" "5000000")                             
 
 # Name for files
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
@@ -43,7 +43,6 @@ B_unsorted="$file_name"-B-unsorted
 short_info="$file_name"-short-info
 short_tmp="$file_name"-short-tmp
 short_unsorted="$file_name"-short-unsorted
-distance_file="$file_name"-distance
 
 sampling_region="$file_name"-sampling-region
 complement_sampling_region="$file_name"-complement-sampling-region
@@ -64,18 +63,19 @@ negative_control_B="$file_name"-exonB-negative-control.csv
 # Finds the intersection between the sampling region and the "genes complement", removing the regions which length is smaller than desired 
 # $genes_complement is a global variable of the script which is assigned with a script input
 
-intersect(){
+intersect() {
 
-    sampling_region=$1
-    len=$2
-    complement_sampling_region=$3
+	sampling_region=$1
+	len=$2
+	complement_sampling_region=$3
 
-    bedtools intersect -a "$sampling_region" -b "$genes_complement" \
-    | awk -F'\t' -v len="$len" '{ if (($3-$2) > len) print $0"\t"$3-$2}' \
-    | sort -k1,1 -k2,2n -k3,3n \
-    > "$complement_sampling_region" 
-    
+	bedtools intersect -a "$sampling_region" -b "$genes_complement" \
+	| awk -F'\t' -v len="$len" '{ if (($3-$2) > len) print $0"\t"$3-$2}' \
+	| sort -k1,1 -k2,2n -k3,3n \
+	> "$complement_sampling_region"
+
 }
+
 
 ###########################
 # Takes a random sample within a region:  
@@ -132,12 +132,6 @@ multiple_exons_negative_control() {
         
             # Find random coordinates within the closest region
             IFS=$'\t' read -r _ _ _ chrClosest startClosest endClosest _ < "$closest_output" 
-        
-			 # Calculate distance to gene border
-   			if [ "$flow" == 'downstream' ]; then distance_gene=$(( startClosest - end_gene ));
-   			elif [ "$flow" == 'upstream' ]; then distance_gene=$(( start_gene - endClosest ));
-   			fi
-			echo "$distance_gene" >> "$distance_file"
 
             #### EXON A ####
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$lenA" 
@@ -145,9 +139,13 @@ multiple_exons_negative_control() {
             # Redefine variables with random coordinates 
             IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
 
-			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countA\t.\t$strand" >> "$A_info"
+			# Calculate distance to gene border
+   			if [ "$flow" == 'downstream' ]; then distance_gene_A=$(( startClosest - end_gene ));
+   			elif [ "$flow" == 'upstream' ]; then distance_gene_A=$(( start_gene - endClosest ));
+   			fi
 
 			(( countA++ ))
+			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countA.$distance_gene_A\t.\t$strand" >> "$A_info"
 
             #### EXON B ####
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$lenB" 
@@ -155,9 +153,14 @@ multiple_exons_negative_control() {
             # Redefine variables with random coordinates 
             IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
 
-            echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countB\t.\t$strand" >> "$B_info"
+			# Calculate distance to gene border
+   			if [ "$flow" == 'downstream' ]; then distance_gene_B=$(( startClosest - end_gene ));
+   			elif [ "$flow" == 'upstream' ]; then distance_gene_B=$(( start_gene - endClosest ));
+   			fi
 
 			(( countB++ ))
+            echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countB.$distance_gene_B\t.\t$strand" >> "$B_info"
+
         fi
         
     done
@@ -195,30 +198,28 @@ single_exon_negative_control() {
 
             # Find closest region of genes complement 
             bedtools closest -a "$closest_input" -b "$sampling_regions" -D ref -t first  > "$closest_output"
-        
-            # Remove region which has already been used to avoid overlapping 
-            IFS=$'\t' read -r _ _ _ chrClosest startClosest endClosest _ < "$closest_output" 
-
-			if [ "$flow" == 'downstream' ]; then distance_gene=$(( startClosest - end_gene ));
-   			elif [ "$flow" == 'upstream' ]; then distance_gene=$(( start_gene - endClosest ));
-   			fi
-			echo "$distance_gene" >> "$distance_file"
-
+			
+			IFS=$'\t' read -r _ _ _ chrClosest startClosest endClosest _ < "$closest_output"
+            
+			### xxxxxxx
+             
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$len" 
 
             # Redefine variables with random coordinates 
             IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
 
-			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countSingle\t.\t$strand" >> "$short_info"
+			if [ "$flow" == 'downstream' ]; then distance_gene_single=$(( startClosest - end_gene ));
+   			elif [ "$flow" == 'upstream' ]; then distance_gene_single=$(( start_gene - endClosest ));
+   			fi
 
 			(( countSingle++ ))
-
+			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countSingle.$distance_gene_single\t.\t$strand" >> "$short_info"
         fi
         
     done
 
-    #rm -rf "$closest_input"
-    #rm -rf "$closest_output"
+    rm -rf "$closest_input"
+    rm -rf "$closest_output"
 }
     
 ###########################
@@ -246,6 +247,8 @@ reformat_file() {
 
     {
         split($1, parts, "::")
+		split(parts[1], header_parts, ".")
+        distance = header_parts[2]
         split(parts[2], coords, ":")
         chromosome = coords[1]
         split(coords[2], range, "-")
@@ -256,7 +259,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("No,%s,%s,%s,%s\n", chromosome, start, end, sequence)
+            printf("No,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, distance)
         }
     }' "$input_file" >> "$output_file"
 
@@ -273,22 +276,8 @@ sort_output(){
     local output_file=$2
 
     local file_id=data/datasets/"$(basename "${input_file%.*}" | sed 's/-unsorted//')" 
-	local file_with_duplicates="$file_id"-with-duplicates
-    local file_no_duplicates_unsorted="$file_id"-unsorted
 
-	paste -d ',' "$input_file" "$distance_file" > "$file_with_duplicates"
-
-	# Remove duplicates 
-    awk -F',' 'BEGIN { OFS="\t" }
-            {
-                key = $1 FS $2 FS $3 FS $4
-                count[key]++
-                if (count[key] <= 1)
-                    print $0
-            }' "$file_with_duplicates" > "$file_no_duplicates_unsorted"
-
-
-	sort -t ',' -k2,2 -k3,3n -k4,4n "$file_no_duplicates_unsorted" > "$file_id"-sorted-columns
+	sort -t ',' -k2,2 -k3,3n -k4,4n "$input_file" > "$file_id"-sorted-columns
 
     numb_seqs=$(wc -l < "$file_id"-sorted-columns)
 
@@ -301,7 +290,6 @@ sort_output(){
 
     (echo "ID,Functional,Chromosome,Start,End,Sequence,DistanceGene"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
-	rm -rf "$file_with_duplicates" "$file_no_duplicates_unsorted"
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns 
 	
 }
@@ -318,11 +306,9 @@ if [[ "$num_fields" -eq 5 ]]; then
 
     if [ ! -s "$negative_control_single" ]; then 
 
-        echo "ID,Functional,Chromosome,Start,End,Sequence,Distance" > "$negative_control_single"
         countSingle=$(( $(wc -l < "$initial_data") - 1 ))                                           # Starts counting from last corresponding functional seq  
         
         tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene len; do   
-
           
             # Downstream 
             end_sampling_region=$(( end_gene + 5000000 ))
@@ -342,6 +328,8 @@ if [[ "$num_fields" -eq 5 ]]; then
            
             single_exon_negative_control 'upstream' "$complement_sampling_region" 
 
+			rm -rf "$complement_sampling_region" "$sampling_region" "$random_output"
+
         done 
 
 		bedtools getfasta -fi "$genome_seq" -bed "$short_info" -fo "$short_tmp" -s -name -tab 
@@ -351,7 +339,7 @@ if [[ "$num_fields" -eq 5 ]]; then
 
 		reformat_file "$short_tmp" "$short_unsorted"
 		
-		sort_output "$short_unsorted" "$negative_control_single"
+		sort_output "$short_unsorted" "$negative_control_single"  
 
 		rm -rf "$short_info" "$short_tmp" "$short_unsorted" 
     
@@ -393,6 +381,8 @@ if [[ "$num_fields" -eq 6 ]]; then
            
             multiple_exons_negative_control 'upstream' "$complement_sampling_region" 
 
+			rm -rf "$complement_sampling_region" "$sampling_region" "$random_output" 
+
         done 
 
     fi
@@ -408,6 +398,7 @@ if [[ "$num_fields" -eq 6 ]]; then
 	sort_output "$A_unsorted" "$negative_control_A" 
 	sort_output "$B_unsorted" "$negative_control_B" 
 
-	#rm -rf "$A_info" "$B_info" "$A_tmp" "$B_tmp" "$A_unsorted" "$B_unsorted" 
-
+	rm -rf "$A_info" "$B_info" "$A_tmp" "$B_tmp" "$A_unsorted" "$B_unsorted" 
+	 
 fi
+
