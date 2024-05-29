@@ -33,11 +33,9 @@ assembly accession: GCF_000001405.40))
     
     Download and unzip FNA file 
 
-        wget https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/annotation_releases/GCF_000001405.40-RS_2023_10/GCF_000001405.40_GRCh38.p14_genomic.fna.gz   && 
-    
-        gunzip GCF_000001405.40_GRCh38.p14_genomic.fna.gz
+        wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/p14/hg38.p14.fa.gz && gunzip hg38.p14.fa.gz --> HEADER >chr1
 
-        rename!
+	(Note: it is important that the headers of the fasta file follow the format 'chr..' This will be necessary to run the tool bedtools getfasta)
 
     Format file to a tab delimited CSV file using the FASTA formatter from [FASTX-Toolkit version 0.0.13](http://hannonlab.cshl.edu/fastx_toolkit/) removing scaffolds and alternative chromosomes, to allow for easier manipulation and parsing. ("NC_" RefSeq sequence prefix for chromosome)
 
@@ -71,6 +69,7 @@ The IDs for the protein-coding genes are obtain from the Hugo Gene Nomenclature 
    
         grep -v "mitochondrially encoded\|Entry Withdrawn\|Yq" gene_with_protein_product.txt | grep "Approved" | cut -f 24 | grep -v "|" | grep . > hgnc-protein-coding-RefSeq.txt
 
+		rm gene_with_protein_product.txt
 
 ## Non-coding Genes:
 
@@ -136,9 +135,11 @@ Download GENCODE annotations of known genes (Last access: 13/11/2023 - version 4
 
     gunzip gencode.v45.annotation.gtf.gz 
 
-Converting GENCODE GTF to bed file, including only genes and removing chrM/Y:
+Converting GENCODE GTF to bed file, including only genes and removing chrM/Y: 
 
-    grep -v "#" gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($1 != "chrM" && $1 != "chrY") {print $1,$4,$5,$7}}' | tr -d '";' > gencode-complement.bed
+    grep -v "#" gencode.v45.annotation.gtf | awk 'OFS="\t" {if ($1 != "chrM" && $1 != "chrY" && $3=="gene") {print $1,$4-1,$5,$10,$6,$7}}' | tr -d '";' > gencode-genes-for-complement
+
+(Note: $4 minus 1 due to numbering starting at 1 on gft format)
 
 Remove excess file:
 
@@ -149,23 +150,19 @@ Remove excess file:
 
 Obtain genes complement using bedtools complement. The length of the human chromosomes was used as genome reference. 
 
-    cut -f 1,2,3,6 data/raw/rnacentral-GRCh38-coords.bed > 
-    gencode_bed="data/raw/gencode-annotation.bed"
-    rnacentral_bed=""
-    genes=data/raw/all-genes.bed
-    chromo_len="data/raw/chromosomes-len.bed"
+    cut -f 1,2,3,4,5,6 rnacentral-GRCh38-coords.bed > rnacentral-genes-for-complement
+   
+    cat gencode-genes-for-complement rnacentral-genes-for-complement | sort -k1,1 -k2,2n -k3,3n > all-genes
     
+    bedtools merge -i all-genes > genes-merged
 
-    cat gencode-complement.bed rnacentral-complement.bed | sort -k1,1 -k2,2n -k3,3n > genes
-    
-    bedtools merge -i genes -s > genes-merged 
-
-    bedtools complement -i genes-merged -g "$chromo_len" > data/raw/genes-complement
+    bedtools complement -i genes-merged -g chromosomes-len > genes-complement
 
 
-Merge both files, sort and remove duplicated entries
+Remove excess files
 
-      > data/raw/genes-complement.bed && rm data/raw/rnacentral-complement && rm data/raw/gencode-complement
+    rm gencode-genes-for-complement rnacentral-genes-for-complement 
+	rm all-genes genes-merged 
 
 
 # Databases for Features 

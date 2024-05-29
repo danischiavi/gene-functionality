@@ -1,14 +1,14 @@
 ---
 ## Sequences Processing & Negative control ## 
 rnacentral_coords: "data/raw/rnacentral-GRCh38-coords.bed"
-rnacentral_lncrna_seq: "data/raw/rnacentral-lncrna-seq.csv"
-rnacentral_short_ncrna: "data/raw/rnacentral-short-ncrna-seq.csv"
-rnacentral_pre_mirna: "data/raw/rnacentral-pre-mirna-seq.csv"
+rnacentral_lncrna_seqs: "data/raw/rnacentral-lncrna-seq.csv"
+rnacentral_short_ncrna_seqs: "data/raw/rnacentral-short-ncrna-seq.csv"
+rnacentral_pre_mirna_seqs: "data/raw/rnacentral-pre-mirna-seq.csv"
 genome_annotations: "data/raw/GRCh38_p14_genomic.gff"
-genome_seq: "data/raw/GRCh38_p14_genome.csv"
+genome_seq: "data/raw/hg38.p14.fa"
 protein_coding_refseq: "data/raw/hgnc-protein-coding-RefSeq.txt"
 gencode_bed: "data/raw/gencode-annotation.bed" 
-genes_complement: "data/raw/genes-complement.bed"
+genes_complement: "data/raw/genes-complement"
 
 ## Conservation features ##
 bigWigSummary_exe: "bin/bigWigSummary"
@@ -25,7 +25,6 @@ dfam_hits: "data/raw/dfam-hg38-sorted.bed"
 ## Protein-and-specific-rna-features ##
 interaction_database: "data/raw/curated-interaction-database.fa"
 bigBedToBed_exe: "bin/bigBedToBed"
-cactus_align_url: "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf"
 
 ## Population variation features ## 
 gnomad_directory: "data/raw/gnomad"

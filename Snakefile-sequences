@@ -51,31 +51,35 @@ rule protein_coding_sequences:
 
 
 rule lncrna_sequences:
-    input: 
-        rnacentral_coords=config["rnacentral_coords"],
-        rnacentral_lncrna_seq=config["rnacentral_lncrna_seq"]
+	input: 
+		rnacentral_coords=config["rnacentral_coords"],
+		rnacentral_lncrna_seqs=config["rnacentral_lncrna_seqs"],
+		genome_seq=config["genome_seq"],
+		interaction_database=config["interaction_database"]
+
+	output:
+		"data/datasets/functional-lncrna-exon1-dataset.csv",
+		"data/datasets/functional-lncrna-exon2-dataset.csv",
+		"data/datasets/lncrna-coords-negative-control.csv"
         
-    output:
-        "data/datasets/functional-lncrna-exon1-dataset.csv",
-        "data/datasets/functional-lncrna-exon2-dataset.csv",
-        "data/datasets/lncrna-coords-negative-control.csv"
-        
-    shell:
-        "scripts/A1-lncRNA-sequences.sh {input} > {output}"
+	shell:
+		"scripts/A1-lncRNA-sequences.sh {input} > {output}"
 
 
 rule short_ncrna_sequences:
-    input: 
-        rnacentral_coords=config["rnacentral_coords"],
-        rnacentral_short_ncrna=config["rnacentral_short_ncrna"],
-        rnacentral_pre_mirna=config["rnacentral_pre_mirna"]
-        
-    output:
-        "data/datasets/functional-short-ncrna-dataset.csv",
-        "data/datasets/short-ncrna-coords-negative-control.csv"
+	input: 
+		rnacentral_coords=config["rnacentral_coords"],
+		rnacentral_short_ncrna_seqs=config["rnacentral_short_ncrna_seqs"],
+		rnacentral_pre_mirna_seqs=config["rnacentral_pre_mirna_seqs"],
+		genome_seq=config["genome_seq"],
+		interaction_database=config["interaction_database"]
+
+	output:
+		"data/datasets/functional-short-ncrna-dataset.csv",
+		"data/datasets/short-ncrna-coords-negative-control.csv"
     
-    shell:
-        "scripts/A2-short-ncRNA-sequences.sh {input} > {output}"    
+	shell:
+		"scripts/A2-short-ncRNA-sequences.sh {input} > {output}"    
 
 
 
@@ -94,18 +98,20 @@ rule short_ncrna_sequences:
 # which was done using ```bedtools intersect``` (Haeussler et al., 2019; Harrow et al., 2012; Quinlan, 2014).
 ##################################################
 rule negative_control_multiple_exons:
-    input:
-        initial_data="data/datasets/{sample}-coords-negative-control.csv",
-        genome_seq=config["genome_seq"],
-        gencode_bed=config["gencode_bed"],
-        rnacentral_bed=config["rnacentral_coords"]
+	input:
+		initial_data="data/datasets/{sample_negative}-coords-negative-control.csv",
+		genome_seq=config["genome_seq"],
+		genes_complement=config["genes_complement"]
         
-    output:
-        "data/datasets/{sample}-first-negative-control.csv",
-        "data/datasets/{sample}-last-negative-control.csv"
+	output:
+		"data/datasets/{sample_negative}-exonA-negative-control.csv",
+		"data/datasets/{sample_negative}-exonB-negative-control.csv"
 
-    shell:
-        "scripts/A3-negative-control.sh {input} > {output}"
+	params:
+		sample_negative = ["protein", "lncrna"]
+
+	shell:
+		"scripts/A3-negative-control.sh {input} > {output}"
 
         
 
@@ -113,8 +119,7 @@ rule negative_control_single_exon:
     input:
         initial_data="data/datasets/short-ncrna-coords-negative-control.csv",
         genome_seq=config["genome_seq"],
-        gencode_bed=config["gencode_bed"],
-        rnacentral_bed=config["rnacentral_coords"]
+        genes_complement=config["genes_complement"]
     
     output:
         "data/datasets/short-ncrna-negative-control-dataset.csv"
@@ -126,25 +131,25 @@ rule negative_control_single_exon:
 ##################################################
 # Rename lncrna and protein-rna negative control files to match corresponding functional dataset 
 rule rename_negative_control_files:
-    input:
-        protein_first = "data/datasets/protein-first-negative-control.csv",
-        protein_last = "data/datasets/protein-last-negative-control.csv",
-        lncrna_first = "data/datasets/lncrna-first-negative-control.csv",
-        lncrna_last = "data/datasets/lncrna-last-negative-control.csv"
+	input:
+		protein_exonA = "data/datasets/protein-exonA-negative-control.csv",
+		protein_exonB = "data/datasets/protein-exonB-negative-control.csv",
+		lncrna_exonA = "data/datasets/lncrna-exonA-negative-control.csv",
+		lncrna_exonB = "data/datasets/lncrna-exonB-negative-control.csv"
     
-    output:
-        protein_exon2 = "data/datasets/protein-exon2-negative-control-dataset.csv",
-        protein_exon3 = "data/datasets/protein-exon3-negative-control-dataset.csv",
-        lncrna_exon1 = "data/datasets/lncrna-exon1-negative-control-dataset.csv",
-        lncrna_exon2 = "data/datasets/lncrna-exon2-negative-control-dataset.csv"
+	output:
+		protein_exon2 = "data/datasets/protein-exon2-negative-control-dataset.csv",
+		protein_exon3 = "data/datasets/protein-exon3-negative-control-dataset.csv",
+		lncrna_exon1 = "data/datasets/lncrna-exon1-negative-control-dataset.csv",
+		lncrna_exon2 = "data/datasets/lncrna-exon2-negative-control-dataset.csv"
     
-    shell:
-        """
-        mv {input.protein_first} {output.protein_exon2}
-        mv {input.protein_last} {output.protein_exon3}
-        mv {input.lncrna_first} {output.lncrna_exon1}
-        mv {input.lncrna_last} {output.lncrna_exon2}
-        """
+	shell:
+		"""
+		mv {input.protein_exonA} {output.protein_exon2}
+		mv {input.protein_exonB} {output.protein_exon3}
+		mv {input.lncrna_exonA} {output.lncrna_exon1}
+		mv {input.lncrna_exonB} {output.lncrna_exon2}
+		"""
 
 
 ##################################################
