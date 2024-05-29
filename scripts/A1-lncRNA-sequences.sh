@@ -46,7 +46,7 @@ lncrna_negative_control_unsorted='data/datasets/lncrna-coords-negative-unsorted.
 ##### Constrains ##### 
 sample_size=1000                     # Number of sequences for each type of RNA 
 lower_limit_lncrna='74'              # Given by the size distribution analysis (10&90% percentile)
-upper_limit_lncrna='1500'
+upper_limit_lncrna='1300'
 
 ## Interaction database ## 
 awk '/^>/ {print substr($1, 2)}' "$interaction_database" > "$int_database_file"

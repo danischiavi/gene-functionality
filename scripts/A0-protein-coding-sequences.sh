@@ -42,7 +42,7 @@ protein_exon_three_unsorted='data/datasets/functional-protein-exon3-unsorted.csv
 coding_negative_control_unsorted='data/datasets/protein-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
-sample_size=100
+sample_size=1000
 lower_limit_protein='61'
 upper_limit_protein='272'
 
@@ -107,14 +107,12 @@ gff2Info() {
             # Reverse transcripts can alter order of start/end positions
             if [ "$start_one" -gt "$end_final" ]; then                              # Negative strand                                                     
                     
-                distance_exons=$(( start_two - end_three ))
 		        # To generate negative control sequences that are the same length as exons two and three
-                echo "chr$chr,$end_final,$start_one,$len_two,$len_three,$distance_exons,$strand" >> "$coding_negative_control_unsorted"
+                echo "chr$chr,$end_final,$start_one,$len_two,$len_three,$strand" >> "$coding_negative_control_unsorted"
                 
             else
-
-                distance_exons=$(( start_three - end_two ))        
-                echo "chr$chr,$start_one,$end_final,$len_two,$len_three,$distance_exons,$strand" >> "$coding_negative_control_unsorted"
+       
+                echo "chr$chr,$start_one,$end_final,$len_two,$len_three,$strand" >> "$coding_negative_control_unsorted"
                 
             fi
         fi 
