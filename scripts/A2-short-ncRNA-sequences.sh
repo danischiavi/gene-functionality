@@ -43,7 +43,7 @@ short_ncrna_unsorted='data/datasets/functional-short-ncrna-unsorted.csv'
 short_negative_control_unsorted='data/datasets/short-ncrna-coords-negative-unsorted.csv'
 
 ##### Constrains ##### 
-sample_size=100                     # Number of sequences for each type of RNA 
+sample_size=1000                     # Number of sequences for each type of RNA 
 lower_limit_short='71'               # Given by the size distribution analysis (10&90% percentile)
 upper_limit_short='142'
 
@@ -165,11 +165,6 @@ sort_output(){
 #### EXTRACT SEQUENCES ####
 ###########################################################################################################################
 
-# Populate arrays with non-coding-sequences IDs column for searching within all ncrna RNAcentral database 
-declare -a "IDs_ncrna=()"  
-mapfile -t IDs_ncrna < <(cut -f 4 -d $'\t' "$rnacentral_coords")
-
-
 if [ ! -s "$short_ncrna" ]; then 
 
 	if [ ! -s "$short_info" ]; then
@@ -204,11 +199,8 @@ if [ ! -s "$short_ncrna" ]; then
 
 				if [[ ! " ${IDs_interaction[@]} " =~ " $random_id " ]]; then
             	
-					if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
-
-                		set_variables "$random_id" 
-                     
-            		fi 
+					set_variables "$random_id" 
+                    
 				fi
 
         	else 
@@ -219,11 +211,8 @@ if [ ! -s "$short_ncrna" ]; then
 
             		if [[ ! " ${selected_ids[@]} " =~ " $random_id " ]]; then
 
-                		if [[ "${IDs_ncrna[@]}" =~ "$random_id" ]]; then
-
-                    		set_variables "$random_id" 
+                    	set_variables "$random_id" 
         
-                		fi
 					fi
             	fi
         	fi    
@@ -238,12 +227,10 @@ if [ ! -s "$short_ncrna" ]; then
 			# -name Use the name field and coordinates for the FASTA header
 			# tab Report extract sequences in a tab-delimited format instead of in FASTA format.
 	
-		
-	
 	fi
 
 	## Format Final file ## 
-	if [ ! -s "$shor_ncrna_unsorted" ]; then
+	if [ ! -s "$short_ncrna_unsorted" ]; then
 	
 		reformat_file "$short_tmp" "$short_ncrna_unsorted"	
 		sort_output "$short_ncrna_unsorted" "$short_ncrna" 
