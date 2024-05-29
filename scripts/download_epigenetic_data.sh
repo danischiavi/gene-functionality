@@ -1,29 +1,21 @@
 #!/bin/bash
-
 set -uex
-
-# Check for correct usage
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 listOfCodes"
-    exit 1
-fi
-
-# Store input files with descriptive names
-LIST_OF_CODES=$1
-
 
 echo "Starting Epigenetic marks download..."
 
-for file in $(cat "$LIST_OF_CODES"); do
-    mkdir -p ../"${file%/*}"  # Create directory if not present
-    code=$(basename "$file" .bed)  # Strip the .bed extension
-    echo "Downloading " "$code"
-    if wget -q https://www.encodeproject.org/files/"$code"/@@download/"$code".bed.gz -O ../"$file".gz; then
-        echo "Download successful: " "$code"
-    else
-        echo "Download failed." "$code"
-    fi
+for file in $(find ../data/epigenetic_data/ -type f -print | grep .txt); do
+    mkdir -p "${file%.txt}"  # Create directory if not present
+
+    for link in $(cat "$file" | grep bed.gz); do
+        code=$(basename "$link" .bed.gz)
+        if [ ! -f "${file%.txt}"/"$code".bed.gz ]; then
+            wget -q "$link" -O "${file%.txt}"/"$code".bed.gz
+            echo "Download successful: " "$code"
+        else
+            echo "File present: $code"
+        fi
+    done
     
 done
-echo "Finished downloading Epigenetic marks"
+echo "Finished downloading Epigenetic marks."
 
