@@ -21,14 +21,15 @@
 ## Input files ##
 # Of each genes from were functional seq was selected: chr, start coords of first exon, last coord of last exon, length exonA and length exonB  
 initial_data=$1  
-initial_data_seq_numb=$(( $(wc -l < "$initial_data") + 1 ))           
+       
 # csv file with genome sequences for each chromosome 
 genome_seq=$2
 # regions of genome lacking of genes (annotated from RNAcentral and Gencode)
 genes_complement=$3
 
+initial_data_seq_numb=$(( $(wc -l < "$initial_data") ))    
 # distances from genome to find a region to sample the negative control. See manuscript for justification
-distances_to_seq=("1000" "5000" "10000" "50000" "100000" "500000" "1000000" "5000000")                             
+distances_to_seq=("1000" "10000" "50000" "100000" "500000" "1000000" "5000000")                             
 
 # Name for files
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
@@ -40,9 +41,9 @@ A_tmp="$file_name"-A-tmp
 B_tmp="$file_name"-B-tmp
 A_unsorted="$file_name"-A-unsorted
 B_unsorted="$file_name"-B-unsorted
-short_info="$file_name"-short-info
-short_tmp="$file_name"-short-tmp
-short_unsorted="$file_name"-short-unsorted
+short_info="$file_name"-info
+short_tmp="$file_name"-tmp
+short_unsorted="$file_name"-unsorted
 
 sampling_region="$file_name"-sampling-region
 complement_sampling_region="$file_name"-complement-sampling-region
@@ -81,16 +82,23 @@ intersect() {
 # Takes a random sample within a region:  
 # selects a random start and end coordinate for the negative control from a specific region (closest to position=(exon+d))
 sample_random() {
-    chrRandom="$1"
-    startRandom="$2"
-    endRandom="$3"
-    lenRandom="$4"
+    
+	local chrRandom="$1"
+    local startRandom="$2"
+    local endRandom="$3"
+    local lenRandom="$4"
 
-    # Generate random start coordinate within the specified range
-    rand_start=$(( RANDOM % (endRandom - startRandom - lenRandom + 2) + startRandom ))      # 2 accounts for start being inclusive 
+	rand_end=$(( endRandom + 1 ))
 
-    # Calculate end coordinate based on start and region length
-    rand_end=$(( rand_start + lenRandom - 1 ))
+	while [ "$rand_end" -gt "$endRandom" ]; do 
+    
+		# Generate random start coordinate within the specified range
+    	rand_start=$(( RANDOM % (endRandom - startRandom - lenRandom + 2) + startRandom ))      # 2 accounts for start being inclusive 
+
+    	# Calculate end coordinate based on start and region length
+    	rand_end=$(( rand_start + lenRandom - 1 ))
+
+	done
 
     # Print sampled region
     echo -e "$chrRandom\t$rand_start\t$rand_end" > "$random_output" 
@@ -137,29 +145,29 @@ multiple_exons_negative_control() {
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$lenA" 
             
             # Redefine variables with random coordinates 
-            IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
+            IFS=$'\t' read -r chrClosestRdm startClosestRdm endClosestRdm < "$random_output" 
 
 			# Calculate distance to gene border
-   			if [ "$flow" == 'downstream' ]; then distance_gene_A=$(( startClosest - end_gene ));
-   			elif [ "$flow" == 'upstream' ]; then distance_gene_A=$(( start_gene - endClosest ));
+   			if [ "$flow" == 'downstream' ]; then distance_gene_A=$(( startClosestRdm - end_gene ));
+   			elif [ "$flow" == 'upstream' ]; then distance_gene_A=$(( start_gene - endClosestRdm ));
    			fi
 
 			(( countA++ ))
-			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countA.$distance_gene_A\t.\t$strand" >> "$A_info"
+			echo -e "$chrClosestRdm\t$startClosestRdm\t$endClosestRdm\tRNA$countA.$distance_gene_A\t.\t$strand" >> "$A_info"
 
             #### EXON B ####
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$lenB" 
             
             # Redefine variables with random coordinates 
-            IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
+            IFS=$'\t' read -r chrClosestRdm startClosestRdm endClosestRdm < "$random_output" 
 
 			# Calculate distance to gene border
-   			if [ "$flow" == 'downstream' ]; then distance_gene_B=$(( startClosest - end_gene ));
-   			elif [ "$flow" == 'upstream' ]; then distance_gene_B=$(( start_gene - endClosest ));
+   			if [ "$flow" == 'downstream' ]; then distance_gene_B=$(( startClosestRdm - end_gene ));
+   			elif [ "$flow" == 'upstream' ]; then distance_gene_B=$(( start_gene - endClosestRdm ));
    			fi
 
 			(( countB++ ))
-            echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countB.$distance_gene_B\t.\t$strand" >> "$B_info"
+            echo -e "$chrClosestRdm\t$startClosestRdm\t$endClosestRdm\tRNA$countB.$distance_gene_B\t.\t$strand" >> "$B_info"
 
         fi
         
@@ -206,14 +214,14 @@ single_exon_negative_control() {
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$len" 
 
             # Redefine variables with random coordinates 
-            IFS=$'\t' read -r chrClosest startClosest endClosest < "$random_output" 
+            IFS=$'\t' read -r chrClosestRdm startClosestRdm endClosestRdm < "$random_output" 
 
-			if [ "$flow" == 'downstream' ]; then distance_gene_single=$(( startClosest - end_gene ));
-   			elif [ "$flow" == 'upstream' ]; then distance_gene_single=$(( start_gene - endClosest ));
+			if [ "$flow" == 'downstream' ]; then distance_gene_single=$(( startClosestRdm - end_gene ));
+   			elif [ "$flow" == 'upstream' ]; then distance_gene_single=$(( start_gene - endClosestRdm ));
    			fi
 
 			(( countSingle++ ))
-			echo -e "$chrClosest\t$startClosest\t$endClosest\tRNA$countSingle.$distance_gene_single\t.\t$strand" >> "$short_info"
+			echo -e "$chrClosestRdm\t$startClosestRdm\t$endClosestRdm\tRNA$countSingle.$distance_gene_single\t.\t$strand" >> "$short_info"
         fi
         
     done
@@ -308,7 +316,7 @@ if [[ "$num_fields" -eq 5 ]]; then
 
         countSingle=$(( $(wc -l < "$initial_data") - 1 ))                                           # Starts counting from last corresponding functional seq  
         
-        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene len; do   
+        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene len strand; do   
           
             # Downstream 
             end_sampling_region=$(( end_gene + 5000000 ))
