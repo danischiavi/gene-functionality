@@ -34,6 +34,9 @@ mkdir -p data/datasets
 short_ncrna='data/datasets/functional-short-ncrna-dataset.csv'
 # Coordenates for negative-control generation 
 short_negative_control='data/datasets/short-ncrna-coords-negative-control.csv'
+# Extra info
+dataset='data/datasets/functional-lncRNA'
+echo 'geneId,chromosome,start,end' > "$dataset" 
 
 ##### Temporary files ####
 int_database_file='data/datasets/interaction-database-tmp'
@@ -81,9 +84,8 @@ set_variables() {
             short_count="${#selected_ids[@]}"
 
             # Output functional dataset
-            echo -e "$chr\t$zero_start\t$end\tRNA$short_count\t.\t$strand" >> "$short_info" 
+            echo -e "$chr\t$zero_start\t$end\tRNA$short_count.$id\t.\t$strand" >> "$short_info" 
                                                  
-
             if [ "$start" -gt "$end" ]; then                                                            # Reverse transcripts can alter order of start/end positions
                 
                 echo "$chr,$end,$start,$len,$strand" >> "$short_negative_control_unsorted"
@@ -121,6 +123,8 @@ reformat_file() {
     {
         split($1, parts, "::")
         split(parts[2], coords, ":")
+		split(parts[1], header_parts, ".")
+        gene_id = header_parts[2]
         chromosome = coords[1]
         split(coords[2], range, "-")
         start = range[1] + 1 
@@ -130,7 +134,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("Yes,%s,%s,%s,%s\n", chromosome, start, end, sequence)
+            printf("Yes,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
         }
     }' "$input_file" >> "$output_file"
 
@@ -156,7 +160,7 @@ sort_output(){
         }
     }' > "$file_id"-id-column
 
-    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+    (echo "ID,Functional,Chromosome,Start,End,Sequence,GeneID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }

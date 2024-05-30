@@ -101,8 +101,8 @@ gff2Info() {
             selected_ids+=("$random_id")                            
             protein_count=$(echo "${#selected_ids[@]}") 
 
-            echo -e "chr$chr\t$start_two_zero\t$end_two\tRNA$protein_count\t.\t$strand" >> "$protein_exon_two_info"
-            echo -e "chr$chr\t$start_three_zero\t$end_three\tRNA$protein_count\t.\t$strand" >> "$protein_exon_three_info"
+            echo -e "chr$chr\t$start_two_zero\t$end_two\tRNA$protein_count.$random_id\t.\t$strand" >> "$protein_exon_two_info"
+            echo -e "chr$chr\t$start_three_zero\t$end_three\tRNA$protein_count.$random_id\t.\t$strand" >> "$protein_exon_three_info"
 
             # Reverse transcripts can alter order of start/end positions
             if [ "$start_one" -gt "$end_final" ]; then                              # Negative strand                                                     
@@ -144,6 +144,8 @@ reformat_file() {
 
     {
         split($1, parts, "::")
+		split(parts[1], header_parts, ".")
+        gene_id = header_parts[2]
         split(parts[2], coords, ":")
         chromosome = coords[1]
         split(coords[2], range, "-")
@@ -154,7 +156,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("Yes,%s,%s,%s,%s\n", chromosome, start, end, sequence)
+            printf("Yes,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
         }
     }' "$input_file" >> "$output_file"
 
@@ -180,7 +182,7 @@ sort_output(){
         }
     }' > "$file_id"-id-column
 
-    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+    (echo "ID,Functional,Chromosome,Start,End,Sequence,GeneID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }
