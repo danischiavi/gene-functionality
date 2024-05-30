@@ -28,11 +28,17 @@ all_histones = [
     "H3k27me3" 
 ]
 
-rna_types = [
+xxx = [
     "protein-exon2", 
     "protein-exon3", 
     "lncrna-exon1", 
     "lncrna-exon2", 
+    "short-ncrna"
+]
+
+rna_types = [
+    "protein", 
+    "lncrna", 
     "short-ncrna"
 ]
 
@@ -265,11 +271,14 @@ rule concatenate_features:
 # Removes columns "ID","Chromosome","End" and "Sequence"       
 rule join_positive_negative:
     input:
-        positive="data/functional-{sample_final}-dataset-features.csv",
-        negative="data/{sample_final}-negative-control-dataset-features.csv"
+        positive="data/functional-{sample_dataset}-dataset-features.csv",
+        negative="data/{sample_dataset}-negative-control-dataset-features.csv"
         
     output:
-        "data/{sample_final}-features.csv"
+        "data/{sample_dataset}-features.csv"
+
+    params:
+        sample_dataset=all_rna
     
     shell:
         """
@@ -280,3 +289,23 @@ rule join_positive_negative:
         rm {output}.tmp
         """
 
+# Merges exons datasets 
+rule join_protein_exons:
+    input:
+        exon2="data/protein-exon2-features.csv",
+        exon3="data/protein-exon3-features.csv"
+    
+    output: 
+        "data/protein-features.csv"
+    
+    cat {input.exon2} {input.exon3} > {output}
+   
+rule join_lncrna_exons:
+    input:
+        exon1="data/lncrna-exon1-features.csv",
+        exon2="data/lncrna-exon2-features.csv"
+    
+    output: 
+        "data/lncrna-features.csv"
+    
+    cat {input.exon1} {input.exon2} > {output}

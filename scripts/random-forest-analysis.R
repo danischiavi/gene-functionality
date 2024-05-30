@@ -13,7 +13,7 @@
 #
 
 # VARIABLES 
-# file1 <- "/Users/danischiavinato/Desktop/data-from-server/20240320/short-features"
+# file <- "/Users/danischiavinato/Desktop/data-from-server/20240416/features"
 ###########################################################################################################################
 
 set.seed(1000)   # Reproducibility while debugging

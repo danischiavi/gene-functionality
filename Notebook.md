@@ -74,6 +74,15 @@ Dani
                         
                         The distance between "negative control exons" now is set at 100 (arbitrary) instead of the distance between the "functional exons" --> This was done because many exons distances were quite big respect the size of the "complement regions" --> many of this regions were not used reducing considerably the number of negative samples 
 
+* 2024/05/27 - Dani:
+
+					change how to extract the sequences from the genome: before --> grep on .csv; now bedtools getfasta --> much faster. Adapted scripts. Now the strand is considered as well: takes inverse complementary for negative strand. 
+					
+					The genome sequence now is downloaded from UCSC --> fasta file header chr1 which matches to the chr column we were using --> requirement for bedtools getfasta 
+
+* 2024/05/28 - Dani: 
+
+					add filter to exclude ncRNA which are included in the curated database use to calculate the interaction RNA:RNA (lncRNA and shor-ncRNA sequences script)
 
                     
 
