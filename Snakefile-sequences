@@ -145,10 +145,10 @@ rule rename_negative_control_files:
     
 	shell:
 		"""
-		mv {input.protein_exonA} {output.protein_exon2}
-		mv {input.protein_exonB} {output.protein_exon3}
-		mv {input.lncrna_exonA} {output.lncrna_exon1}
-		mv {input.lncrna_exonB} {output.lncrna_exon2}
+		mv {input.protein_exonA} {output.protein_exon2} && rm {input.protein_exonA}
+		mv {input.protein_exonB} {output.protein_exon3} && rm {input.protein_exonB}
+		mv {input.lncrna_exonA} {output.lncrna_exon1} && rm {input.lncrna_exonA}
+		mv {input.lncrna_exonB} {output.lncrna_exon2} && rm {input.lncrna_exonB}
 		"""
 
 
