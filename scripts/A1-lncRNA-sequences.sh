@@ -76,41 +76,56 @@ set_variables() {
         	if [ "$exon_count" -ge 2 ]; then                                                                # Filter for Multiexonic lncrna
                         
         		# Length of the required exons
-            	len_one=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $1}')               # Length exons within range
-            	len_two=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}') 
+            	len_first=$(  echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $1}')               # Length exons within range
             	len_last=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')
-
-            	if { [ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]; } && { [ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ]; }; then  
-                
+				
             	# Coordinates 
-                	seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                	# 0-start
-                    
-					relative_start_one=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. For exon one is zero     
-                    start_one=$(( seq_start + relative_start_one ))                                  
-            		end_one=$((              start_one + len_one ))                             
+                seq_start=$(echo "$meta" | awk -F'\t' '{print $2}' )                                	# 0-start
+                seq_end=$(echo "$meta" | awk -F'\t' '{print $3}' )    
 
-                	relative_start_two=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
-                	start_two=$(( seq_start + relative_start_two ))                                       
-                	end_two=$((              start_two + len_two ))
+				relative_start_first=$(  echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $1}') # Position relative to seq_start extracted from (bed format) for exons. For exon one is zero     
+                start_first=$(( seq_start + relative_start_first ))                                  
+            	end_first=$((              start_first + len_first ))                             
 
-                	relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
-                	start_last=$(( seq_start + relative_start_last )) 
-                	end_last=$((             start_last + len_last ))
+                relative_start_last=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$exon_count" -F',' '{print $exon_count}')  # Extracted this way since just need the coordinates (not seq)
+                start_last=$(( seq_start + relative_start_last )) 
+                end_last=$((             start_last + len_last ))
+
+				# On the positive strand, exons are named 1,2,3 from left to right, while the negative is right to left 
+				# The order the len and position of the exons is described on the bed file is from left to right for both strands
+
+					if [ "$strand" == '+' ]; then 
+						
+						len_one="$len_first"
+						start_one="$start_first" 
+						end_one="$end_first" 
+
+						len_two=$(echo "$meta" | awk -F'\t' '{print $11}' | awk -F',' '{print $2}') 
+						relative_start_two=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -F',' '{print $2}')
+                		start_two=$(( seq_start + relative_start_two ))                                       
+                		end_two=$((              start_two + len_two ))
             
-			    # RNA count
-				    (( lncrna_count ++ ))
-	
-					echo -e "$chr\t$start_one\t$end_one\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_one_info"
-            		echo -e "$chr\t$start_two\t$end_two\tRNA$lncrna_count\t.\t$strand" >> "$lncrna_exon_two_info" 
+			    	elif [ "$strand" == '-' ]; then 
 
-                	if [ "$start_one" -gt "$end_last" ]; then                                                			# Reverse transcripts can alter order of start/end positions
-                                                                             
-                    	echo "$chr,$end_last,$start_one,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three
-                        
-                	else
+						len_one="$len_last"
+						start_one="$start_last" 
+						end_one="$end_last" 
 
-                    	echo "$chr,$start_one,$end_last,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"
-                	fi
+						len_two=$( echo "$meta" | awk -F'\t' '{print $11}' | awk -v exon_count="$(( exon_count - 1 ))" -F',' '{print $exon_count}') 
+						relative_start_two=$( echo "$meta" | awk -F'\t' '{print $12}' | awk -v exon_count="$(( exon_count - 1 ))" -F',' '{print $2}')
+                		start_two=$(( seq_start + relative_start_two ))                                       
+                		end_two=$((              start_two + len_two ))
+
+					fi
+
+					if { [ "$len_one" -ge "$lower_limit_lncrna" ] && [ "$len_one" -le "$upper_limit_lncrna" ]; } && { [ "$len_two" -ge "$lower_limit_lncrna" ] && [ "$len_two" -le "$upper_limit_lncrna" ]; }; then  
+                
+				    	(( lncrna_count ++ )) # RNA count
+
+						echo -e "$chr\t$start_one\t$end_one\tRNA$lncrna_count.$id\t.\t$strand" >> "$lncrna_exon_one_info"
+            			echo -e "$chr\t$start_two\t$end_two\tRNA$lncrna_count.$id\t.\t$strand" >> "$lncrna_exon_two_info" 
+          	                                                       
+                    	echo "$chr,$seq_start,$seq_end,$len_one,$len_two,$strand" >> "$lncrna_negative_control_unsorted"      # To generate negative control sequences that are the same length as exons two and three      	
             	fi
 			fi
 		fi
@@ -142,6 +157,8 @@ reformat_file() {
     {
         split($1, parts, "::")
         split(parts[2], coords, ":")
+		split(parts[1], header_parts, ".")
+        gene_id = header_parts[2]
         chromosome = coords[1]
         split(coords[2], range, "-")
         start = range[1] + 1 
@@ -151,7 +168,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("Yes,%s,%s,%s,%s\n", chromosome, start, end, sequence)
+            printf("Yes,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
         }
     }' "$input_file" >> "$output_file"
 
@@ -177,7 +194,7 @@ sort_output(){
         }
     }' > "$file_id"-id-column
 
-    (echo "ID,Functional,Chromosome,Start,End,Sequence"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+    (echo "ID,Functional,Chromosome,Start,End,Sequence,GeneID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }
