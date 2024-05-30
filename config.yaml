@@ -29,4 +29,9 @@ bigBedToBed_exe: "bin/bigBedToBed"
 ## Population variation features ## 
 gnomad_directory: "data/raw/gnomad"
 
+## Epigenetic features ##
+histone_marks_directory: "data/epigenetic_data/histone_marks"
+chromatin_accessibility_directory: "data/epigenetic_data/chromatin_accessibility"
+methylome_directory: "data/epigenetic_data/methylome"
+
 ... 

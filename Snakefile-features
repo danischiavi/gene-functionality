@@ -22,10 +22,9 @@ all_rna = [
 ]
 
 all_histones = [
-    "H3k36me3", 
-    "H3k27ac", 
-    "H3k9me3", 
-    "H3k27me3" 
+    "H3K36me3", 
+    "H3K27ac", 
+    "H3k79me2" 
 ]
 
 xxx = [
@@ -196,10 +195,11 @@ rule run_populatio_variation:
 ########################
 rule run_histone_features:
     input:
-        initial_data="data/datasets/{sample}-dataset.csv"
+        expand("data/datasets/{sample}-dataset.csv", sample=all_rna, histone_name=all_histones)#,
+        #histone_marks_directory=config["histone_marks_directory"]
 
     output:
-        "{sample}-histone-feature.csv"
+        "data/histone_feature/{histone_name}/{sample}-histone-feature.csv"
         
     params:
         sample=all_rna,
@@ -214,10 +214,11 @@ rule run_histone_features:
 ##########################
 rule run_chromatin_accessibility_features:
     input:
-        initial_data="data/datasets/{sample}-dataset.csv"
+        expand("data/datasets/{sample}-dataset.csv", sample=all_rna)#,
+        #histone_marks_directory=config["chromatin_accessibility_directory"]
 
     output:
-        "{sample}-chrm_acc-feature.csv"
+        "data/chrm_acc_feature/{sample}-chrm_acc-feature.csv"
         
     params:
         sample=all_rna
@@ -231,10 +232,11 @@ rule run_chromatin_accessibility_features:
 ################################
 rule run_methylome_features:
     input:
-        initial_data="data/datasets/{sample}-dataset.csv"
+        expand("data/datasets/{sample}-dataset.csv", sample=all_rna)#,
+        #histone_marks_directory=config["methylome_directory"]
 
     output:
-        "{sample}-methylome-feature.csv"
+        "data/methylome_feature/{sample}-methylome-feature.csv"
         
     params:
         sample=all_rna
@@ -243,19 +245,37 @@ rule run_methylome_features:
         "scripts/methylome_processing.sh {input} {output}"
 
 
+################################        
+## Dinucleotide Frequencies
+################################
+rule run_dinucleotide_features:
+    input:
+        initial_data="data/datasets/{sample}-dataset.csv"
+
+    output:
+        "data/dinucleotide_feature/{sample}-dinucleotide-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/B0.1_Dinucleotide_frequencies.sh {input} {output}"
+
+
 #### FORMAT FINAL FEATURES DATASET #### 
 rule concatenate_features:
     input:
         "data/datasets/{sample}-dataset.csv",
         "data/intrinsic/{sample}-intrinsic.csv",
         "data/conservation/{sample}-conservation.csv",
-        "data/transcriptome/{sample}-transcriptome.csv",
+        #"data/transcriptome/{sample}-transcriptome.csv",
         "data/repeats/{sample}-repeats.csv",
         "data/specific/{sample}-specific.csv", 
         "data/population/{sample}-population.csv",
-        "data/histone_feature/{histone_name}_{sample}-histone-feature.csv",
-        "data/chrm_acc_feature/chrm_acc_{sample}-chrm_acc-feature.csv",
-        "data/methylome_feature/{sample}-methylome-feature.csv"
+        #expand("data/histone_feature/{histone_name}_{sample}-histone-feature.csv", sample=all_rna, histone_name=all_histones),
+        #"data/chrm_acc_feature/chrm_acc_{sample}-chrm_acc-feature.csv",
+        #"data/methylome_feature/{sample}-methylome-feature.csv",
+        "data/dinucleotide_feature/{sample}-dinucleotide-feature.csv"
     output:
         "data/{sample}-dataset-features.csv"
     
