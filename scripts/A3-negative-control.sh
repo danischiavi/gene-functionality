@@ -29,7 +29,7 @@ genes_complement=$3
 
 initial_data_seq_numb=$(( $(wc -l < "$initial_data") ))    
 # distances from genome to find a region to sample the negative control. See manuscript for justification
-distances_to_seq=("1000" "10000" "50000" "100000" "500000" "1000000" "5000000")                             
+distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             
 
 # Name for files
 file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
