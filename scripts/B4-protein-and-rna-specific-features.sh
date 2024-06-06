@@ -21,8 +21,9 @@ first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')
 last_rna_id=$(awk -F',' 'END {print $1}' "$initial_data" | tr -d 'RNA') 
 
 #### File declaration ####
+base_name=$(basename "${initial_data%.*}" | sed 's/-dataset//')
 mkdir -p data/specific && output_directory=data/specific
-file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
+file_name="${output_directory}/$base_name"
 
 # Final output file
 output_file_specific="$file_name"-specific.csv
@@ -129,113 +130,142 @@ fi
 if [ ! -e "$output_file_rnacoding" ] || [ ! -e "$output_file_Rscape" ]; then
 
     #### Directories and temporary files ####
-    maf_directory="$output_directory"/maf/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+    
+	maf_directory="$output_directory"/maf/"$base_name"
     mkdir -p "$maf_directory"
 
-    RNAalifold_directory="$output_directory"/RNAalifold/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+    RNAalifold_directory="$output_directory"/RNAalifold/"$base_name"
     mkdir -p "$RNAalifold_directory"
 
-    RNAcode_directory="$output_directory"/RNAcode/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+    RNAcode_directory="$output_directory"/RNAcode/"$base_name"
     mkdir -p "$RNAcode_directory"
 
-    Rscape_directory="$output_directory"/Rscape/$(basename "${initial_data%.*}" | sed 's/-dataset//')
+    Rscape_directory="$output_directory"/Rscape/"$base_name"
     mkdir -p  "$Rscape_directory"
     
   
     #### Calculate features line by line #### 
-    tail -n +2 "$initial_data"  | while IFS=, read -r rna_id _ chr start end _; do
+    tail -n +2 "$initial_data" | while IFS=, read -r rna_id _ chr start end _; do
 
         # Temporary files # 
-        Rscape_output="$Rscape_directory"/"$rna_id"
-        maf_file="$maf_directory"/"$rna_id".maf
-
-        #### Obtain MSA maf-files from 241-way cactus alignment ####
+        Rscape_output="${Rscape_directory}/${rna_id}"
+        maf_file="${maf_directory}/${rna_id}.maf"
+   
         if [ ! -s "$maf_file" ]; then                                                                               
 
+			#### Obtain MSA maf-files from 241-way cactus alignment ####
             "$bigBedToBed_exe" "$cactus_align_url" stdout -chrom="$chr" -start="$start" -end="$end" | cut -f 4 | tr ';' '\n' > "$maf_file"                                                                   # to extract MSA of regions from UCSC server  
                                                                                         
         fi
 
         if [ -s "$maf_file" ]; then 
         
-            #### Reformat MSA.maf files for tools #### 
+            #### Reformat MSA.maf files #### 
 
-            stk_dir="${output_directory}/stk/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
-            if [ ! -e "$stk_dir" ]; then mkdir -p "$stk_dir"; fi
+            stk_dir="${output_directory}/stk/${base_name}"
+			mkdir -p "$stk_dir"
             stk_file="$stk_dir"/"$rna_id".stk
 
-            aln_dir="${output_directory}/aln/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
+            aln_dir="${output_directory}/aln/${base_name}"
             mkdir -p "$aln_dir"
-            aln_file="$aln_dir"/"$rna_id".aln
+            aln_file="${aln_dir}/${rna_id}.aln"
 
             if [ ! -s "$stk_file" ]; then
                 
                 ## maf to stk for RNAalifold and R-scape
-                ./scripts/maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
-                                                    
+                ./scripts/B4.1-maf-to-stk.sh "$maf_file" "$stk_dir"                                                               # Output: stk file stored at stk_dir 
+
+			fi
+
+			if [ -s "$stk_file" ] && ! grep -q "maf file NA" "$stk_file"; then                                    
                 ## stk to clustal (.aln) for Rcode (see notes for more details)
                 esl-reformat --mingap clustal "$stk_file" > "$aln_file"
                 # --mingap remove columns containing all gaps
-            
-            fi
+				
+			else
+				echo "maf file was removed - no relevant information" >> errors.log 
+				rm -rf "$maf_file" "$stk_file"
+			fi
+			
+			#### Run Features #### 
 
-            ##### RNAalifold ####
-            RNAalifold_output="$RNAalifold_directory"/"$rna_id"
+			##### RNAalifold ####
+			if [ -s "$stk_file" ]; then
 
-            if [ ! -s "$RNAalifold_output" ]; then                          
+            	RNAalifold_output="$RNAalifold_directory"/"$rna_id"
+				rnaalifold_score=""
+
+            	if [ ! -s "$RNAalifold_output" ]; then                          
                 
-                ## Generate secondary structure consensus sequence and associated MFE value
-                echo "RNAalifold --input-format=S --noPS $stk_file >$RNAalifold_output 2>>errors.log" >>errors.log
-                #timeout 60m
-	            RNAalifold --input-format=S --noPS "$stk_file" > "$RNAalifold_output" 2>>errors.log
-            
-            fi
+                	## Generate secondary structure consensus sequence and associated MFE value
+                	echo "RNAalifold --input-format=S --noPS $stk_file >$RNAalifold_output 2>>errors.log" >> errors.log
+	            	timeout 5m RNAalifold --input-format=S --noPS "$stk_file" > "$RNAalifold_output" 2>> errors.log || echo "RNAalifold_timeout" > "$RNAalifold_output"
 
-            rnaalifold_score=$( cat "$RNAalifold_output" | tail -1 | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
-            
+					if grep -q "RNAalifold_timeout" "$RNAalifold_output"; then echo "NA" > "$RNAalifold_output"; fi
+			
+				fi
+
+				rnaalifold_score=$( tail -1 "$RNAalifold_output" | cut -d ' ' -f 2- | tr -d "(" | cut -d "=" -f 1 )
+				[ -z "$rnaalifold_score" ] && rnaalifold_score='NA'		
+				
+
+			else
+				rnaalifold_score=NA
+			fi
+
+				
             ##### RNAcode ####
-            RNAcode_output="$RNAcode_directory"/"$rna_id"
-            if [ ! -s "$RNAcode_output" ]; then
+			if [ -s "$aln_file" ]; then 
+            
+				RNAcode_output="$RNAcode_directory"/"$rna_id"
+				rnacode=""
 
-	            echo "RNAcode $aln_file -o $RNAcode_output 2>>errors.log &> /dev/null" >>errors.log
-	            RNAcode "$aln_file" -o "$RNAcode_output" 2>>errors.log &> /dev/null
-            
+				if [ ! -s "$RNAcode_output" ]; then
+
+	            	echo "RNAcode $aln_file -o $RNAcode_output 2>>errors.log &> /dev/null" >>errors.log
+	            	timeout 5m RNAcode "$aln_file" -o "$RNAcode_output" 2>> errors.log &> /dev/null || echo "RNAcode_timeout" > "$RNAcode_output"
+			
+					if grep -q "RNAcode_timeout" "$RNAcode_output"; then echo "NA" > "$RNAcode_output"; fi
+					
+				fi
+			
+				# Takes the largest score, but records zero if no significant hits found.
+				rnacode=$( grep -v "No significant coding regions found.\|#\|=" "$RNAcode_output" | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
+				[ -z "$rnacode" ] && rnacode='NA'
+				
             fi
-            # Takes the largest score, but records zero if no significant hits found.
-            rnacode=$( grep -v "No significant coding regions found.\|#\|=" "$RNAcode_output" | grep . | tr -s ' ' | cut -d ' ' -f 10 | grep . | sort -V | tail -1 )
-            
-            [ -z "$rnacode" ] && rnacode=NA
-            [ -z "$rnaalifold_score" ] && rnaalifold_score=NA
-            
+
+			#### Output scores ####
             if [ ! -e "$output_file_rnacoding" ]; then echo "coding_potential,RNAalifold_score" > "$output_file_rnacoding"; fi
             echo "$rnacode,$rnaalifold_score" | tr -d ' ' >> "$output_file_rnacoding"
 
-
             ##### R-scape ####
-            if [ ! -s "$Rscape_output" ]; then
-                
-		        echo "R-scape -E 100 $stk_file >/dev/null 2>>errors.log" >>errors.log
-                R-scape -E 100 --outdir "$Rscape_directory" --nofigures "$stk_file" >/dev/null 2>>errors.log                           # deleted -s option since structure is required ??
+            if [ -s "$stk_file" ]; then
 
-                # remove extra output files 
-                rm -rf "$Rscape_directory"/"$rna_id".power
-                rm -rf "$Rscape_directory"/"$rna_id".sorted.cov
-                 
+				if [ ! -s "$Rscape_output" ]; then
+                
+		        	echo "R-scape -E 100 $stk_file >/dev/null 2>>errors.log" >>errors.log
+                	timeout 5m R-scape -E 100 --outdir "$Rscape_directory" --nofigures "$stk_file" >/dev/null 2>>errors.log || touch "$Rscape_output"                           # deleted -s option since structure is required ??
+
+                	# remove extra output files 
+                	rm -rf "$Rscape_directory"/"$rna_id".power
+                	rm -rf "$Rscape_directory"/"$rna_id".sorted.cov
+                fi 
+
+			else
+                touch "$Rscape_output"
             fi
 
         else
-            echo "$rna_id multiple alignment file is empty" >> error.log                                                                                      
-           # Generate blanks if no MAF available
+            echo "$rna_id multiple alignment file is empty" >> errors.log                                                                                      
+           	# Generate blanks if no MAF available
             echo NA,NA >> "$output_file_rnacoding"
             touch "$Rscape_output"
-
-        fi
-
-        rm -rf "$maf_file"
-        rm -rf "$stk_file"
-        rm -rf "$aln_file"
-
-    done 
+		fi
+        
+    #rm -rf "$maf_file" "$stk_file" "$aln_file"
+	
+	done
 
 fi
 ##### Process R-scape output files ####
