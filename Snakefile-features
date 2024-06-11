@@ -59,7 +59,8 @@ rule all_features:
                                   
 rule run_intrinsic_seq_features:
     input:
-        "data/datasets/{sample}-dataset.csv"
+        "data/datasets/{sample}-dataset.csv",
+		"data/datasets/{sample}-seq.fa"
     
     output:
         "data/intrinsic/{sample}-intrinsic.csv"
@@ -84,7 +85,8 @@ rule run_seq_conservation_features:
     input:
         initial_data="data/datasets/{sample}-dataset.csv",
         bigWigSummary_exe=config["bigWigSummary_exe"],
-        zoonomia_phylo_bw=config["zoonomia_phylo_bw"] 
+        _100w_phyloP_bw=config["_100w_phyloP_bw"],
+		zoonomia_phyloP_bw=config["zoonomia_phyloP_bw"] 
 
     output:
         "data/conservation/{sample}-conservation.csv"
@@ -288,7 +290,7 @@ rule concatenate_features:
 
 # Removes column "Distance" and header from negative control files
 # Joins functional file with its corresponding negative control
-# Removes columns "ID","Chromosome","End" and "Sequence"       
+# Removes columns "ID","Chromosome","End", "Sequence", and "GeneId"/"DistanceGene"       
 rule join_positive_negative:
     input:
         positive="data/functional-{sample_dataset}-dataset-features.csv",
@@ -302,30 +304,37 @@ rule join_positive_negative:
     
     shell:
         """
-        awk 'NR>1' {input.negative} | cut -d',' -f1-6,8- > {output}.tmp &&
+        awk 'NR>1' {input.negative} > {output}.tmp &&
         cat {input.positive} {output}.tmp > {output} &&
-        cut -d',' -f2,7- {output} > {output}.final &&                             
+        cut -d',' -f2,8- {output} > {output}.final &&                             
         mv {output}.final {output} &&
         rm {output}.tmp
         """
 
 # Merges exons datasets 
 rule join_protein_exons:
-    input:
-        exon2="data/protein-exon2-features.csv",
-        exon3="data/protein-exon3-features.csv"
+	input:
+		exon2="data/protein-exon2-features.csv",
+		exon3="data/protein-exon3-features.csv"
     
-    output: 
-        "data/protein-features.csv"
+	output: 
+		"data/protein-features.csv"
     
-    cat {input.exon2} {input.exon3} > {output}
-   
+	shell:
+		"""
+    	cat {input.exon2} {input.exon3} > {output}
+		"""
+
 rule join_lncrna_exons:
-    input:
-        exon1="data/lncrna-exon1-features.csv",
-        exon2="data/lncrna-exon2-features.csv"
+	input:
+		exon1="data/lncrna-exon1-features.csv",
+		exon2="data/lncrna-exon2-features.csv"
     
-    output: 
-        "data/lncrna-features.csv"
+	output: 
+		"data/lncrna-features.csv"
     
-    cat {input.exon1} {input.exon2} > {output}
+	shell:
+		"""
+		cat {input.exon1} {input.exon2} > {output}
+		"""
+		

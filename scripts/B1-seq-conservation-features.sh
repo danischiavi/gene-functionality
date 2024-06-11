@@ -15,9 +15,10 @@
 #### Files and directories #### 
 initial_data=$1
 bigWigSummary_exe=$2
-zoonomia_phylo_bw=$3
+_100_phyloP_bw=$3
+zoonomia_phyloP_bw=$4
 
-zoonomia_phylo_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-functional-human-genes/data/raw/hg38.phyloP241mammalian2020v2.bigWig
+zoonomia_phyloP_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-functional-human-genes/data/raw/hg38.phyloP241mammalian2020v2.bigWig
 output_directory=data/conservation
 mkdir -p "$output_directory"
 
@@ -27,14 +28,16 @@ output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/datase
 #### Extract conservation features for each set of chromosome coordinates #### 
 if [ ! -s "$output_file" ]; then
 
-    echo "phyloP_max" > "$output_file"
+    echo "phyloP_max_100w,phyloP_max_241w" > "$output_file"
 
     tail -n +2 "$initial_data"  | while IFS=',' read -r _ _ chr start end _; do
 
         #### PhyloP (pp) values: 241-way mammalian alignment ####
-        echo "zoonomia_max=$(   $bigWigSummary_exe -type=max $zoonomia_phylo_bw $chr $start $end 1 2>&1 )" >> errors.log
+        echo "zoonomia_max=$(   $bigWigSummary_exe -type=max $zoonomia_phyloP_bw $chr $start $end 1 2>&1 )" >> errors.log
         
-        zoonomia_max=$(   $bigWigSummary_exe -type=max "$zoonomia_phylo_bw" "$chr" "$start" "$end" 1 2>&1 )
+		_100w_max=$(   $bigWigSummary_exe -type=max "$_100_phyloP_bw" "$chr" "$start" "$end" 1 2>&1 )
+
+        zoonomia_max=$(   $bigWigSummary_exe -type=max "$zoonomia_phyloP_bw" "$chr" "$start" "$end" 1 2>&1 )
 
         ## Convert any missing data to NA
         missing_value() {
@@ -49,9 +52,10 @@ if [ ! -s "$output_file" ]; then
         }
 
         zoonomia_max=$(missing_value "$zoonomia_max")
+		_100w_max=$(missing_value "$_100w_max")
 
         ## Values to output file 
-        echo "$zoonomia_max" >> "$output_file"
+        echo "$_100w_max,$zoonomia_max" >> "$output_file"
 
     done
 
