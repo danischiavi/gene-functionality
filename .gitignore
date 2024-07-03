@@ -6,6 +6,7 @@ features-of-function-data/
 test/
 bin/
 .snakemake/
+others/
 
 z.NOTES.txt
 tabix.log
@@ -19,3 +20,4 @@ data/raw
 data/repeats
 data/specific
 data/transcriptome
+
