@@ -11,7 +11,7 @@ z.NOTES.txt
 tabix.log
 errors.log
 
-data/by-data
+data/by-date
 data/conservation
 data/intrinsic
 data/population
