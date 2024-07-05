@@ -7,7 +7,7 @@ Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/gene-func
 test/
 bin/
 .snakemake/
-others/
+
 
 z.NOTES.txt
 tabix.log
@@ -27,12 +27,3 @@ scripts/models.py
 scripts/random-forest-analysis.R
 scripts/randomForest.py
 scripts/tuning-randomForest.py
-
-complementary/join_datasets.sh
-complementary/join_epigenetic_features.sh
-complementary/list_of_files.txt
-complementary/run_chrm_acc.sh
-complementary/run_histone.sh
-complementary/run_methylome.sh
-complementary/spearman-function-feature.R
-complementary/spearman.R
