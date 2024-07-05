@@ -139,6 +139,7 @@ sort_output(){
     (echo "ID,Chromosome,Start,End,Sequence,GeneID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
+	rm -rf "$input_file"
 }
 
 
@@ -192,4 +193,4 @@ fi
     
 
 rm -rf data/gencode-genes-list 
-rm -rf gencode-exons
+rm -rf data/gencode-exons
