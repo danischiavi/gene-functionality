@@ -21,13 +21,7 @@ sorted_regions_file_bed=$(mktemp)
 augmented_regions_bed=$(mktemp)
 
 # Variables
-data_path=../data/histone_feature/"$HISTONE_NAME"
-marks_path=../data/histone_marks/"$HISTONE_NAME"
-
-# Create a directory if not present already
-if [ ! -d "$data_path" ]; then
-    mkdir "$data_path"
-fi
+marks_path=data/raw/histone_marks/"$HISTONE_NAME"
 
 
 # Remove header from regions file and sort regions
