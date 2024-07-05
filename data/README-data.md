@@ -276,3 +276,15 @@ The script will download all files specified in listOfCodes.txt
 
 
 
+
+
+# Gencode lncRNA annotations gff3 file from website: https://www.gencodegenes.org/human/
+
+wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.long_noncoding_RNAs.gff3.gz
+
+# fasta file 
+https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.lncRNA_transcripts.fa.gz
+
+# Remove chrY $$ chrM
+
+awk -F'\t' '$1 != "chrY" && $1 != "chrM"' data/raw/gencode.v46.long_noncoding_RNAs.gff3 > data/raw/gencode-lncRNA-annotations.gff3
