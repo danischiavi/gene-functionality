@@ -21,7 +21,10 @@ output_file="$file_name"-intrinsic.csv
 
 ## Temporary files ## 
 output_gc="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')GC.csv" 
-output_complexity="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')low-complexity.csv" 
+output_dinucleotide="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-frequencies.csv" 
+output_dinucleotide_tmp="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-tmp.csv" 
+dinucleotide_seqs="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-seqs-tmp"
+dinucleotide_seq="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-seq-tmp"
 
 ########################################################################################################################### 
 
@@ -61,88 +64,39 @@ if [ ! -s "$output_gc" ]; then
 
 fi                                       
 
-
 ########################################################################################################################### 
 
-# Low complexity density 
+# Dinucleotide frequencies 
 
 ###########################################################################################################################
 
-if [ ! -s "$output_complexity" ]; then
+# Remove header from regions file and get sequences
+awk -F, 'NR > 1 {print $6}' OFS="\t", "$initial_data" > "$dinucleotide_seqs"
 
-    echo "lowComplexity_density" > "$output_complexity"
+echo "AA,AC,AG,AT,CA,CC,CG,CT,GA,GC,GG,GT,TA,TC,TG,TT" > "$output_dinucleotide_tmp"
 
-    # Variables to read fasta file # 
-    first_rna_id=$(awk 'NR==1 {print $1}' "$initial_fasta" | tr -d '>RNA') 
-    last_rna_id=$(awk '/^>/{id=$1} END{print id}' "$initial_fasta" | tr -d '>RNA')
-    var="$first_rna_id"
+cat "$dinucleotide_seqs" | while read -r line
+do
+    echo "$line" > "$dinucleotide_seq"
+    ./scripts/B0.1-markovProperties.pl -k 2 -i "$dinucleotide_seq" >> "$output_dinucleotide_tmp"
+    echo "" >> "$output_dinucleotide_tmp"
+done
 
-    # Temporary files # 
-    dust_input="$file_name"-dust-input.fa
-    dust_output="$file_name"-dust-output
+echo "GA,CpG,GG,TA" > "$output_dinucleotide_tmp"
 
-    while [ "$var" -le "$last_rna_id" ]; do
-    
-        rna_id="RNA$var" 
-
-        grep -w -A 1 "$rna_id" "$initial_fasta" > "$dust_input"
-
-        if [ -s "$dust_input" ]; then
-
-            seq=$( grep -v "$rna_id" "$dust_input" )
-
-            dustmasker -in "$dust_input" -out "$dust_output"            # dustmasker output: >RNAid \n start - end 
-
-            count=$(tail -n +2 "$dust_output" | wc -l)                  # Count of low complexity regions 
-
-            # If low sequence complexity regions recorded: calculate density in sequence; else, record zero
-            if [ "$count" -gt 0 ]; then
-
-                sum=0
-                seq_len=$(echo -n "$seq" | awk '{print length}')
-
-                tail -n +2 "$dust_output" | while read -r line; do
-
-                    start=$(echo "$line" | awk '{print $1}')
-                    end=$(echo "$line" | awk '{print $3}')
-    
-                    diff=$((end - start))
-
-                    sum=$((sum + diff))
-
-                    echo "$sum" > sum-file
-
-                done 
-        
-                sum=$(cat sum-file)
-                low_compl_den=$(awk "BEGIN {print $sum / $seq_len}")
-        
-                echo "$low_compl_den" >> "$output_complexity"
-
-            else
-
-                echo "0" >> "$output_complexity"
-        
-            fi
-        fi
-
-        (( var++ ))
-   
-    done
-
-    rm -rf "$dust_input"
-    rm -rf "$dust_output"
-fi
+awk -F, '{print $9,$10,$11,$13}' OFS="," "$output_dinucleotide_tmp" > "$output_dinucleotide"
 
 
 ## Join output files for better organization
 if [ ! -s "$output_file" ]; then
 
-    paste -d',' "$output_gc" "$output_complexity" > "$output_file"
+    paste -d',' "$output_gc" "$output_dinucleotide" > "$output_file"
 
 fi
 
 
 #### Remove excess files #####
+rm -rf "$dinucleotide_seqs" "$dinucleotide_seq"
+rm -rf "$output_dinucleotide_tmp"
 #rm -rf "$output_gc"
-#rm -rf "$output_complexity"
+#rm -rf "$output_dinucleotides
