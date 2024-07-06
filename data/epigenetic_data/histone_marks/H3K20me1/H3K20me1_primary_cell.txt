@@ -1,0 +1,13 @@
+"https://www.encodeproject.org/metadata/?replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&assay_title=Histone+ChIP-seq&assay_title=Mint-ChIP-seq&status=released&assembly=GRCh38&files.file_type=bed+narrowPeak&target.label=H4K20me1&biosample_ontology.classification=primary+cell&type=Experiment&files.analyses.status=released&files.preferred_default=true"
+https://www.encodeproject.org/files/ENCFF604KWW/@@download/ENCFF604KWW.bed.gz
+https://www.encodeproject.org/files/ENCFF097INF/@@download/ENCFF097INF.bed.gz
+https://www.encodeproject.org/files/ENCFF397ZUJ/@@download/ENCFF397ZUJ.bed.gz
+https://www.encodeproject.org/files/ENCFF494JFR/@@download/ENCFF494JFR.bed.gz
+https://www.encodeproject.org/files/ENCFF346SGF/@@download/ENCFF346SGF.bed.gz
+https://www.encodeproject.org/files/ENCFF183GOE/@@download/ENCFF183GOE.bed.gz
+https://www.encodeproject.org/files/ENCFF152XEO/@@download/ENCFF152XEO.bed.gz
+https://www.encodeproject.org/files/ENCFF201FZW/@@download/ENCFF201FZW.bed.gz
+https://www.encodeproject.org/files/ENCFF949HTC/@@download/ENCFF949HTC.bed.gz
+https://www.encodeproject.org/files/ENCFF970LPG/@@download/ENCFF970LPG.bed.gz
+https://www.encodeproject.org/files/ENCFF305BST/@@download/ENCFF305BST.bed.gz
+https://www.encodeproject.org/files/ENCFF631WFC/@@download/ENCFF631WFC.bed.gz

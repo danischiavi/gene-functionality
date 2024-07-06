@@ -1,0 +1,10 @@
+"https://www.encodeproject.org/metadata/?control_type%21=%2A&status=released&perturbed=false&assay_slims=DNA+methylation&assay_title=WGBS&replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&assembly=GRCh38&files.file_type=bed+bedMethyl&files.output_type=methylation+state+at+CpG&biosample_ontology.classification=primary+cell&type=Experiment"
+https://www.encodeproject.org/files/ENCFF435ETE/@@download/ENCFF435ETE.bed.gz
+https://www.encodeproject.org/files/ENCFF451WIY/@@download/ENCFF451WIY.bed.gz
+https://www.encodeproject.org/files/ENCFF699GKH/@@download/ENCFF699GKH.bed.gz
+https://www.encodeproject.org/files/ENCFF874GGB/@@download/ENCFF874GGB.bed.gz
+https://www.encodeproject.org/files/ENCFF774VLD/@@download/ENCFF774VLD.bed.gz
+https://www.encodeproject.org/files/ENCFF355UVU/@@download/ENCFF355UVU.bed.gz
+https://www.encodeproject.org/files/ENCFF692JTJ/@@download/ENCFF692JTJ.bed.gz
+https://www.encodeproject.org/files/ENCFF774GXJ/@@download/ENCFF774GXJ.bed.gz
+https://www.encodeproject.org/files/ENCFF837SXM/@@download/ENCFF837SXM.bed.gz
