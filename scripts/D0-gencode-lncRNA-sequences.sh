@@ -109,7 +109,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
+            printf("NA,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
         }
     }' "$input_file" >> "$output_file"
 
@@ -127,7 +127,7 @@ sort_output(){
 
 	local file_id=data/datasets/"$(basename "${input_file%.*}" | sed 's/-unsorted.csv//')" 
 
-	sort -t ',' -k1,1 -k2,2n -k3,3n "$input_file" > "$file_id"-sorted-columns
+	sort -t ',' -k2,2 -k3,3n -k4,4n "$input_file" > "$file_id"-sorted-columns
 
 	awk -v start=1 -v end=$(( $(wc -l < "$input_file")))  '
     BEGIN {
@@ -136,7 +136,7 @@ sort_output(){
         }
     }' > "$file_id"-id-column
 
-    (echo "ID,Chromosome,Start,End,Sequence,GeneID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+    (echo "ID,Functional,Chromosome,Start,End,Sequence,GeneID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 	rm -rf "$input_file"
