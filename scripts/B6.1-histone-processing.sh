@@ -21,7 +21,7 @@ sorted_regions_file_bed=$(mktemp)
 augmented_regions_bed=$(mktemp)
 
 # Variables
-marks_path=data/raw/histone_marks/"$HISTONE_NAME"
+marks_path=data/raw/epigenetic_data/histone_marks/"$HISTONE_NAME"
 
 
 # Remove header from regions file and sort regions

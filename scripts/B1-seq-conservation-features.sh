@@ -18,7 +18,6 @@ bigWigSummary_exe=$2
 _100_phyloP_bw=$3
 zoonomia_phyloP_bw=$4
 
-zoonomia_phyloP_bw=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-functional-human-genes/data/raw/hg38.phyloP241mammalian2020v2.bigWig
 output_directory=data/conservation
 mkdir -p "$output_directory"
 
@@ -35,9 +34,9 @@ if [ ! -s "$output_file" ]; then
         #### PhyloP (pp) values: 241-way mammalian alignment ####
         echo "zoonomia_max=$(   $bigWigSummary_exe -type=max $zoonomia_phyloP_bw $chr $start $end 1 2>&1 )" >> errors.log
         
-		_100w_max=$(   $bigWigSummary_exe -type=max "$_100_phyloP_bw" "$chr" "$start" "$end" 1 2>&1 )
+		_100w_max=$(   $bigWigSummary_exe -type=max "${_100_phyloP_bw}" "${chr}" "${start}" "${end}" 1 2>&1 )
 
-        zoonomia_max=$(   $bigWigSummary_exe -type=max "$zoonomia_phyloP_bw" "$chr" "$start" "$end" 1 2>&1 )
+        zoonomia_max=$(   $bigWigSummary_exe -type=max "${zoonomia_phyloP_bw}" "${chr}" "${start}" "${end}" 1 2>&1 )
 
         ## Convert any missing data to NA
         missing_value() {
@@ -55,7 +54,7 @@ if [ ! -s "$output_file" ]; then
 		_100w_max=$(missing_value "$_100w_max")
 
         ## Values to output file 
-        echo "$_100w_max,$zoonomia_max" >> "$output_file"
+        echo "${_100w_max},${zoonomia_max}" >> "$output_file"
 
     done
 

@@ -20,8 +20,8 @@ sorted_regions_file_bed=$(mktemp)
 augmented_regions_bed=$(mktemp)
 
 # Variables
-data_path=../data/chrm_acc_feature
-marks_path=../data/chrm_acc
+data_path=data/raw/epigenetic_data/chrm_acc_feature
+marks_path=data/raw/epigenetic_data/chromatin_accessibility
 
 # Create a directory if not present already
 if [ ! -d "$data_path" ]; then
