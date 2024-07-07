@@ -9,8 +9,8 @@
 configfile: "config.yaml"
 
 datasets = [
-    "gencode-lncrna-exon1-dataset.csv", 
-    "gencode-lncrna-exon2-dataset.csv" 
+	"gencode-lncrna-exon1-dataset.csv", 
+	"gencode-lncrna-exon2-dataset.csv" 
 ]
 
 
@@ -18,8 +18,8 @@ datasets = [
 ## RUN ALL FEATURES 
 ###################
 rule all_features:
-    input:
-        expand("data/gencode-lncrna-features.csv")
+	input:
+		expand("data/gencode-lncrna-features.csv")
 
 
 #############
@@ -27,20 +27,20 @@ rule all_features:
 #############
 # GC percentage: divide number of guanine and cytosine nucleotides by total sequence length
 # Dinucleotide composition 
-                                 
+								 
 rule run_intrinsic_seq_features:
-    input:
-        "data/datasets/{sample}-dataset.csv",
+	input:
+		"data/datasets/{sample}-dataset.csv",
 		"data/datasets/{sample}-seq.fa"
-    
-    output:
-        "data/intrinsic/{sample}-intrinsic.csv"
-    
-    params:
-        sample=datasets
-    
-    shell:
-        "scripts/B0-intrinsic-seq-features.sh {input} > {output}"
+	
+	output:
+		"data/intrinsic/{sample}-intrinsic.csv"
+	
+	params:
+		sample=datasets
+	
+	shell:
+		"scripts/B0-intrinsic-seq-features.sh {input} > {output}"
 
 
 ###############
@@ -53,20 +53,20 @@ rule run_intrinsic_seq_features:
 # 1 causes the score across the whole sequence to be reported
 
 rule run_seq_conservation_features:
-    input:
-        initial_data="data/datasets/{sample}-dataset.csv",
-        bigWigSummary_exe=config["bigWigSummary_exe"],
-        _100w_phyloP_bw=config["_100w_phyloP_bw"],
+	input:
+		initial_data="data/datasets/{sample}-dataset.csv",
+		bigWigSummary_exe=config["bigWigSummary_exe"],
+		_100w_phyloP_bw=config["_100w_phyloP_bw"],
 		zoonomia_phyloP_bw=config["zoonomia_phyloP_bw"] 
 
-    output:
-        "data/conservation/{sample}-conservation.csv"
-    
-    params:
-        sample=datasets
-    
-    shell:
-        "scripts/B1-seq-conservation-features.sh {input} > {output}"
+	output:
+		"data/conservation/{sample}-conservation.csv"
+	
+	params:
+		sample=datasets
+
+	shell:
+		"scripts/B1-seq-conservation-features.sh {input} > {output}"
 
 
 ################
@@ -75,21 +75,21 @@ rule run_seq_conservation_features:
 # Read counts were calculated using ```samtools view -c``` and maximum read depth was calculated using ```samtools depth -r``` (Li et al., 2009).
 
 rule run_transcriptome:
-    input:
-        "data/datasets/{sample}-dataset.csv", 
-        encode_folder=config["encode_folder"]
+	input:
+		"data/datasets/{sample}-dataset.csv", 
+		encode_folder=config["encode_folder"]
 
-    output:
-        "data/transcriptome/{sample}-transcriptome.csv"
-    
-    params:
-        sample=datasets
-    
-    shell:
-        "scripts/B2-transcriptome-expression-features.sh {input} > {output}"
+	output:
+		"data/transcriptome/{sample}-transcriptome.csv"
+	
+	params:
+		sample=datasets
+	
+	shell:
+		"scripts/B2-transcriptome-expression-features.sh {input} > {output}"
 
 
-##################        
+##################		
 ## Genomic repeats 
 ##################
 # Parameters used to run mmseqs
@@ -104,111 +104,111 @@ rule run_transcriptome:
 # -id ignores downstream to report closest upstream element
 
 rule run_genomic_repeat:
-    input:
-        initial_data="data/datasets/{sample}-dataset.csv",
-        initial_fasta="data/datasets/{sample}-seq.fa", 
-        human_genome_mmseqs=config["human_genome_mmseqs"],
-        dfam_hits=config["dfam_hits"]   
+	input:
+		initial_data="data/datasets/{sample}-dataset.csv",
+		initial_fasta="data/datasets/{sample}-seq.fa", 
+		human_genome_mmseqs=config["human_genome_mmseqs"],
+		dfam_hits=config["dfam_hits"]   
 
-    output:
-        "data/repeats/{sample}-repeats.csv"
+	output:
+		"data/repeats/{sample}-repeats.csv"
 
-    params:
-        sample=datasets
+	params:
+		sample=datasets
 
-    shell:
-        "scripts/B3-genomic-repeat-associated-features.sh {input} > {output}"
+	shell:
+		"scripts/B3-genomic-repeat-associated-features.sh {input} > {output}"
 
 
-###########################        
+###########################		
 ## Protein and RNA specific 
 ###########################
 
 rule run_protein_and_rna_specific_features:
-    input:
-        initial_data="data/datasets/{sample}-dataset.csv",
-        initial_fasta="data/datasets/{sample}-seq.fa",
-        interaction_database=config["interaction_database"],
-        bigBedToBed_exe=config["bigBedToBed_exe"]
-                
-    output:
-        "data/specific/{sample}-specific.csv"
+	input:
+		initial_data="data/datasets/{sample}-dataset.csv",
+		initial_fasta="data/datasets/{sample}-seq.fa",
+		interaction_database=config["interaction_database"],
+		bigBedToBed_exe=config["bigBedToBed_exe"]
+				
+	output:
+		"data/specific/{sample}-specific.csv"
 
-    params:
-        sample=datasets
+	params:
+		sample=datasets
 
-    shell:
-        "scripts/B4-protein-and-rna-specific-features.sh {input} > {output}"
+	shell:
+		"scripts/B4-protein-and-rna-specific-features.sh {input} > {output}"
 
 
-#######################        
+#######################		
 ## Population variation
 #######################
 # SNP frequencies, which were used to caluculate the average minor allele frequency, were calculated using ```vcftools``` (Danecek et al., 2011). All chromosome SNP data from the Genome Aggregation Database (gnomAD) v3 was downloaded as a local copy, with the 
 # SNPs for each region extracted using ```tabix -f -h``` (Karczewski et al. 2020; Li et al., 2009).
 
 rule run_populatio_variation:
-    input:
-        initial_data="data/datasets/{sample}-dataset.csv",
-        gnomad_directory=config["gnomad_directory"]
+	input:
+		initial_data="data/datasets/{sample}-dataset.csv",
+		gnomad_directory=config["gnomad_directory"]
 
-    output:
-        "data/population/{sample}-population.csv"
+	output:
+		"data/population/{sample}-population.csv"
 
-    params:
-        sample=datasets
+	params:
+		sample=datasets
 
-    shell:
-        "scripts/B5-population-variation-features.sh {input} > {output}"
+	shell:
+		"scripts/B5-population-variation-features.sh {input} > {output}"
 
 
-########################        
+########################		
 ## Epigenetic Features  
 ########################
 rule run_epigenetic_features:
-    input:
-    	initial_data="data/datasets/{sample}-dataset.csv"   # include the path of tha databases as an input 
+	input:
+		initial_data="data/datasets/{sample}-dataset.csv"   # include the path of tha databases as an input 
 
-    output:
-        "data/epigenetic/{sample}-epigenetic.csv"
-        
-    params:
-        sample=datasets
-        
-    shell:
-        "scripts/B6.0-epigenetic-features.sh {input} > {output}"
+	output:
+		"data/epigenetic/{sample}-epigenetic.csv"
+		
+	params:
+		sample=datasets
+		
+	shell:
+		"scripts/B6-epigenetic-features.sh {input} > {output}"
 
 
 #### FORMAT FINAL FEATURES DATASET #### 
 rule concatenate_features:
-    input:
-        "data/datasets/{sample}-dataset.csv",
-        "data/intrinsic/{sample}-intrinsic.csv",
-        "data/conservation/{sample}-conservation.csv",
-        "data/transcriptome/{sample}-transcriptome.csv",
-        "data/repeats/{sample}-repeats.csv",
-        "data/specific/{sample}-specific.csv", 
-        "data/population/{sample}-population.csv",
+	input:
+		"data/datasets/{sample}-dataset.csv",
+		"data/intrinsic/{sample}-intrinsic.csv",
+		"data/conservation/{sample}-conservation.csv",
+		"data/transcriptome/{sample}-transcriptome.csv",
+		"data/repeats/{sample}-repeats.csv",
+		"data/specific/{sample}-specific.csv", 
+		"data/population/{sample}-population.csv",
 		"data/epigenetic/{sample}-epigenetic.csv"
-        
-    output:
-        "data/{sample}-dataset-features.csv"
-    
-    params:
-        sample=datasets
+		
+	output:
+		"data/{sample}-dataset-features.csv"
+	
+	params:
+		sample=datasets
 
-    shell:
-        "paste -d ',' {input} > {output}"
+	shell:
+		"paste -d ',' {input} > {output}"
 
 # Merges exons datasets 
 rule join_lncrna_exons:
 	input:
 		exon1="data/gencode-lncrna-exon1-dataset-features.csv",
 		exon2="data/gencode-lncrna-exon2-dataset-features.csv"
-    
+	
 	output: 
 		"data/gencode-lncrna-features.csv"
-    
+	
 	shell:
 		"""
 		cat {input.exon1} {input.exon2} > {output}
