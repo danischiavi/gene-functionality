@@ -3,7 +3,7 @@ set -uex
 
 echo "Starting Epigenetic marks download..."
 
-for file in $(find ../data/epigenetic_data/ -type f -print | grep .txt); do
+for file in $(find data/raw/epigenetic_data/ -type f -print | grep .txt); do
     mkdir -p "${file%.txt}"  # Create directory if not present
 
     for link in $(cat "$file" | grep bed.gz); do
