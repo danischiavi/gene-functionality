@@ -27,3 +27,8 @@ scripts/models.py
 scripts/random-forest-analysis.R
 scripts/randomForest.py
 scripts/tuning-randomForest.py
+scripts/upsampling-RF.py
+scripts/sample-specific-weights-RF.py
+
+
+*.ps
