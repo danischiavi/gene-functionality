@@ -21,7 +21,7 @@ output_file="$file_name"-intrinsic.csv
 
 ## Temporary files ## 
 output_gc="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')GC.csv" 
-output_dinucleotide="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-frequencies.csv" 
+output_dinucleotide="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-freq.csv" 
 output_dinucleotide_tmp="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-tmp.csv" 
 dinucleotide_seqs="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-seqs-tmp"
 dinucleotide_seq="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-seq-tmp"
@@ -82,8 +82,7 @@ do
     echo "" >> "$output_dinucleotide_tmp"
 done
 
-echo "GA,CpG,GG,TA" > "$output_dinucleotide_tmp"
-
+echo "GA,CpG,GG,TA" > "$output_dinucleotide"
 awk -F, '{print $9,$10,$11,$13}' OFS="," "$output_dinucleotide_tmp" > "$output_dinucleotide"
 
 
