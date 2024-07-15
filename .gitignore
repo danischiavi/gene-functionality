@@ -29,6 +29,13 @@ scripts/randomForest.py
 scripts/tuning-randomForest.py
 scripts/upsampling-RF.py
 scripts/sample-specific-weights-RF.py
+scripts/distance-analysis.py
 
+results/old
+results/lncrna-exon1-features-matrix
+results/lncrna-exon2-features-matrix
+results/protein-exon2-features-matrix
+results/protein-exon3-features-matrix
+results/short-features-matrix
 
 *.ps
