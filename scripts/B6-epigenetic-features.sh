@@ -38,18 +38,9 @@ if [ ! -s "${file_name}-chrm-acc" ]; then
 fi
 
 
-# Run methylome signature 
-if [ ! -s "${file_name}-methylome" ]; then
-
-	./scripts/B6.3-methylome-processing.sh "$initial_data" "${file_name}-methylome" 
-
-fi
-
-
-
 ## Join output files for better organization into one
 if [ ! -s "$output_file_specific" ]; then
 
-    paste -d',' "$output_file_histone" "${file_name}-chrm-acc" "${file_name}-methylome" > "$output_file"
+    paste -d',' "$output_file_histone" "${file_name}-chrm-acc" > "$output_file"
 
 fi

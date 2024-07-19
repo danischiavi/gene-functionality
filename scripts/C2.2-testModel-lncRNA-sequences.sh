@@ -143,7 +143,8 @@ reformat_file() {
     {
         split($1, parts, "::")
         split(parts[2], coords, ":")
-        gene_id = parts[1]
+		split(parts[1], header_parts, ".")
+        gene_id = header_parts[2]
         chromosome = coords[1]
         split(coords[2], range, "-")
         start = range[1] + 1 
