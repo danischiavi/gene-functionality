@@ -154,7 +154,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("NA,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
+            printf("Yes,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, gene_id)
         }
     }' "$input_file" >> "$output_file"
 

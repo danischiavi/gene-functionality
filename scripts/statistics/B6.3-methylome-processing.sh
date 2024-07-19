@@ -17,8 +17,8 @@ sorted_regions_file_bed=$(mktemp)
 augmented_regions_bed=$(mktemp)
 
 # Variables
-data_path=data/raw/epigenetic_data/methylome_feature
-beds_path=data/raw/epigenetic_data/methylome/methylome_beds
+data_path=data/epigenetic/methylome_feature
+beds_path=data/epigenetic/methylome_feature/sorted_beds
 
 # Create a directory if not present already
 if [ ! -d "$data_path"/sorted_beds/ ]; then

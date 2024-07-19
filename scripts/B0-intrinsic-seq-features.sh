@@ -91,11 +91,10 @@ if [ ! -s "$output_file" ]; then
 
     paste -d',' "$output_gc" "$output_dinucleotide" > "$output_file"
 
+	rm -rf "$output_gc" "$output_dinucleotides"
+
 fi
 
 
 #### Remove excess files #####
-rm -rf "$dinucleotide_seqs" "$dinucleotide_seq"
-rm -rf "$output_dinucleotide_tmp"
-#rm -rf "$output_gc"
-#rm -rf "$output_dinucleotides
+rm -rf "$dinucleotide_seqs" "$dinucleotide_seq" "$output_dinucleotide_tmp"

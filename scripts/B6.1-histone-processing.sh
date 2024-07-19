@@ -35,13 +35,13 @@ sort -k1,1 -k2,2n -k3,3n > "$sorted_regions_file_bed"
 
 
 # Heavy processing ahead. Check for previously created files and skip if present.
-if [ ! -f "$data_path"/"$HISTONE_NAME"_sorted_histone_marks.bed ]; then
+if [ ! -f "${marks_path}/${HISTONE_NAME}_sorted_histone_marks.bed" ]; then
     for dir in "$marks_path"/*; do
     	if [ -d "$dir" ]; then 
 			for file in "$dir"/*.bed.gz; do
 				if [ -f "$file" ]; then
         			filename=$(basename "$file" .bed)  # Extract filename without .bed extension
-        			zcat "$file" >> "$marks_path"/temp_histone_marks.bed
+        			zcat "$file" >> "${marks_path}/temp_histone_marks.bed"
 					#awk -v OFS="\t" '{print $0}' "$file" >> "$marks_path"/temp_histone_marks.bed
 				fi
 			done
@@ -51,12 +51,14 @@ if [ ! -f "$data_path"/"$HISTONE_NAME"_sorted_histone_marks.bed ]; then
     # Filtering based on p and q value (-log10 format), select only marks with values less than 0.05
     awk -F '\t' '{
              print $1"\t"$2"\t"$3"\t"$7"\t"$8"\t"$9
-         }' OFS=, "$marks_path"/temp_histone_marks.bed | \
-    sort -k1,1 -k2,2n -k3,3n > "$data_path"/"$HISTONE_NAME"_sorted_histone_marks.bed
+         }' OFS=, "${marks_path}/temp_histone_marks.bed" | \
+    sort -k1,1 -k2,2n -k3,3n > "${marks_path}/${HISTONE_NAME}_sorted_histone_marks.bed"
 fi
 
 # Perform interval intersection using BEDTools
-bedtools intersect -a "$data_path"/"$HISTONE_NAME"_sorted_histone_marks.bed -b "$sorted_regions_file_bed" -wo > overlaps_"$HISTONE_NAME"_"$OUTPUT_NAME".bed
+if [[ ! -f "${OUTPUT_NAME}-overlaps.bed" ]]; then
+	bedtools intersect -a "${marks_path}/${HISTONE_NAME}_sorted_histone_marks.bed" -b "$sorted_regions_file_bed" -wo > "${OUTPUT_NAME}-overlaps.bed"
+fi
 
 # AvgSignal = sum(wi * ei)
 # Calculate the weighted sum of enrichment, grouped by Chromosome, StartExon, EndExon
@@ -71,18 +73,18 @@ awk -F '\t' '
             print k, sum[k];
         }
     }
-' overlaps_"$HISTONE_NAME"_"$OUTPUT_NAME".bed | sort -k1,1 -k2,2n -k3,3n > "$OUTPUT_NAME".bed
+' "${OUTPUT_NAME}-overlaps.bed" | sort -k1,1 -k2,2n -k3,3n > "${OUTPUT_NAME}.bed"
 
 
 awk -F '\t' 'NR==FNR { seen[$1,$2,$3]=$4; next } 
              { if (($1,$2,$3) in seen) print $0"\t"seen[$1,$2,$3]; else print $0"\t0" }' \
-             "$OUTPUT_NAME".bed "$sorted_regions_file_bed" > "$augmented_regions_bed"
+             "${OUTPUT_NAME}.bed" "$sorted_regions_file_bed" > "$augmented_regions_bed"
 
 # Add header row
-echo "AvgSignal" > "$data_path"/"$HISTONE_NAME"_"$OUTPUT_NAME".csv
+echo "${HISTONE_NAME}_AvgSignal" > "${OUTPUT_NAME}.csv"
 
 # Convert BEDTools output to desired CSV format
-awk -F '\t' '{print $6}' OFS=, "$augmented_regions_bed" >> "$data_path"/"$HISTONE_NAME"_"$OUTPUT_NAME".csv
+awk -F '\t' '{print $6}' OFS=, "$augmented_regions_bed" >> "${OUTPUT_NAME}.csv"
 
 
 # Remove the temporary files

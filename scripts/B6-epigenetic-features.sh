@@ -8,7 +8,7 @@ mkdir -p "$output_directory"
 file_name=${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')
 
 # Output file
-output_file_histone="${file_name}-histones"
+output_file_histone="${file_name}-histones.csv"
 output_file="$file_name"-epigenetic.csv 
 
 
@@ -41,6 +41,6 @@ fi
 ## Join output files for better organization into one
 if [ ! -s "$output_file_specific" ]; then
 
-    paste -d',' "$output_file_histone" "${file_name}-chrm-acc" > "$output_file"
+    paste -d',' "$output_file_histone" "${file_name}-chrm-acc.csv" > "$output_file"
 
 fi
