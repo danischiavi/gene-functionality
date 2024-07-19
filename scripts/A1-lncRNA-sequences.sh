@@ -199,6 +199,8 @@ sort_output(){
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns
 }
 
+###########################
+
 find_index() {
 
     local value="$1"

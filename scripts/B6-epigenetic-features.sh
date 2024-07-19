@@ -24,7 +24,7 @@ if [ ! -s "$output_file_histone" ]; then
 
 	done
 
-	paste -d',' "${file_name}-H3K36me3" "${file_name}-H3K27ac" "${file_name}-H3K79me2" > "$output_file_histone"
+	paste -d',' "${file_name}-H3K36me3.csv" "${file_name}-H3K27ac.csv" "${file_name}-H3K79me2.csv" > "$output_file_histone"
 
 	# rm -rf "${file_name}-H3K36me3" "${file_name}-H3K27ac" "${file_name}-H3k79me2"
 

@@ -1,5 +1,12 @@
 #!/bin/bash
 # 
+# 
+# Script Name: non-coding-sequences.sh
+#
+# Author: Daniela Schiavinato
+# Last edited: April 2024
+#
+# Description: 
 ## This script generates the corresponding negative control dataset for the input file (protein-codingRNA, lncRNA or short-ncRNA)       
 # - Outputs one file for each exon (Exon 2&3 for protein-coding; 1&2 for lncRNA and single exon for short-ncRNA)      
 # - Note that A refers to the exon of a functional seq of the RNA type (Exon 1 for lncRNA and Exon 2 for protein-codingRNA);
