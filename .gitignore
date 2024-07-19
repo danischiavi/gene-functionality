@@ -13,6 +13,7 @@ z.NOTES.txt
 tabix.log
 errors.log
 
+data/features
 data/by-date
 data/conservation
 data/intrinsic
@@ -21,6 +22,9 @@ data/raw
 data/repeats
 data/specific
 data/transcriptome
+data/epigenetic
+data/epigenetic_data
+data/statistics
 
 scripts/missing-values.py
 scripts/models.py
@@ -37,5 +41,6 @@ results/lncrna-exon2-features-matrix
 results/protein-exon2-features-matrix
 results/protein-exon3-features-matrix
 results/short-features-matrix
+results/plots
 
 *.ps
