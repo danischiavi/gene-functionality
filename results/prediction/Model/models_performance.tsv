@@ -1,0 +1,33 @@
+
+### PROTEIN-CODING SUMMARY ####
+Metric	Mean	Std
+Sens	0.895	0.017
+Spec	0.999	0.0
+MCC	0.936	0.01
+AUC-ROC	0.993	0.002
+
+Feature Importance
+Feature	MDI_mean	MDI_std
+phyloP_max_100w	0.196	0.007
+RPKM_tissue	0.17	0.006
+phyloP_max_241w	0.163	0.007
+RPKM_primary-cell	0.137	0.005
+coding_potential	0.119	0.005
+H3K79me2_AvgSignal	0.053	0.002
+H3K36me3_AvgSignal	0.023	0.001
+Max_covariance	0.018	0.001
+RNAalifold_score	0.015	0.002
+chrm_acc_AvgSignal	0.014	0.001
+SNP_density	0.013	0.001
+copy_number	0.012	0.001
+GG	0.009	0.001
+H3K27ac_AvgSignal	0.009	0.001
+TA	0.007	0.0
+repeat_distance	0.007	0.0
+CpG	0.006	0.0
+GC_percentage	0.006	0.0
+GA	0.006	0.0
+MAF_avg	0.005	0.0
+MFE	0.005	0.0
+Interaction_ave	0.004	0.0
+Neutral	0.004	0.0
