@@ -13,6 +13,10 @@ exon_one_tmp="${dir}/gencode-lncrna-exon1-tmp"
 exon_two_tmp="${dir}/gencode-lncrna-exon2-tmp"
 combined_seq="${dir}/combined-seq"
 
+##### Constrains ##### 
+lower_limit='74'              # Given by the size distribution analysis (10&90% percentile)
+upper_limit='1500'
+
 gff2Info() {                                                                                
 
     local exons=$1
@@ -34,7 +38,7 @@ gff2Info() {
 
 		small_size+=("$id")
 
-    elif { [ "$len_two" -gt "$upper_limit" ] && [ "$len_one" -gt "$upper_limit" ]; }; then 
+    elif { [ "$len_two" -gt "$upper_limit" ] || [ "$len_one" -gt "$upper_limit" ]; }; then 
 
 		large_size+=("$id")	
 	
@@ -180,7 +184,7 @@ ambiguity "$combined_seq"
 import matplotlib.pyplot as plt
 
 labels = ['< 2 exons', 'exons > 1500nt', 'exons < 74nt', 'seq ambiguity']
-sizes = [4191, 60, 3937, 0]
+sizes = [4191, 1300, 3937, 0]
 selected_ids = 11971
 excluded_total = sum(sizes)
 sizes = [20198 - excluded_total] + sizes  # Include remaining lncRNAs that are not excluded
