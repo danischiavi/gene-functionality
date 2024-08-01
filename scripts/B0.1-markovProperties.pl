@@ -70,19 +70,20 @@ my %jmerFreq = %{extractNmerFreqs($checkedSeq, $k-1, $alpha)};
 my $psK = 0.01;        #A pseudocount for each kmer 
 my $psJ = sqrt($psK);  #A pseudocount for each k-1mer 
 
+my @output;
 foreach my $kmer (sort keys %kmerFreq) {
     my $jmer1 = substr($kmer, 0, $k-1);
     my $jmer2 = substr($kmer, 1, $k-1);
     
-    
-    if( defined($kmerFreq{$kmer}) && defined($jmerFreq{$jmer1}) && defined($jmerFreq{$jmer2}) ){
-	my $bits = ( log($kmerFreq{$kmer} + $psK) - log($jmerFreq{$jmer1} + $psJ) - log($jmerFreq{$jmer2} + $psJ) )/log(2);
-	printf "$kmer\t%0.2f", $bits;
-	printf "\t\t$kmer\[%0.2f\]\t$jmer1\[%0.2f\]\t$jmer2\[%0.2f\]\t\t", $kmerFreq{$kmer}, $jmerFreq{$jmer1}, $jmerFreq{$jmer2} if defined($verbose);
-	#printf "( log($kmerFreq{$kmer} + $psK) - log($jmerFreq{$jmer1} + $psJ) - log($jmerFreq{$jmer2} + $psJ) )/log(2);" if defined($verbose); #DEBUGGING
-	print "\n"; 
+    if (defined($kmerFreq{$kmer}) && defined($jmerFreq{$jmer1}) && defined($jmerFreq{$jmer2})) {
+        my $bits = (log($kmerFreq{$kmer} + $psK) - log($jmerFreq{$jmer1} + $psJ) - log($jmerFreq{$jmer2} + $psJ)) / log(2);
+        push @output, sprintf("%.2f", $bits);
     }
 }
+
+# Print all elements, joined by commas
+print join(",", @output[0..$#output]);
+print "\n";
 
 exit(0);   
 ######################################################################
