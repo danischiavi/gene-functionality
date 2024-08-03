@@ -25,6 +25,7 @@ data/transcriptome
 data/epigenetic
 data/epigenetic_data
 data/statistics
+data/neutral
 
 scripts/missing-values.py
 scripts/models.py
@@ -42,5 +43,21 @@ results/protein-exon2-features-matrix
 results/protein-exon3-features-matrix
 results/short-features-matrix
 results/plots
+results/prediction/testModel/old
+results/prediction/testModel/plots
+results/prediction/
 
 *.ps
+scripts/C2.4-testModel-negative-control.sh
+scripts/plots.py
+scripts/E-prediction-analysis.py
+scripts/randomForest_lncrna.py
+scripts/randomForest_protein.py
+scripts/randomForest_short.py
+scripts/randomForest_super.py
+results/prediction/Model/models_performance.tsv
+data/gencode-lncRNA/gencode-lncrna-list
+data/gencode-genes-list
+results/prediction/Model/models_performance.tsv
+Snakefile-testModel-features
+scripts/randomForest_protein.py
