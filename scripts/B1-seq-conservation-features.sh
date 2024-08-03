@@ -27,7 +27,7 @@ output_file="${output_directory}/$(basename "${initial_data%.*}" | sed 's/datase
 #### Extract conservation features for each set of chromosome coordinates #### 
 if [ ! -s "$output_file" ]; then
 
-    echo "phyloP_max_100w,phyloP_max_241w" > "$output_file"
+    echo "phyloP_max_241w,phyloP_max_100w" > "$output_file"
 
     tail -n +2 "$initial_data"  | while IFS=',' read -r _ _ chr start end _; do
 
@@ -54,7 +54,7 @@ if [ ! -s "$output_file" ]; then
 		_100w_max=$(missing_value "$_100w_max")
 
         ## Values to output file 
-        echo "${_100w_max},${zoonomia_max}" >> "$output_file"
+        echo "${zoonomia_max},${_100w_max}" >> "$output_file"
 
     done
 
