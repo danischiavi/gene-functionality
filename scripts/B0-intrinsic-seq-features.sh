@@ -73,7 +73,7 @@ fi
 # Remove header from regions file and get sequences
 awk -F, 'NR > 1 {print $6}' OFS="\t", "$initial_data" > "$dinucleotide_seqs"
 
-echo "AA,AC,AG,AT,CA,CC,CG,CT,GA,GC,GG,GT,TA,TC,TG,TT" > "$output_dinucleotide_tmp"
+echo "AA,AC,AG,AT,CA,CC,CpG,CT,GA,GC,GG,GT,TA,TC,TG,TT" > "$output_dinucleotide_tmp"
 
 cat "$dinucleotide_seqs" | while read -r line
 do
@@ -82,8 +82,7 @@ do
     echo "" >> "$output_dinucleotide_tmp"
 done
 
-echo "GA,CpG,GG,TA" > "$output_dinucleotide"
-awk -F, '{print $9,$10,$11,$13}' OFS="," "$output_dinucleotide_tmp" > "$output_dinucleotide"
+awk -F, '{print $7,$9,$11,$13}' OFS="," "$output_dinucleotide_tmp" >> "$output_dinucleotide"
 
 
 ## Join output files for better organization
