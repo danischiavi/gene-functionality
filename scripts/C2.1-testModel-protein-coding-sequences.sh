@@ -218,3 +218,5 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 	rm -rf "$protein_exon_two_unsorted" "$protein_exon_three_unsorted"
 
 fi
+
+

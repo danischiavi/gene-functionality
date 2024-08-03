@@ -141,6 +141,7 @@ if [ ! -s "$output_file_repeats" ]; then
 
     paste -d',' "$output_file_copy" "$output_file_distance" > "$output_file_repeats"
 
+	rm -rf "$output_file_copy" "$output_file_distance"
 fi
 
 
@@ -152,7 +153,3 @@ rm -rf "$combined_output"
 rm -rf "$initial_data_tmp"
 rm -rf "$file_name-tmp"
 rm -rf "$dfam_hits_tmp"
-#rm -rf "$output_file_copy"
-#rm -rf "$output_file_distance"
-
-

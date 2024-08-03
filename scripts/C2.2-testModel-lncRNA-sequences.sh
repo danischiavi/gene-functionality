@@ -36,7 +36,7 @@ exon_one_unsorted="${dir}/testModel-lncrna-exon1-unsorted.csv"
 exon_two_unsorted="${dir}/testModel-lncrna-exon2-unsorted.csv"  
 
 ##### Constrains ##### 
-lower_limit='50'              # Given by the size distribution analysis (10&90% percentile)
+lower_limit='50'              
 upper_limit='3000'
 sample_size=500
 
