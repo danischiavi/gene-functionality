@@ -39,7 +39,7 @@ initial_data_seq_numb=$(( $(wc -l < "$initial_data") ))
 distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             
 
 # Name for files
-file_name=data/datasets/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
+file_name=data/datasets/testModel/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
 ## Temporary files ##
 A_info="$file_name"-A-info

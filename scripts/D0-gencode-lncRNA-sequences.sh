@@ -22,7 +22,7 @@ gencode_annotations=$1
 genome_seq=$2
 
 # Gene list 
-awk -F'\t' '$3 == "gene" {split($NF, arr, ";"); for (i in arr) {if (match(arr[i], /^ID=([^;]+)/, id)) {print id[1]}}}' "$gencode_annotations" > data/gencode-genes-list 	# maybe add it to readmedata 
+awk -F'\t' '$3 == "gene" {split($NF, arr, ";"); for (i in arr) {if (match(arr[i], /^ID=([^;]+)/, id)) {print id[1]}}}' "$gencode_annotations" > data/gencode-lncRNA/gencode-genes-list 	# maybe add it to readmedata 
 
 #### Final Output files #####
 dir='data/datasets'
@@ -57,9 +57,9 @@ gff2Info() {
     coords_one=$( awk 'NR==1 {print $1, $4, $5, $7}' "$exons" )                                                  
     coords_two=$( awk 'NR==2 {print $1, $4, $5}' "$exons" )                                                    
       												
-    IFS=' ' read -r chr start_one end_one strand <<< "$coords_one"                                                 # Starting and end coordinates of exons
+    IFS=' ' read -r chr start_one end_one strand <<< "$coords_one"                                               
     IFS=' ' read -r _ start_two end_two <<< "$coords_two"
-	start_one_bed=$(( start_one - 1 ))															# to follow bed format required for bedtools getfasta 
+	start_one_bed=$(( start_one - 1 ))															
 	start_two_bed=$(( start_two - 1 ))
                                                                        
     len_one=$(( end_one - start_one_bed ))
@@ -156,9 +156,9 @@ if [ ! -s "$exon_one" ] || [ ! -s "$exon_two" ]; then
 
 		for lncrna_id in "${IDs_lncrna[@]}"; do
 
-			awk -F'\t' -v id="$lncrna_id" '$0 ~ "gene_id="id && $3 == "exon"' "$gencode_annotations" > data/gencode-exons
+			awk -F'\t' -v id="$lncrna_id" '$0 ~ "gene_id="id && $3 == "exon"' "$gencode_annotations" > data/gencode-lncRNA/gencode-exons
 
-            if [ "$(wc -l < data/gencode-exons)" -ge 2 ]; then gff2Info data/gencode-exons "$lncrna_id"; fi    
+            if [ "$(wc -l < data/gencode-exons)" -ge 2 ]; then gff2Info data/gencode-lncRNA/gencode-exons "$lncrna_id"; fi    
 		
     	done
 	fi
