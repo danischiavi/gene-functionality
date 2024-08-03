@@ -9,11 +9,11 @@ file_name=${output_directory}/$(basename "${input_file%.*}" | sed 's/-dataset//'
 output_file="$file_name"-random.csv 
 
 
-### RANDOM NUMBER - NEUTRAL PREDICTOR ###
+### RANDOM NUMBER ###
 
 total="$(wc -l < ${input_file})"
 
-echo 'Neutral' > "$output_file" 
+echo 'Random' > "$output_file" 
 
 i=1
 while [ "$i" -lt "$total" ]; do 
