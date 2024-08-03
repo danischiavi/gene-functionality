@@ -78,11 +78,12 @@ echo "AA,AC,AG,AT,CA,CC,CpG,CT,GA,GC,GG,GT,TA,TC,TG,TT" > "$output_dinucleotide_
 cat "$dinucleotide_seqs" | while read -r line
 do
     echo "$line" > "$dinucleotide_seq"
-    ./scripts/B0.1-markovProperties.pl -k 2 -i "$dinucleotide_seq" >> "$output_dinucleotide_tmp"
-    echo "" >> "$output_dinucleotide_tmp"
+    perl ./scripts/B0.1-markovProperties.pl -i "$dinucleotide_seq" -k 2 -a 'ACGT'  >> "$output_dinucleotide_tmp"
 done
 
-awk -F, '{print $7,$9,$11,$13}' OFS="," "$output_dinucleotide_tmp" >> "$output_dinucleotide"
+# selected dinucleotides: GA,CpG,GG,TA
+
+awk -F, '{print $9,$7,$11,$13}' OFS="," "$output_dinucleotide_tmp" >> "$output_dinucleotide"
 
 
 ## Join output files for better organization
@@ -96,4 +97,5 @@ fi
 
 
 #### Remove excess files #####
-rm -rf "$dinucleotide_seqs" "$dinucleotide_seq" "$output_dinucleotide_tmp"
+rm -rf "$dinucleotide_seqs" "$dinucleotide_seq" 
+# rm -rf "$output_dinucleotide_tmp"
