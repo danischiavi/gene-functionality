@@ -205,7 +205,7 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 
             	grep "exon-$random_id" "$genome_annotations" > data/exons                               # Grep annotation from Reference Genome (NCBI) according to protein-coding genes (HGNC)
         
-            	if [ "$(wc -l < data/exons)" -ge 4 ]; then gff2Info data/exons "$genome_seq"; fi        # At least 4 exons 
+            	if [ "$(wc -l < data/exons)" -ge 4 ]; then gff2Info data/exons; fi        # At least 4 exons 
             
         	fi
     	done 
