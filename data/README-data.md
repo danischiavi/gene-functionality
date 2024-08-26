@@ -14,6 +14,7 @@
         * [Specific RNA and Protein-Coding ](#specific-rna-and-protein-coding)
         * [Population Variation](#population-variation)
         * [Epigenetic marks analysis](#epigenetic-marks-analysis)
+        * [Conservation Scores (GERP)](#gerp)
 
 * [References](#references)
 
@@ -266,6 +267,20 @@ Download epigenetic marks from IHEC portal. For this, use the following commands
     ./download_epigenetic_data.sh ../listOfCodes.txt # Download and create appropiate folders in data/
 
 The script will download all files specified in listOfCodes.txt
+
+
+  ## Conservation scores (GERP)
+
+Download bigwig file with GERP conservation scores from Ensembl.org portal. For this use the following commands xxx
+
+    cd scripts/complementary/
+    
+    # Download scores file into data/raw/ folder
+    ./download_63amniotes.sh 
+    ./download_91mammals.sh
+
+These files are necesary downstream to compute GERP features.
+
 
 ## Go back to Working directory 
 

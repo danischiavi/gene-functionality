@@ -40,6 +40,10 @@ https://hgdownload.soe.ucsc.edu/admin/exe/
 
         wget https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigSummary 
 
+ * bigWigToBedGraph
+
+        wget https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigToBedGraph
+
  
 
 ## Pipeline Purpose

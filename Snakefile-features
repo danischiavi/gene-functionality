@@ -91,6 +91,38 @@ rule run_seq_conservation_features:
     shell:
         "scripts/B1-seq-conservation-features.sh {input} > {output}"
 
+# Compute the maximum GERP 91 mammals score
+rule run_gerp_mammals:
+    input:
+        initial_data="data/datasets/{sample}-dataset.csv",
+        GERP_FILE=config["gerp_bw_mammals"],
+        PREFIX=config["mammals"]
+
+    output:
+        "data/conservation/{sample}-gerpmammals-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/B0.6_GERP.sh {input} > {output}"
+
+# Compute the maximum GERP 63 amniotes score
+rule run_gerp_amniotes:
+    input:
+        initial_data="data/datasets/{sample}-dataset.csv",
+        GERP_FILE=config["gerp_bw_amniotes"],
+        PREFIX=config["amniotes"]
+
+    output:
+        "data/conservation/{sample}-gerpamniotes-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/B1.1_GERP.sh {input} {output}"
+
 
 ################
 ## Transcriptome
@@ -258,6 +290,40 @@ rule run_dinucleotide_features:
         "scripts/B0.1_Dinucleotide_frequencies.sh {input} {output}"
 
 
+################################        
+## Accessibility score
+################################
+rule run_accessibility:
+    input:
+        initial_data="data/datasets/{sample}-dataset.csv"
+
+    output:
+        "data/accessibility/{sample}-accessibility-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/B4.2_accessibility.sh {input} {output}"
+
+
+################################        
+## Coding potential score
+################################
+rule run_fickett:
+    input:
+        initial_data="data/datasets/{sample}-dataset.csv"
+
+    output:
+        "data/coding-potential/{sample}-fickett-feature.csv"
+        
+    params:
+        sample=all_rna
+
+    shell:
+        "scripts/B4.3_fickett.sh {input} {output}"
+
+
 #### FORMAT FINAL FEATURES DATASET #### 
 rule concatenate_features:
     input:
@@ -271,7 +337,12 @@ rule concatenate_features:
         #expand("data/histone_feature/{histone_name}_{sample}-histone-feature.csv", sample=all_rna, histone_name=all_histones),
         #"data/chrm_acc_feature/chrm_acc_{sample}-chrm_acc-feature.csv",
         #"data/methylome_feature/{sample}-methylome-feature.csv",
-        "data/dinucleotide_feature/{sample}-dinucleotide-feature.csv"
+        "data/dinucleotide_feature/{sample}-dinucleotide-feature.csv",
+        "data/accessibility/{sample}-accessibility-feature.csv",
+        "data/coding-potential/{sample}-fickett-feature.csv",
+        "data/conservation/{sample}-gerpmammals-feature.csv",
+        "data/conservation/{sample}-gerpamniotes-feature.csv"
+
     output:
         "data/{sample}-dataset-features.csv"
     

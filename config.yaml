@@ -14,6 +14,8 @@ genes_complement: "data/raw/genes-complement"
 bigWigSummary_exe: "bin/bigWigSummary"
 _100w_phyloP_bw: "data/raw/hg38.phyloP100way.bw"
 zoonomia_phyloP_bw: "data/raw/hg38.phyloP241mammalian2020v2.bigWig"
+gerp_bw_mammals: "data/raw/gerp_91mammals_conservation_scores.homo_sapiens.GRCh38.bw"
+gerp_bw_amniontes: "data/raw/gerp_63amniotes_conservation_scores.homo_sapiens.GRCh38.bw"
 
 ## Transcriptome expression features ##
 encode_folder: "/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/features-of-function-data/ENCODE"
