@@ -39,7 +39,7 @@ initial_data_seq_numb=$(( $(wc -l < "$initial_data") ))
 distances_to_seq=("1000" "10000" "100000" "1000000" "5000000")                             
 
 # Name for files
-file_name=data/datasets/testModel/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
+file_name=data/datasets/IDS/$(basename "${initial_data%.*}" | sed 's/-coords-negative-control//')                 
 
 ## Temporary files ##
 A_info="$file_name"-A-info
@@ -160,7 +160,7 @@ multiple_exons_negative_control() {
    			fi
 
 			(( countA++ ))
-			echo -e "$chrClosestRdm\t$startClosestRdm\t$endClosestRdm\tRNA$countA.$distance_gene_A\t.\t$strand" >> "$A_info"
+			echo -e "${chrClosestRdm}\t${startClosestRdm}\t${endClosestRdm}\tRNA${countA}.${id}.${distance_gene_A}\t.\t${strand}" >> "$A_info"
 
             #### EXON B ####
             sample_random "$chrClosest" "$startClosest" "$endClosest" "$lenB" 
@@ -174,7 +174,7 @@ multiple_exons_negative_control() {
    			fi
 
 			(( countB++ ))
-            echo -e "$chrClosestRdm\t$startClosestRdm\t$endClosestRdm\tRNA$countB.$distance_gene_B\t.\t$strand" >> "$B_info"
+            echo -e "${chrClosestRdm}\t${startClosestRdm}\t${endClosestRdm}\tRNA${countB}.${id}.${distance_gene_B}\t.\t${strand}" >> "$B_info"
 
         fi
         
@@ -228,7 +228,7 @@ single_exon_negative_control() {
    			fi
 
 			(( countSingle++ ))
-			echo -e "$chrClosestRdm\t$startClosestRdm\t$endClosestRdm\tRNA$countSingle.$distance_gene_single\t.\t$strand" >> "$short_info"
+			echo -e "${chrClosestRdm}\t${startClosestRdm}\t${endClosestRdm}\tRNA${countSingle}.${id}.${distance_gene_single}\t.\t${strand}" >> "$short_info"
         fi
         
     done
@@ -263,7 +263,8 @@ reformat_file() {
     {
         split($1, parts, "::")
 		split(parts[1], header_parts, ".")
-        distance = header_parts[2]
+        id = header_parts[2]
+		distance = header_parts[3]
         split(parts[2], coords, ":")
         chromosome = coords[1]
         split(coords[2], range, "-")
@@ -274,7 +275,7 @@ reformat_file() {
         ambiguity = calc_ambiguity(sequence)
 
         if (ambiguity <= 5) {
-            printf("No,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, distance)
+            printf("No,%s,%s,%s,%s,%s,%s\n", chromosome, start, end, sequence, distance, id)
         }
     }' "$input_file" >> "$output_file"
 
@@ -303,7 +304,7 @@ sort_output(){
         }
     }' > "$file_id"-id-column
 
-    (echo "ID,Functional,Chromosome,Start,End,Sequence,DistanceGene"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
+    (echo "ID,Functional,Chromosome,Start,End,Sequence,DistanceGene,ID"; paste -d ',' "$file_id"-id-column "$file_id"-sorted-columns) > "$output_file"
 
 	rm -rf "$file_id"-id-column "$file_id"-sorted-columns 
 	
@@ -317,13 +318,13 @@ sort_output(){
 num_fields=$( awk -F',' '{print NF}' "$initial_data" | sort -nu | tail -n 1 )                      
 
 #### Single exon sequences ####
-if [[ "$num_fields" -eq 5 ]]; then                                                                      
+if [[ "$num_fields" -eq 6 ]]; then                                                                      
 
     if [ ! -s "$negative_control_single" ]; then 
 
         countSingle=$(( $(wc -l < "$initial_data") - 1 ))                                           # Starts counting from last corresponding functional seq  
         
-        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene len strand; do   
+        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene len strand id; do   
           
             # Downstream 
             end_sampling_region=$(( end_gene + 5000000 ))
@@ -364,14 +365,14 @@ fi
 
 
 # Multiple exons sequences #
-if [[ "$num_fields" -eq 6 ]]; then 
+if [[ "$num_fields" -eq 7 ]]; then 
 
     if [ ! -s "$negative_control_A" ] || [ ! -s "$negative_control_B" ]; then 
 
         countA=$(( $(wc -l < "$initial_data") ))
         countB=$(( $(wc -l < "$initial_data") ))
 
-        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene lenA lenB strand; do  
+        tail -n +2 "$initial_data"  | while IFS=, read -r chr start_gene end_gene lenA lenB strand id; do  
 
             len_region=$(( lenA + lenB ))
             # Temporary files
