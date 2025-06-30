@@ -14,7 +14,7 @@ initial_data=$1
 initial_fasta=$2
 interaction_database=$3
 bigBedToBed_exe=$4
-
+#bigBedToBed_exe=/Volumes/archive/userdata/student_users/danielaschiavinato/dani-scratch/gene-functionality/bin/bigBedToBed
 cactus_align_url="http://hgdownload.soe.ucsc.edu/goldenPath/hg38/cactus241way/cactus241way.bigMaf"
 
 first_rna_id=$(awk -F',' 'NR==2 {print $1}' "$initial_data" | tr -d 'RNA')

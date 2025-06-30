@@ -35,4 +35,5 @@ histone_marks_directory: "data/epigenetic_data/histone_marks"
 chromatin_accessibility_directory: "data/epigenetic_data/chromatin_accessibility"
 methylome_directory: "data/epigenetic_data/methylome"
 
+gencode_annotations: "data/raw/gencode.v45.annotation.gtf"
 ... 

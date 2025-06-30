@@ -77,4 +77,10 @@ if [ ! -e "$file_name"-tissue.csv ]; then run_encode 'tissue'; fi
 
 if [ ! -e "$file_name"-primary-cell.csv ]; then run_encode 'primary-cell'; fi
 
-paste -d',' "$file_name"-tissue.csv "$file_name"-primary-cell.csv > "$file_name"-transcriptome.csv  
+if [ ! -e "$file_name"-transcriptome.csv ];then 
+	
+	paste -d',' "$file_name"-tissue.csv "$file_name"-primary-cell.csv > "$file_name"-transcriptome.csv  
+
+	rm -rf "$file_name"-tissue.csv "$file_name"-primary-cell.csv
+
+fi

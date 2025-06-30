@@ -21,12 +21,6 @@ all_rna = [
     "short-ncrna-negative-control"
 ]
 
-all_histones = [
-    "H3K36me3", 
-    "H3K27ac", 
-    "H3k79me2" 
-]
-
 xxx = [
     "protein-exon2", 
     "protein-exon3", 

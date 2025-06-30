@@ -21,8 +21,16 @@ file_name="${output_directory}/${base_name}"
 output_file="$file_name"-intrinsic.csv      
 
 ## Temporary files ## 
+<<<<<<< HEAD
 output_gc="${output_directory}/${base_name}-GC.csv" 
 output_complexity="${output_directory}/${base_name}-low-complexity.csv" 
+=======
+output_gc="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')GC.csv" 
+output_dinucleotide="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-freq.csv" 
+output_dinucleotide_tmp="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-tmp.csv" 
+dinucleotide_seqs="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-seqs-tmp"
+dinucleotide_seq="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')dinucelotide-seq-tmp"
+>>>>>>> d1b05d496cbc2a621674d383688dd5ecad8b6c9d
 
 ########################################################################################################################### 
 
@@ -62,22 +70,24 @@ if [ ! -s "$output_gc" ]; then
 
 fi                                       
 
-
 ########################################################################################################################### 
 
-# Low complexity density 
+# Dinucleotide frequencies 
 
 ###########################################################################################################################
 
-if [ ! -s "$output_complexity" ]; then
+# Remove header from regions file and get sequences
+awk -F, 'NR > 1 {print $6}' OFS="\t", "$initial_data" > "$dinucleotide_seqs"
 
-    echo "lowComplexity_density" > "$output_complexity"
+echo "AA,AC,AG,AT,CA,CC,CpG,CT,GA,GC,GG,GT,TA,TC,TG,TT" > "$output_dinucleotide_tmp"
 
-    # Variables to read fasta file # 
-    first_rna_id=$(awk 'NR==1 {print $1}' "$initial_fasta" | tr -d '>RNA') 
-    last_rna_id=$(awk '/^>/{id=$1} END{print id}' "$initial_fasta" | tr -d '>RNA')
-    var="$first_rna_id"
+cat "$dinucleotide_seqs" | while read -r line
+do
+    echo "$line" > "$dinucleotide_seq"
+    perl ./scripts/B0.1-markovProperties.pl -i "$dinucleotide_seq" -k 2 -a 'ACGT'  >> "$output_dinucleotide_tmp"
+done
 
+<<<<<<< HEAD
     # Temporary files # 
     dust_input="${file_name}-dust-input.fa"
     dust_output="${file_name}-dust-output"
@@ -137,15 +147,27 @@ if [ ! -s "$output_complexity" ]; then
     rm -rf "$dust_input" "$dust_output"
 
 fi
+=======
+# selected dinucleotides: GA,CpG,GG,TA
+
+awk -F, '{print $9,$7,$11,$13}' OFS="," "$output_dinucleotide_tmp" >> "$output_dinucleotide"
+>>>>>>> d1b05d496cbc2a621674d383688dd5ecad8b6c9d
 
 
 ## Join output files for better organization
 if [ ! -s "$output_file" ]; then
 
-    paste -d',' "$output_gc" "$output_complexity" > "$output_file"
+    paste -d',' "$output_gc" "$output_dinucleotide" > "$output_file"
+
+	rm -rf "$output_gc" "$output_dinucleotides"
 
 fi
 
 
 #### Remove excess files #####
+<<<<<<< HEAD
 #rm -rf "$output_gc" "$output_complexity"
+=======
+rm -rf "$dinucleotide_seqs" "$dinucleotide_seq" 
+# rm -rf "$output_dinucleotide_tmp"
+>>>>>>> d1b05d496cbc2a621674d383688dd5ecad8b6c9d

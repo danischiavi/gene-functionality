@@ -55,8 +55,7 @@ upper_limit_protein='272'
 gff2Info() {                                                                                
 
     local exons=$1
-    local genome_seq=$2
-
+   
     coords_one=$(   awk 'NR==1 {print $1, $4, $5, $7}' "$exons")                                                      # Required to generate the upstream negative control sequences
     coords_two=$(   awk 'NR==2 {print $1, $4, $5}' "$exons")                                                      # Exon two coordinates
     coords_three=$( awk 'NR==3 {print $1, $4, $5}' "$exons")                                                      # Exon three coordinates
@@ -206,7 +205,7 @@ if [ ! -s "$protein_exon_two" ] || [ ! -s "$protein_exon_three" ]; then
 
             	grep "exon-$random_id" "$genome_annotations" > data/exons                               # Grep annotation from Reference Genome (NCBI) according to protein-coding genes (HGNC)
         
-            	if [ "$(wc -l < data/exons)" -ge 4 ]; then gff2Info data/exons "$genome_seq"; fi        # At least 4 exons 
+            	if [ "$(wc -l < data/exons)" -ge 4 ]; then gff2Info data/exons; fi        # At least 4 exons 
             
         	fi
     	done 
