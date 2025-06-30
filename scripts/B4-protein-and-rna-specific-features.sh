@@ -123,7 +123,7 @@ fi
 
 ############################################################################################################################
 
- # RNAalifold scores, MFE, RNAcode score  - RNAalifold; R-scape; RNAcode - MSA: 241way cactus alignment (zoonomia)
+ # RNAalifold; R-scape; RNAcode - MSA: 241way cactus alignment (zoonomia)
 
 ###########################################################################################################################
 

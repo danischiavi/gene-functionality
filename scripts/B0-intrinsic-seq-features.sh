@@ -14,14 +14,15 @@ initial_fasta=$2
              
 output_directory=data/intrinsic
 mkdir -p "$output_directory"
-file_name="${output_directory}/$(basename "${initial_data%.*}" | sed 's/-dataset//')"
+base_name=$(basename "${initial_data%.*}" | sed 's/-dataset//')
+file_name="${output_directory}/${base_name}"
 
 ## Final Output file ##
 output_file="$file_name"-intrinsic.csv      
 
 ## Temporary files ## 
-output_gc="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')GC.csv" 
-output_complexity="${output_directory}/$(basename "${initial_data%.*}" | sed 's/dataset//')low-complexity.csv" 
+output_gc="${output_directory}/${base_name}-GC.csv" 
+output_complexity="${output_directory}/${base_name}-low-complexity.csv" 
 
 ########################################################################################################################### 
 
@@ -78,12 +79,12 @@ if [ ! -s "$output_complexity" ]; then
     var="$first_rna_id"
 
     # Temporary files # 
-    dust_input="$file_name"-dust-input.fa
-    dust_output="$file_name"-dust-output
+    dust_input="${file_name}-dust-input.fa"
+    dust_output="${file_name}-dust-output"
 
     while [ "$var" -le "$last_rna_id" ]; do
     
-        rna_id="RNA$var" 
+        rna_id="RNA${var}" 
 
         grep -w -A 1 "$rna_id" "$initial_fasta" > "$dust_input"
 
@@ -106,9 +107,9 @@ if [ ! -s "$output_complexity" ]; then
                     start=$(echo "$line" | awk '{print $1}')
                     end=$(echo "$line" | awk '{print $3}')
     
-                    diff=$((end - start))
+                    diff=$(( end - start ))
 
-                    sum=$((sum + diff))
+                    sum=$(( sum + diff ))
 
                     echo "$sum" > sum-file
 
@@ -124,14 +125,17 @@ if [ ! -s "$output_complexity" ]; then
                 echo "0" >> "$output_complexity"
         
             fi
-        fi
+
+        else 
+			echo "missing sequence in fasta file" >> "$output_complexity"
+		fi
 
         (( var++ ))
    
     done
 
-    rm -rf "$dust_input"
-    rm -rf "$dust_output"
+    rm -rf "$dust_input" "$dust_output"
+
 fi
 
 
@@ -144,5 +148,4 @@ fi
 
 
 #### Remove excess files #####
-#rm -rf "$output_gc"
-#rm -rf "$output_complexity"
+#rm -rf "$output_gc" "$output_complexity"

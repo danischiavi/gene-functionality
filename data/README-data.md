@@ -168,6 +168,13 @@ Remove excess files
 # Databases for Features 
 
 ## Conservation Scores
+
+#### phyloP 100way 
+Download the bigWig file from the Zoonomia project resouces (reference) (Last access: 11/12/2023)
+
+	wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/phyloP100way/hg38.phyloP100way.bw
+
+
 #### phyloP 241-mammal 
 Download the bigWig file from the Zoonomia project resouces (reference) (Last access: 11/12/2023)
 
@@ -276,3 +283,11 @@ The script will download all files specified in listOfCodes.txt
 
 
 
+#### GENCODE LNCRNA
+from https://www.gencodegenes.org/human/ 
+
+annotations (20310 genes) 
+https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.long_noncoding_RNAs.gff3.gz
+
+fasta files
+wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.lncRNA_transcripts.fa.gz
