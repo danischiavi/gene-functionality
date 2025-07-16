@@ -14,7 +14,7 @@ output_file="$file_name"-epigenetic.csv
 
 #### Run scripts #### 
 # Run histone signatures script
-histone_name=("H3K36me3" "H3K27ac" "H3K79me2")
+histone_name=("H3K79me2" "H3K9ac")
 
 if [ ! -s "$output_file_histone" ]; then	
 
@@ -37,12 +37,18 @@ if [ ! -s "${file_name}-chrm-acc" ]; then
 
 fi
 
+# Run methylome signal script 
+if [ ! -s "${file_name}-methylome" ]; then
+
+	./scripts/B6.3-methylome-processing.sh "$initial_data" "${file_name}-methylome" 
+
+fi
 
 ## Join output files for better organization into one
 if [ ! -s "$output_file_specific" ]; then
 
-    paste -d',' "$output_file_histone" "${file_name}-chrm-acc.csv" > "$output_file"
+    paste -d',' "$output_file_histone" "${file_name}-chrm-acc.csv" "${file_name}-methylome.csv" > "$output_file"
 
-	rm -rf "$output_file_histone" "${file_name}-chrm-acc.csv"
+	rm -rf "$output_file_histone" "${file_name}-chrm-acc.csv" "${file_name}-methylome.csv"
 
 fi
