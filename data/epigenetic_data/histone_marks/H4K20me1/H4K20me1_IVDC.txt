@@ -1,0 +1,9 @@
+"https://www.encodeproject.org/metadata/?replicates.library.biosample.donor.organism.scientific_name=Homo+sapiens&assay_title=Histone+ChIP-seq&assay_title=Mint-ChIP-seq&status=released&assembly=GRCh38&files.file_type=bed+narrowPeak&target.label=H4K20me1&biosample_ontology.classification=in+vitro+differentiated+cells&type=Experiment&files.analyses.status=released&files.preferred_default=true"
+https://www.encodeproject.org/files/ENCFF111RBO/@@download/ENCFF111RBO.bed.gz
+https://www.encodeproject.org/files/ENCFF603XUN/@@download/ENCFF603XUN.bed.gz
+https://www.encodeproject.org/files/ENCFF720IXG/@@download/ENCFF720IXG.bed.gz
+https://www.encodeproject.org/files/ENCFF805VGV/@@download/ENCFF805VGV.bed.gz
+https://www.encodeproject.org/files/ENCFF938SYL/@@download/ENCFF938SYL.bed.gz
+https://www.encodeproject.org/files/ENCFF180QYX/@@download/ENCFF180QYX.bed.gz
+https://www.encodeproject.org/files/ENCFF609DIL/@@download/ENCFF609DIL.bed.gz
+https://www.encodeproject.org/files/ENCFF902JQE/@@download/ENCFF902JQE.bed.gz
