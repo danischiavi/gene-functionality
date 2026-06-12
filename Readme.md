@@ -1,6 +1,6 @@
-# Features of Functional Human Genes 
+# Genomic Indicators of Gene Function 
 
- This is the repository for the "Features of Functional Human Genes" paper pipeline, data and results.
+ This is the repository for the "Genomic indicators of gene function: A systematic assessment of the human genome" paper pipeline, data and results.
 
 ## Simple access instructions
 
@@ -44,8 +44,7 @@ https://hgdownload.soe.ucsc.edu/admin/exe/
 
 ## Pipeline Purpose
 
-This pipeline has been created to evaluate XXX. For the research paper that is relevant to this pipeline, please see: XXX
-
+We developed this pipeline to perform a systematic assessment of genomic indicators in the human genome. For the research paper relevant to this pipeline, please see: https://www.biorxiv.org/content/10.64898/2026.04.08.717348v1 
 
 ## How to use this pipeline
 
