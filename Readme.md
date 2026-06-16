@@ -94,7 +94,8 @@ Generates the functional short-non-coding RNA dataset with 1000 sequences, and t
 Input: gene coordinates and genome genes complement (genome regions lacking of genes - for details see)
 Output: negative control dataset for each functional dataset 
 
-Generates the negative control dataset of each functional dataset. For this, we input each file with the coordinates for the negative control generated as described above (Ex: xxxx). From each exon on this file, we generate 10 other coordinates (5 downstream and 5 upstream) considering the length of the sequence and a fixed distance from the corresponding gene.   
+Generates the negative control dataset of each functional dataset. For this, we input each file with the coordinates for the negative control generated as described above. From each exon on this file, we generate 10 other coordinates (5 downstream and 5 upstream) considering the length of the sequence and a fixed distance from the corresponding gene.   
+
 We search for the closest genomic region of the genes complement to each of these generated coordinates. These new coordinates are used to extract the corresponding sequences from the human genome and generate the final negative control dataset.  
 
 
