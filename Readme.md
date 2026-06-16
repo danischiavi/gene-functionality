@@ -112,7 +112,7 @@ Calculates the RPKM (average number of reads per kilobase of transcripts per mil
 
 * #### B3-genomic-repeats-associated-features.sh
 
-Calculates the genomic copy number of each sequence on the human genome version GRCh38. Also, calculates the distance to the closest non-overlapping transposable DNA elements in the human genome obtained from Dfam vxxx.
+Calculates the genomic copy number of each sequence on the human genome version GRCh38. Also, calculates the distance to the closest non-overlapping transposable DNA elements in the human genome obtained from Dfam v3.8.
 
 * #### B4-protein-and-rna-specific-features.sh
 
