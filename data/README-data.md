@@ -25,8 +25,6 @@ The following databases and files should be stored on the data/raw directory
 
 # Databases for Sequences Datasets
 ## Human Genome: 
-
-The human genome is obtain from xxxx 
        
 * ####  Human genome sequences (Last access: 15/12/2023, assembly name: GRCh38.p14
 assembly accession: GCF_000001405.40))
@@ -123,7 +121,7 @@ The Non-coding genes coordinates are obtain from RNAcentral (The RNAcentral Cons
 
 
 ## Negative control
-The chromosome coordinates and sequences for the final negative control protein-coding, short ncRNA and lncRNA genes are available in [data](data/) (ADD LINK TO GITHUB!!!)
+The chromosome coordinates and sequences for the final negative control protein-coding, short ncRNA and lncRNA genes are available in [data](data/datasets) 
 
 The coordinates for the negative control datasets are extracted from regions of the genome lacking known annotated genes. Both GENCODE and RNAcentral databases are used to determinate this genes complement regions. 
 
@@ -277,32 +275,3 @@ The script will download all files specified in listOfCodes.txt
 ## Go back to Working directory 
 
     cd ../..
-
-
-
-
-
-
-<<<<<<< HEAD
-#### GENCODE LNCRNA
-from https://www.gencodegenes.org/human/ 
-
-annotations (20310 genes) 
-https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.long_noncoding_RNAs.gff3.gz
-
-fasta files
-wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.lncRNA_transcripts.fa.gz
-=======
-
-
-# Gencode lncRNA annotations gff3 file from website: https://www.gencodegenes.org/human/
-
-wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.long_noncoding_RNAs.gff3.gz
-
-# fasta file 
-https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.lncRNA_transcripts.fa.gz
-
-# Remove chrY $$ chrM
-
-awk -F'\t' '$1 != "chrY" && $1 != "chrM"' data/raw/gencode.v46.long_noncoding_RNAs.gff3 > data/raw/gencode-lncRNA-annotations.gff3
->>>>>>> d1b05d496cbc2a621674d383688dd5ecad8b6c9d
