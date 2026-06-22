@@ -12,7 +12,7 @@ Clone this repository to the project directory.
 
     git clone https://github.com/danischiavi/gene-functionality gene-functionality
 
-This will download the project pipline and curated paper data and results. The data and results corresponding to the paper are located in the XXX directory.
+This will download the project pipline and curated paper data and results. The data and results corresponding to the paper are located in the  ./results directory.
 
 If you want to use any of the scripts, you will need to perform further installation steps.
 
@@ -70,7 +70,7 @@ When running the pipeline, always run from the **project directory**, unless oth
 Input:  RefSeq IDs from HGNC for coding potential RNA sequences, human genome annotations and sequence
 Output: functional coding protein RNA sequences datasets (exon 2&3) and coordinates for their negative control
 
-Generates the functional protein-coding RNA dataset for exon 2 and 3 with 1000 sequences, and the coordinates to generate their negative control dataset. For this, we randomly select protein-coding genes IDs from the HGNC database (linkxx) and extract the corresponding coordinates and sequences from the GRCh38 genome (annotations and fasta file linkxxx ncbi). We exclude sequences by chromosome Y and mitrochondria, exon number, sequence length and unknown nucleotides (see maniscript for details) 
+Generates the functional protein-coding RNA dataset for exon 2 and 3 with 1000 sequences, and the coordinates to generate their negative control dataset. For this, we randomly select protein-coding genes IDs from the HGNC database, extracting the corresponding coordinates and sequences. We exclude sequences by chromosome Y and mitrochondria, exon number, sequence length and unknown nucleotides (see maniscript for details) 
 
 For the negative coordinates, we extract the start coordinate of the first exon and end coordinate of last exon, and the length of exon 2 and 3. This files is used [downstream](#A3-negative-control.sh) as input to generate the negative control dataset
 
@@ -80,12 +80,12 @@ For the negative coordinates, we extract the start coordinate of the first exon 
 Input: lncRNA sequences and non-coding RNA annotations from RNAcentral 
 Output: functional lncRNA sequences datasets (exon 1&2) and coordinates for their negative control
 
-Generates the functional lncRNA dataset for exon 1 and 2 with 1000 sequences, and the coordinates to generate their negative control dataset. For this, we randomly select lncRNA genes IDs from the RNAcentral database (linkxx) and extract the corresponding coordinates and sequences from the RNAcentral as well (annotations and fasta file linkxxx). We filter out sequences and generate the coordinates for the negative control as described for the functional protein-coding dataset.   
+Generates the functional lncRNA dataset for exon 1 and 2 with 1000 sequences, and the coordinates to generate their negative control dataset. For this, we randomly select lncRNA genes IDs from the RNAcentral database, extracting the corresponding coordinates and sequences. We filter out sequences and generate the coordinates for the negative control as described for the functional protein-coding dataset.   
 
 * #### A2-short-ncRNA-sequences.sh
 
 Input: short-ncRNA sequences and non-coding RNA annotations from RNAcentral 
-Output: functional short-ncRNA sequences datasets (exon 1&2) and coordinates for their negative control
+Output: functional short-ncRNA sequences datasets and coordinates for their negative control
 
 Generates the functional short-non-coding RNA dataset with 1000 sequences, and the coordinates to generate its negative control dataset as described for the functional lncRNA dataset. 
 
@@ -127,13 +127,6 @@ Calculates the average interaction free energy between the sequences and a curat
 
 Calculates Minor Allele Frequency (MAF) and the Single Nucleotide Polymorphisms (SNPs) density. For this, the SNPs count for each sequence is extracted from gnomAD v3 database. 
 
-* #### C0-spearman-function-feature.R
-
-Calculates a Spearman correlation between each feature and functionality. The correlation matrix for each dataset is generated with the confidence intervals calculated using a bootstrap approach (N=1,000).
-
-* #### C1-random-forest-analysis.R
-
-Generates a Random forests with 1,000 trees, using 70% training data and 30% test data. A bootstrap approach is used to simulate a further 100 classification models to assess performance variation due to sampling biases. 
 
 #### Others 
 
