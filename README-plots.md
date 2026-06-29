@@ -6,7 +6,7 @@
 
 | Figure | Source | Columns used | Notes |
 |---|---|---|---|
-| `figure1-KS-across-features-and-dataset` | `results/*-features_20260608.csv` — all 10 functional + negative-control files | KS distance computed across all 31 feature columns, all 5 RNA-type/exon datasets | < ... > |
+| `figure1-KS-across-features-and-dataset` | `results/*-features_20260608.csv` — all 10 functional + negative-control files | KS distance computed across all 31 feature columns, all 5 RNA-type/exon datasets | Generated with `scripts/ks-plots.py` |
 | `figure2-Violin-transcriptome` | `results/z-scores/*-zscores.csv` — all 10 files | `RPKM_tissue`, `RPKM_primary.cell` | Generated with `complementary/generate_gene_functionality_zscore_violin_plots.R`. |
 | `figure3-Violin-conservation` | `results/z-scores/*-zscores.csv` — all 10 files | `phyloP_max_241w`, `phyloP_max_100w`, `GERP_91_mammals_max`, `GERP_63_amniotes_max` | Generated with `complementary/generate_gene_functionality_zscore_violin_plots.R`. |
 | `figure4-Violin-epigenetic` | `results/z-scores/*-zscores.csv` — all 10 files | `H3K9ac_MaxScaledSignal`, `H3K79me2_MaxScaledSignal`, `H3K79me1_MaxScaledSignal`, `chrm_acc_MaxScaledSignal`, `methylome` | Generated with `complementary/generate_gene_functionality_zscore_violin_plots.R`. |
@@ -26,7 +26,7 @@
 | `figureS4-mRNA-correlation-matrix` | `results/functional-protein-exon2/exon3-...-features_*.csv` (+ negative controls) | | Feature-feature Spearman correlation for protein-coding, both exons combined. Generated with `complementary/generate_gene_functionality_heatmap.R`. |
 | `figureS5-sncRNA-correlation-matrix` | `results/functional-short-ncrna-dataset-features_*.csv` + `results/short-ncrna-negative-control-dataset-features_*.csv` |  | Feature-feature correlation for short ncRNA. Generated with `complementary/generate_gene_functionality_heatmap.R`. |
 | `figureS6-lncRNA-correlation-matrix` | `results/functional-lncrna-exon1/exon2-...-features_*.csv` (+ negative controls) |  | Feature-feature correlation for lncRNA, both exons combined. Generated with `complementarygenerate_gene_functionality_heatmap.R`. |
-| `figureS7-data-effect-sizes` | `results/*-features_*.csv` — all 10 files |  | Effect size of functional vs. negative-control per feature, all RNA types. |
+| `figureS7-data-effect-sizes` | `results/*-features_*.csv` — all 10 files |  | Effect size of functional vs. negative-control per feature, all RNA types. Generated with `scripts/ks-plots.py` 
 | `figureS8-sncRNA-primary-cell-RPKM-z-score` | `results/z-scores/functional-short-ncrna-dataset-zscores.csv` + `results/z-scores/short-ncrna-negative-control-dataset-zscores.csv` | Column `RPKM_primary.cell`. | Generated with `complementary/generate_gene_functionality_zscore_distribution_plots.R`. |
 | `figureS9-mRNA-PhyloP-mammals-z-score` | `results/z-scores/functional-protein-exon2/exon3-dataset-zscores.csv` (+ negative controls) | Column `phyloP_max_241w`. | Generated with `complementary/generate_gene_functionality_zscore_distribution_plots.R`. |
 | `figureS10-mRNA-methylome-z-score` | `results/z-scores/functional-protein-exon2/exon3-dataset-zscores.csv` (+ negative controls) | Column `methylome`. | Generated with `complementary/generate_gene_functionality_zscore_distribution_plots.R`. |

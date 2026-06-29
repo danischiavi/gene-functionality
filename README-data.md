@@ -1,9 +1,6 @@
 # DATA - Features of Functional Human Genes 
 
 * [Databases for Sequences Datasets](#databases-for-sequences-datasets)
-	* [Figure 1](#figure1)
-
-* [Databases for Sequences Datasets](#databases-for-sequences-datasets)
     * [Human Genome](#human-genome)
     * [Protein-coding Genes](#protein-coding-genes)
     * [Non-coding Genes](#non-coding-genes)
@@ -17,10 +14,6 @@
         * [Specific RNA and Protein-Coding ](#specific-rna-and-protein-coding)
         * [Population Variation](#population-variation)
         * [Epigenetic marks analysis](#epigenetic-marks-analysis)
-
-## Figure 1: Kolmogorov-Smirnov statistics by feature and dataset 
---> add table to repository (dani)
-
 
 # Raw Data: 
 
