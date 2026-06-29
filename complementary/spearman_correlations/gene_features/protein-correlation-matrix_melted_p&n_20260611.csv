@@ -1,0 +1,962 @@
+"","Var1","Var2","value"
+"1","Random number","Random number",1
+"2","GC%","Random number",0.00996206244296223
+"3","Complexity","Random number",-0.0111564614561278
+"4","CpG","Random number",0.00537393318603087
+"5","GA","Random number",0.00067840794769102
+"6","GT","Random number",0.00110770244747757
+"7","TA","Random number",-0.00903508118560903
+"8","T%","Random number",-0.00551083263696976
+"9","C%","Random number",0.0097374891591521
+"10","G%","Random number",0.00392609379090506
+"11","PhyloP-mammals","Random number",0.00811249646700565
+"12","PhyloP-vertebrates","Random number",0.0138359553767575
+"13","GERP-mammals","Random number",0.00695430134273722
+"14","GERP-vertebrates","Random number",-0.005093307142346
+"15","Tissue RPKM","Random number",0.00578224941024337
+"16","Primary cell RPKM","Random number",0.00194721434354066
+"17","H3K9ac","Random number",-0.000547018165603414
+"18","H3K79me1","Random number",0.00113857676643976
+"19","H3K79me2","Random number",0.00255214233675332
+"20","Chromatin Accessibility","Random number",0.00849109885201431
+"21","Methylome","Random number",0.00794497381448662
+"22","Repeat free","Random number",0.00197663358307838
+"23","Copies","Random number",-0.00382427854664697
+"24","RNAcode","Random number",0.0108571501673842
+"25","Fickett","Random number",0.010600930219768
+"26","Covariance","Random number",0.00885476102432455
+"27","MFE","Random number",-0.00648343296695105
+"28","Interactions","Random number",-0.0041523422534945
+"29","MaxEnt splicing","Random number",0.00275135724785418
+"30","SNPs","Random number",-0.00355646540139522
+"31","MAF","Random number",-0.00702124501460743
+"32","Random number","GC%",0.00996206244296223
+"33","GC%","GC%",1
+"34","Complexity","GC%",-0.148222424914733
+"35","CpG","GC%",0.179338953439317
+"36","GA","GC%",0.0647771441222271
+"37","GT","GC%",-0.0788735521106433
+"38","TA","GC%",-0.459559567941698
+"39","T%","GC%",-0.217935642285627
+"40","C%","GC%",0.241570953709299
+"41","G%","GC%",0.236069728812597
+"42","PhyloP-mammals","GC%",0.0736795388890723
+"43","PhyloP-vertebrates","GC%",0.0884800376688457
+"44","GERP-mammals","GC%",0.0371389559432608
+"45","GERP-vertebrates","GC%",0.0261372180747435
+"46","Tissue RPKM","GC%",0.0713342311800321
+"47","Primary cell RPKM","GC%",0.215202798278816
+"48","H3K9ac","GC%",0.394279340362047
+"49","H3K79me1","GC%",0.251681140511694
+"50","H3K79me2","GC%",0.169508421749951
+"51","Chromatin Accessibility","GC%",0.457439283293448
+"52","Methylome","GC%",0.292425919117383
+"53","Repeat free","GC%",0.139847699480659
+"54","Copies","GC%",0.0280469044109261
+"55","RNAcode","GC%",0.118320792372452
+"56","Fickett","GC%",0.0944705532687595
+"57","Covariance","GC%",-0.0085211127885115
+"58","MFE","GC%",-0.530534180508012
+"59","Interactions","GC%",-0.466399374696368
+"60","MaxEnt splicing","GC%",0.0456125975088089
+"61","SNPs","GC%",0.266500098879215
+"62","MAF","GC%",0.0229395694440967
+"63","Random number","Complexity",-0.0111564614561278
+"64","GC%","Complexity",-0.148222424914733
+"65","Complexity","Complexity",1
+"66","CpG","Complexity",0.0999972098227946
+"67","GA","Complexity",-0.0722823343821847
+"68","GT","Complexity",-0.0286997840878423
+"69","TA","Complexity",-0.0481129132616413
+"70","T%","Complexity",0.0147114369604317
+"71","C%","Complexity",0.00648191856619564
+"72","G%","Complexity",-0.0186130430591745
+"73","PhyloP-mammals","Complexity",-0.137628516838128
+"74","PhyloP-vertebrates","Complexity",-0.136581135188108
+"75","GERP-mammals","Complexity",-0.154443735957615
+"76","GERP-vertebrates","Complexity",-0.0681695386053332
+"77","Tissue RPKM","Complexity",-0.0942515060379693
+"78","Primary cell RPKM","Complexity",-0.0773628299645115
+"79","H3K9ac","Complexity",-0.0685962082058723
+"80","H3K79me1","Complexity",-0.0808631308159511
+"81","H3K79me2","Complexity",-0.0641103924525703
+"82","Chromatin Accessibility","Complexity",-0.0880257312145021
+"83","Methylome","Complexity",-0.00611613790379985
+"84","Repeat free","Complexity",-0.0494227597904885
+"85","Copies","Complexity",0.196578268214815
+"86","RNAcode","Complexity",-0.095168783985283
+"87","Fickett","Complexity",-0.144055728583647
+"88","Covariance","Complexity",-0.209380841713478
+"89","MFE","Complexity",-0.00435216174532793
+"90","Interactions","Complexity",0.0123181424516025
+"91","MaxEnt splicing","Complexity",-0.0454186614493495
+"92","SNPs","Complexity",0.334414309040441
+"93","MAF","Complexity",0.177880151337342
+"94","Random number","CpG",0.00537393318603087
+"95","GC%","CpG",0.179338953439317
+"96","Complexity","CpG",0.0999972098227946
+"97","CpG","CpG",1
+"98","GA","CpG",-0.0125560853984908
+"99","GT","CpG",0.0196424575139883
+"100","TA","CpG",-0.00304977183861663
+"101","T%","CpG",-0.0952803161832833
+"102","C%","CpG",0.0838600782059718
+"103","G%","CpG",0.0944698057828849
+"104","PhyloP-mammals","CpG",0.0489650970684076
+"105","PhyloP-vertebrates","CpG",0.0538294791237465
+"106","GERP-mammals","CpG",0.0238561355212363
+"107","GERP-vertebrates","CpG",0.0142322322538375
+"108","Tissue RPKM","CpG",0.0830420347375618
+"109","Primary cell RPKM","CpG",0.125428575080547
+"110","H3K9ac","CpG",0.202973608767846
+"111","H3K79me1","CpG",0.116884029379313
+"112","H3K79me2","CpG",0.130218065720219
+"113","Chromatin Accessibility","CpG",0.114867856985723
+"114","Methylome","CpG",0.517905639485781
+"115","Repeat free","CpG",0.0851675247606863
+"116","Copies","CpG",0.0982118603663171
+"117","RNAcode","CpG",0.150596551687154
+"118","Fickett","CpG",-0.0472831460951597
+"119","Covariance","CpG",-0.0595493967385343
+"120","MFE","CpG",-0.10611608065307
+"121","Interactions","CpG",-0.074161951004625
+"122","MaxEnt splicing","CpG",0.0316370774795271
+"123","SNPs","CpG",0.325335118781236
+"124","MAF","CpG",0.0848821432548112
+"125","Random number","GA",0.00067840794769102
+"126","GC%","GA",0.0647771441222271
+"127","Complexity","GA",-0.0722823343821847
+"128","CpG","GA",-0.0125560853984908
+"129","GA","GA",1
+"130","GT","GA",-0.31267909500259
+"131","TA","GA",-0.310649154570182
+"132","T%","GA",-0.0346168057905964
+"133","C%","GA",0.00535928841348684
+"134","G%","GA",0.0304051259240002
+"135","PhyloP-mammals","GA",0.109785627410567
+"136","PhyloP-vertebrates","GA",0.11047458273915
+"137","GERP-mammals","GA",0.100960500337651
+"138","GERP-vertebrates","GA",0.0666739396245186
+"139","Tissue RPKM","GA",0.0701377455323749
+"140","Primary cell RPKM","GA",0.0633170547915276
+"141","H3K9ac","GA",0.0405358775559202
+"142","H3K79me1","GA",0.0733863693555792
+"143","H3K79me2","GA",0.0653095740462214
+"144","Chromatin Accessibility","GA",0.0374493692410013
+"145","Methylome","GA",0.0129059176543655
+"146","Repeat free","GA",0.0309138579385914
+"147","Copies","GA",-0.0850826778232104
+"148","RNAcode","GA",0.126388810949295
+"149","Fickett","GA",0.0480684178609952
+"150","Covariance","GA",0.0997661259916792
+"151","MFE","GA",-0.0299189050895308
+"152","Interactions","GA",-0.0540603900579259
+"153","MaxEnt splicing","GA",0.04634653441182
+"154","SNPs","GA",-0.0656057045907775
+"155","MAF","GA",-0.0308184582218419
+"156","Random number","GT",0.00110770244747757
+"157","GC%","GT",-0.0788735521106433
+"158","Complexity","GT",-0.0286997840878423
+"159","CpG","GT",0.0196424575139883
+"160","GA","GT",-0.31267909500259
+"161","GT","GT",1
+"162","TA","GT",0.126692111231126
+"163","T%","GT",0.0216076459338805
+"164","C%","GT",-0.0297040745758551
+"165","G%","GT",-0.0115661929255823
+"166","PhyloP-mammals","GT",-0.0576794423271966
+"167","PhyloP-vertebrates","GT",-0.0551444717073838
+"168","GERP-mammals","GT",-0.0520844275200514
+"169","GERP-vertebrates","GT",-0.0301797309009838
+"170","Tissue RPKM","GT",0.00353644588057575
+"171","Primary cell RPKM","GT",-0.0210716682278304
+"172","H3K9ac","GT",-0.0416664968971936
+"173","H3K79me1","GT",-0.0215837410219899
+"174","H3K79me2","GT",-0.0184833777726861
+"175","Chromatin Accessibility","GT",-0.0263068947411487
+"176","Methylome","GT",0.0414317087684466
+"177","Repeat free","GT",-0.0423654392677121
+"178","Copies","GT",0.0379816966959955
+"179","RNAcode","GT",-0.0165786021255302
+"180","Fickett","GT",0.0273953766133696
+"181","Covariance","GT",-0.0341755190045289
+"182","MFE","GT",0.0146596060448022
+"183","Interactions","GT",0.105447229857126
+"184","MaxEnt splicing","GT",-0.00280279457076669
+"185","SNPs","GT",-0.0123115956433754
+"186","MAF","GT",-0.000108524145733861
+"187","Random number","TA",-0.00903508118560903
+"188","GC%","TA",-0.459559567941698
+"189","Complexity","TA",-0.0481129132616413
+"190","CpG","TA",-0.00304977183861663
+"191","GA","TA",-0.310649154570182
+"192","GT","TA",0.126692111231126
+"193","TA","TA",1
+"194","T%","TA",0.12026441130433
+"195","C%","TA",-0.118914140920812
+"196","G%","TA",-0.124243967300037
+"197","PhyloP-mammals","TA",-0.113306773118661
+"198","PhyloP-vertebrates","TA",-0.116383736843344
+"199","GERP-mammals","TA",-0.0827101708870912
+"200","GERP-vertebrates","TA",-0.0627036260588343
+"201","Tissue RPKM","TA",-0.0894242751950722
+"202","Primary cell RPKM","TA",-0.1423914765218
+"203","H3K9ac","TA",-0.206731824369972
+"204","H3K79me1","TA",-0.147574325178997
+"205","H3K79me2","TA",-0.109662327372774
+"206","Chromatin Accessibility","TA",-0.215902668818255
+"207","Methylome","TA",-0.113436698350247
+"208","Repeat free","TA",-0.106825977653824
+"209","Copies","TA",0.0317451820358858
+"210","RNAcode","TA",-0.13594814080899
+"211","Fickett","TA",-0.0407788939421282
+"212","Covariance","TA",-0.0395671546586543
+"213","MFE","TA",0.226972011333115
+"214","Interactions","TA",0.190138141212015
+"215","MaxEnt splicing","TA",-0.0455596464841494
+"216","SNPs","TA",-0.118512647826925
+"217","MAF","TA",-0.00729811334971276
+"218","Random number","T%",-0.00551083263696976
+"219","GC%","T%",-0.217935642285627
+"220","Complexity","T%",0.0147114369604317
+"221","CpG","T%",-0.0952803161832833
+"222","GA","T%",-0.0346168057905964
+"223","GT","T%",0.0216076459338805
+"224","TA","T%",0.12026441130433
+"225","T%","T%",1
+"226","C%","T%",-0.406390450248645
+"227","G%","T%",-0.615438946303002
+"228","PhyloP-mammals","T%",-0.0614950537773185
+"229","PhyloP-vertebrates","T%",-0.0707358797135052
+"230","GERP-mammals","T%",-0.0485348887900676
+"231","GERP-vertebrates","T%",-0.0452795445403232
+"232","Tissue RPKM","T%",-0.0928518307636556
+"233","Primary cell RPKM","T%",-0.152351838234623
+"234","H3K9ac","T%",-0.148757189196477
+"235","H3K79me1","T%",-0.118238770373766
+"236","H3K79me2","T%",-0.10507281071872
+"237","Chromatin Accessibility","T%",-0.123579294922274
+"238","Methylome","T%",-0.0673805207925108
+"239","Repeat free","T%",-0.0586083238977946
+"240","Copies","T%",0.030362734378673
+"241","RNAcode","T%",-0.127831973120315
+"242","Fickett","T%",-0.0310291366851268
+"243","Covariance","T%",-0.0198827453836733
+"244","MFE","T%",0.110727260826594
+"245","Interactions","T%",0.0989804956097332
+"246","MaxEnt splicing","T%",-0.0365570300030765
+"247","SNPs","T%",-0.05075575218348
+"248","MAF","T%",0.010792596388291
+"249","Random number","C%",0.0097374891591521
+"250","GC%","C%",0.241570953709299
+"251","Complexity","C%",0.00648191856619564
+"252","CpG","C%",0.0838600782059718
+"253","GA","C%",0.00535928841348684
+"254","GT","C%",-0.0297040745758551
+"255","TA","C%",-0.118914140920812
+"256","T%","C%",-0.406390450248645
+"257","C%","C%",1
+"258","G%","C%",0.179907308008168
+"259","PhyloP-mammals","C%",0.0304135705337726
+"260","PhyloP-vertebrates","C%",0.0286779566521274
+"261","GERP-mammals","C%",0.0134794237215229
+"262","GERP-vertebrates","C%",0.00887156199896634
+"263","Tissue RPKM","C%",0.0537822541934857
+"264","Primary cell RPKM","C%",0.121879560344618
+"265","H3K9ac","C%",0.157157870211324
+"266","H3K79me1","C%",0.0906088772088809
+"267","H3K79me2","C%",0.0721714682850257
+"268","Chromatin Accessibility","C%",0.137509247965527
+"269","Methylome","C%",0.0671329830196025
+"270","Repeat free","C%",0.0546161842784408
+"271","Copies","C%",-0.0103738816013986
+"272","RNAcode","C%",0.0678146027681728
+"273","Fickett","C%",0.0150067173688557
+"274","Covariance","C%",0.00506448032481569
+"275","MFE","C%",-0.14159239624554
+"276","Interactions","C%",-0.11292202181991
+"277","MaxEnt splicing","C%",0.0287154756438414
+"278","SNPs","C%",0.0831160247118765
+"279","MAF","C%",0.00434638806015679
+"280","Random number","G%",0.00392609379090506
+"281","GC%","G%",0.236069728812597
+"282","Complexity","G%",-0.0186130430591745
+"283","CpG","G%",0.0944698057828849
+"284","GA","G%",0.0304051259240002
+"285","GT","G%",-0.0115661929255823
+"286","TA","G%",-0.124243967300037
+"287","T%","G%",-0.615438946303002
+"288","C%","G%",0.179907308008168
+"289","G%","G%",1
+"290","PhyloP-mammals","G%",0.0639016459727761
+"291","PhyloP-vertebrates","G%",0.0674265833666792
+"292","GERP-mammals","G%",0.046876483050815
+"293","GERP-vertebrates","G%",0.048386862033078
+"294","Tissue RPKM","G%",0.0818844515422421
+"295","Primary cell RPKM","G%",0.159333020878917
+"296","H3K9ac","G%",0.157717887724417
+"297","H3K79me1","G%",0.134431182666792
+"298","H3K79me2","G%",0.106548061132389
+"299","Chromatin Accessibility","G%",0.129019501841111
+"300","Methylome","G%",0.0858380450913397
+"301","Repeat free","G%",0.044346806840057
+"302","Copies","G%",-0.0161122991723954
+"303","RNAcode","G%",0.13639593309735
+"304","Fickett","G%",0.0276945727806115
+"305","Covariance","G%",0.0229185101989447
+"306","MFE","G%",-0.154081151564206
+"307","Interactions","G%",-0.106022630281753
+"308","MaxEnt splicing","G%",0.0640876158282578
+"309","SNPs","G%",0.0530113043818341
+"310","MAF","G%",-0.0138322108142628
+"311","Random number","PhyloP-mammals",0.00811249646700565
+"312","GC%","PhyloP-mammals",0.0736795388890723
+"313","Complexity","PhyloP-mammals",-0.137628516838128
+"314","CpG","PhyloP-mammals",0.0489650970684076
+"315","GA","PhyloP-mammals",0.109785627410567
+"316","GT","PhyloP-mammals",-0.0576794423271966
+"317","TA","PhyloP-mammals",-0.113306773118661
+"318","T%","PhyloP-mammals",-0.0614950537773185
+"319","C%","PhyloP-mammals",0.0304135705337726
+"320","G%","PhyloP-mammals",0.0639016459727761
+"321","PhyloP-mammals","PhyloP-mammals",1
+"322","PhyloP-vertebrates","PhyloP-mammals",0.839678957632785
+"323","GERP-mammals","PhyloP-mammals",0.829900320903294
+"324","GERP-vertebrates","PhyloP-mammals",0.636799597789875
+"325","Tissue RPKM","PhyloP-mammals",0.182474961230497
+"326","Primary cell RPKM","PhyloP-mammals",0.173839192801286
+"327","H3K9ac","PhyloP-mammals",0.329770335671488
+"328","H3K79me1","PhyloP-mammals",0.271528343263426
+"329","H3K79me2","PhyloP-mammals",0.254626910698568
+"330","Chromatin Accessibility","PhyloP-mammals",0.303014445605906
+"331","Methylome","PhyloP-mammals",-0.0412544538802347
+"332","Repeat free","PhyloP-mammals",0.227575385342868
+"333","Copies","PhyloP-mammals",-0.588745240986646
+"334","RNAcode","PhyloP-mammals",0.381585817077676
+"335","Fickett","PhyloP-mammals",0.0626813370011379
+"336","Covariance","PhyloP-mammals",0.777096675132541
+"337","MFE","PhyloP-mammals",-0.0934423221829799
+"338","Interactions","PhyloP-mammals",-0.0594355278440897
+"339","MaxEnt splicing","PhyloP-mammals",0.165758541554971
+"340","SNPs","PhyloP-mammals",-0.219157255081604
+"341","MAF","PhyloP-mammals",-0.13313837840991
+"342","Random number","PhyloP-vertebrates",0.0138359553767575
+"343","GC%","PhyloP-vertebrates",0.0884800376688457
+"344","Complexity","PhyloP-vertebrates",-0.136581135188108
+"345","CpG","PhyloP-vertebrates",0.0538294791237465
+"346","GA","PhyloP-vertebrates",0.11047458273915
+"347","GT","PhyloP-vertebrates",-0.0551444717073838
+"348","TA","PhyloP-vertebrates",-0.116383736843344
+"349","T%","PhyloP-vertebrates",-0.0707358797135052
+"350","C%","PhyloP-vertebrates",0.0286779566521274
+"351","G%","PhyloP-vertebrates",0.0674265833666792
+"352","PhyloP-mammals","PhyloP-vertebrates",0.839678957632785
+"353","PhyloP-vertebrates","PhyloP-vertebrates",1
+"354","GERP-mammals","PhyloP-vertebrates",0.876284361528415
+"355","GERP-vertebrates","PhyloP-vertebrates",0.637875783441443
+"356","Tissue RPKM","PhyloP-vertebrates",0.198843228268127
+"357","Primary cell RPKM","PhyloP-vertebrates",0.184531722491038
+"358","H3K9ac","PhyloP-vertebrates",0.327794318668645
+"359","H3K79me1","PhyloP-vertebrates",0.269657480342108
+"360","H3K79me2","PhyloP-vertebrates",0.250490986556142
+"361","Chromatin Accessibility","PhyloP-vertebrates",0.298764135895413
+"362","Methylome","PhyloP-vertebrates",-0.0505102978016437
+"363","Repeat free","PhyloP-vertebrates",0.277082104290449
+"364","Copies","PhyloP-vertebrates",-0.618816300092134
+"365","RNAcode","PhyloP-vertebrates",0.399169821460027
+"366","Fickett","PhyloP-vertebrates",0.0547393908335943
+"367","Covariance","PhyloP-vertebrates",0.740881465892884
+"368","MFE","PhyloP-vertebrates",-0.0792658285096327
+"369","Interactions","PhyloP-vertebrates",-0.0599415910765088
+"370","MaxEnt splicing","PhyloP-vertebrates",0.171657525483935
+"371","SNPs","PhyloP-vertebrates",-0.212395294770151
+"372","MAF","PhyloP-vertebrates",-0.13361998898169
+"373","Random number","GERP-mammals",0.00695430134273722
+"374","GC%","GERP-mammals",0.0371389559432608
+"375","Complexity","GERP-mammals",-0.154443735957615
+"376","CpG","GERP-mammals",0.0238561355212363
+"377","GA","GERP-mammals",0.100960500337651
+"378","GT","GERP-mammals",-0.0520844275200514
+"379","TA","GERP-mammals",-0.0827101708870912
+"380","T%","GERP-mammals",-0.0485348887900676
+"381","C%","GERP-mammals",0.0134794237215229
+"382","G%","GERP-mammals",0.046876483050815
+"383","PhyloP-mammals","GERP-mammals",0.829900320903294
+"384","PhyloP-vertebrates","GERP-mammals",0.876284361528415
+"385","GERP-mammals","GERP-mammals",1
+"386","GERP-vertebrates","GERP-mammals",0.65274608367731
+"387","Tissue RPKM","GERP-mammals",0.179789261861719
+"388","Primary cell RPKM","GERP-mammals",0.154177598117091
+"389","H3K9ac","GERP-mammals",0.30705019938917
+"390","H3K79me1","GERP-mammals",0.24474507942243
+"391","H3K79me2","GERP-mammals",0.218150576556614
+"392","Chromatin Accessibility","GERP-mammals",0.290613413353594
+"393","Methylome","GERP-mammals",-0.083457234700482
+"394","Repeat free","GERP-mammals",0.285469846210652
+"395","Copies","GERP-mammals",-0.616147482420989
+"396","RNAcode","GERP-mammals",0.331256580286729
+"397","Fickett","GERP-mammals",0.0533664419857187
+"398","Covariance","GERP-mammals",0.766463377301957
+"399","MFE","GERP-mammals",-0.0352674249635429
+"400","Interactions","GERP-mammals",-0.0228002113795762
+"401","MaxEnt splicing","GERP-mammals",0.152828341451864
+"402","SNPs","GERP-mammals",-0.233943965748792
+"403","MAF","GERP-mammals",-0.140035555292235
+"404","Random number","GERP-vertebrates",-0.005093307142346
+"405","GC%","GERP-vertebrates",0.0261372180747435
+"406","Complexity","GERP-vertebrates",-0.0681695386053332
+"407","CpG","GERP-vertebrates",0.0142322322538375
+"408","GA","GERP-vertebrates",0.0666739396245186
+"409","GT","GERP-vertebrates",-0.0301797309009838
+"410","TA","GERP-vertebrates",-0.0627036260588343
+"411","T%","GERP-vertebrates",-0.0452795445403232
+"412","C%","GERP-vertebrates",0.00887156199896634
+"413","G%","GERP-vertebrates",0.048386862033078
+"414","PhyloP-mammals","GERP-vertebrates",0.636799597789875
+"415","PhyloP-vertebrates","GERP-vertebrates",0.637875783441443
+"416","GERP-mammals","GERP-vertebrates",0.65274608367731
+"417","GERP-vertebrates","GERP-vertebrates",1
+"418","Tissue RPKM","GERP-vertebrates",0.160642203163937
+"419","Primary cell RPKM","GERP-vertebrates",0.158770002563677
+"420","H3K9ac","GERP-vertebrates",0.239878127423146
+"421","H3K79me1","GERP-vertebrates",0.18986677132373
+"422","H3K79me2","GERP-vertebrates",0.199977274325483
+"423","Chromatin Accessibility","GERP-vertebrates",0.213592021705652
+"424","Methylome","GERP-vertebrates",-0.0523715037682646
+"425","Repeat free","GERP-vertebrates",0.187461745545827
+"426","Copies","GERP-vertebrates",-0.467043105593458
+"427","RNAcode","GERP-vertebrates",0.260184436926295
+"428","Fickett","GERP-vertebrates",0.0246783175100995
+"429","Covariance","GERP-vertebrates",0.541153145661401
+"430","MFE","GERP-vertebrates",-0.0408094661028184
+"431","Interactions","GERP-vertebrates",-0.0262209387837379
+"432","MaxEnt splicing","GERP-vertebrates",0.116547842568596
+"433","SNPs","GERP-vertebrates",-0.177944312111791
+"434","MAF","GERP-vertebrates",-0.120459039602808
+"435","Random number","Tissue RPKM",0.00578224941024337
+"436","GC%","Tissue RPKM",0.0713342311800321
+"437","Complexity","Tissue RPKM",-0.0942515060379693
+"438","CpG","Tissue RPKM",0.0830420347375618
+"439","GA","Tissue RPKM",0.0701377455323749
+"440","GT","Tissue RPKM",0.00353644588057575
+"441","TA","Tissue RPKM",-0.0894242751950722
+"442","T%","Tissue RPKM",-0.0928518307636556
+"443","C%","Tissue RPKM",0.0537822541934857
+"444","G%","Tissue RPKM",0.0818844515422421
+"445","PhyloP-mammals","Tissue RPKM",0.182474961230497
+"446","PhyloP-vertebrates","Tissue RPKM",0.198843228268127
+"447","GERP-mammals","Tissue RPKM",0.179789261861719
+"448","GERP-vertebrates","Tissue RPKM",0.160642203163937
+"449","Tissue RPKM","Tissue RPKM",1
+"450","Primary cell RPKM","Tissue RPKM",0.597587549258723
+"451","H3K9ac","Tissue RPKM",0.148827378934295
+"452","H3K79me1","Tissue RPKM",0.241517980412346
+"453","H3K79me2","Tissue RPKM",0.285459376266422
+"454","Chromatin Accessibility","Tissue RPKM",0.0345153048066615
+"455","Methylome","Tissue RPKM",0.0369551313042701
+"456","Repeat free","Tissue RPKM",0.0888511339506289
+"457","Copies","Tissue RPKM",-0.0777520802368379
+"458","RNAcode","Tissue RPKM",0.360530972259642
+"459","Fickett","Tissue RPKM",0.0604819513919499
+"460","Covariance","Tissue RPKM",0.0998319662667488
+"461","MFE","Tissue RPKM",0.163310018632321
+"462","Interactions","Tissue RPKM",0.0743713527368186
+"463","MaxEnt splicing","Tissue RPKM",0.115162468214898
+"464","SNPs","Tissue RPKM",-0.063300071022784
+"465","MAF","Tissue RPKM",-0.151439827969433
+"466","Random number","Primary cell RPKM",0.00194721434354066
+"467","GC%","Primary cell RPKM",0.215202798278816
+"468","Complexity","Primary cell RPKM",-0.0773628299645115
+"469","CpG","Primary cell RPKM",0.125428575080547
+"470","GA","Primary cell RPKM",0.0633170547915276
+"471","GT","Primary cell RPKM",-0.0210716682278304
+"472","TA","Primary cell RPKM",-0.1423914765218
+"473","T%","Primary cell RPKM",-0.152351838234623
+"474","C%","Primary cell RPKM",0.121879560344618
+"475","G%","Primary cell RPKM",0.159333020878917
+"476","PhyloP-mammals","Primary cell RPKM",0.173839192801286
+"477","PhyloP-vertebrates","Primary cell RPKM",0.184531722491038
+"478","GERP-mammals","Primary cell RPKM",0.154177598117091
+"479","GERP-vertebrates","Primary cell RPKM",0.158770002563677
+"480","Tissue RPKM","Primary cell RPKM",0.597587549258723
+"481","Primary cell RPKM","Primary cell RPKM",1
+"482","H3K9ac","Primary cell RPKM",0.260242325635765
+"483","H3K79me1","Primary cell RPKM",0.318528562478784
+"484","H3K79me2","Primary cell RPKM",0.348364130516909
+"485","Chromatin Accessibility","Primary cell RPKM",0.134506064836656
+"486","Methylome","Primary cell RPKM",0.117537146571337
+"487","Repeat free","Primary cell RPKM",0.0647762044227441
+"488","Copies","Primary cell RPKM",-0.0561657347365958
+"489","RNAcode","Primary cell RPKM",0.330901630205953
+"490","Fickett","Primary cell RPKM",0.074431048864012
+"491","Covariance","Primary cell RPKM",0.065333542836892
+"492","MFE","Primary cell RPKM",0.0630164790736548
+"493","Interactions","Primary cell RPKM",0.00530421831449212
+"494","MaxEnt splicing","Primary cell RPKM",0.0962750429537664
+"495","SNPs","Primary cell RPKM",-0.0156883415370152
+"496","MAF","Primary cell RPKM",-0.13770294623643
+"497","Random number","H3K9ac",-0.000547018165603414
+"498","GC%","H3K9ac",0.394279340362047
+"499","Complexity","H3K9ac",-0.0685962082058723
+"500","CpG","H3K9ac",0.202973608767846
+"501","GA","H3K9ac",0.0405358775559202
+"502","GT","H3K9ac",-0.0416664968971936
+"503","TA","H3K9ac",-0.206731824369972
+"504","T%","H3K9ac",-0.148757189196477
+"505","C%","H3K9ac",0.157157870211324
+"506","G%","H3K9ac",0.157717887724417
+"507","PhyloP-mammals","H3K9ac",0.329770335671488
+"508","PhyloP-vertebrates","H3K9ac",0.327794318668645
+"509","GERP-mammals","H3K9ac",0.30705019938917
+"510","GERP-vertebrates","H3K9ac",0.239878127423146
+"511","Tissue RPKM","H3K9ac",0.148827378934295
+"512","Primary cell RPKM","H3K9ac",0.260242325635765
+"513","H3K9ac","H3K9ac",1
+"514","H3K79me1","H3K9ac",0.390054758101932
+"515","H3K79me2","H3K9ac",0.351919925461027
+"516","Chromatin Accessibility","H3K9ac",0.547658266299154
+"517","Methylome","H3K9ac",0.0158801392615474
+"518","Repeat free","H3K9ac",0.283625073113092
+"519","Copies","H3K9ac",-0.254698996415869
+"520","RNAcode","H3K9ac",0.125451099197495
+"521","Fickett","H3K9ac",0.0194966208887668
+"522","Covariance","H3K9ac",0.241267851292297
+"523","MFE","H3K9ac",-0.216077330315184
+"524","Interactions","H3K9ac",-0.177928790062061
+"525","MaxEnt splicing","H3K9ac",0.0561136026389583
+"526","SNPs","H3K9ac",0.059503348504756
+"527","MAF","H3K9ac",-0.056405000621357
+"528","Random number","H3K79me1",0.00113857676643976
+"529","GC%","H3K79me1",0.251681140511694
+"530","Complexity","H3K79me1",-0.0808631308159511
+"531","CpG","H3K79me1",0.116884029379313
+"532","GA","H3K79me1",0.0733863693555792
+"533","GT","H3K79me1",-0.0215837410219899
+"534","TA","H3K79me1",-0.147574325178997
+"535","T%","H3K79me1",-0.118238770373766
+"536","C%","H3K79me1",0.0906088772088809
+"537","G%","H3K79me1",0.134431182666792
+"538","PhyloP-mammals","H3K79me1",0.271528343263426
+"539","PhyloP-vertebrates","H3K79me1",0.269657480342108
+"540","GERP-mammals","H3K79me1",0.24474507942243
+"541","GERP-vertebrates","H3K79me1",0.18986677132373
+"542","Tissue RPKM","H3K79me1",0.241517980412346
+"543","Primary cell RPKM","H3K79me1",0.318528562478784
+"544","H3K9ac","H3K79me1",0.390054758101932
+"545","H3K79me1","H3K79me1",1
+"546","H3K79me2","H3K79me1",0.458004965544106
+"547","Chromatin Accessibility","H3K79me1",0.243251518140317
+"548","Methylome","H3K79me1",0.0840650392451911
+"549","Repeat free","H3K79me1",0.176576573107733
+"550","Copies","H3K79me1",-0.166323485547554
+"551","RNAcode","H3K79me1",0.276198222399511
+"552","Fickett","H3K79me1",0.0687263250062126
+"553","Covariance","H3K79me1",0.192168900716501
+"554","MFE","H3K79me1",-0.144487444009748
+"555","Interactions","H3K79me1",-0.113594394525579
+"556","MaxEnt splicing","H3K79me1",0.101211447769123
+"557","SNPs","H3K79me1",-0.0283483951174018
+"558","MAF","H3K79me1",-0.0821178080616166
+"559","Random number","H3K79me2",0.00255214233675332
+"560","GC%","H3K79me2",0.169508421749951
+"561","Complexity","H3K79me2",-0.0641103924525703
+"562","CpG","H3K79me2",0.130218065720219
+"563","GA","H3K79me2",0.0653095740462214
+"564","GT","H3K79me2",-0.0184833777726861
+"565","TA","H3K79me2",-0.109662327372774
+"566","T%","H3K79me2",-0.10507281071872
+"567","C%","H3K79me2",0.0721714682850257
+"568","G%","H3K79me2",0.106548061132389
+"569","PhyloP-mammals","H3K79me2",0.254626910698568
+"570","PhyloP-vertebrates","H3K79me2",0.250490986556142
+"571","GERP-mammals","H3K79me2",0.218150576556614
+"572","GERP-vertebrates","H3K79me2",0.199977274325483
+"573","Tissue RPKM","H3K79me2",0.285459376266422
+"574","Primary cell RPKM","H3K79me2",0.348364130516909
+"575","H3K9ac","H3K79me2",0.351919925461027
+"576","H3K79me1","H3K79me2",0.458004965544106
+"577","H3K79me2","H3K79me2",1
+"578","Chromatin Accessibility","H3K79me2",0.17071444969195
+"579","Methylome","H3K79me2",0.0879431130904824
+"580","Repeat free","H3K79me2",0.130745542469228
+"581","Copies","H3K79me2",-0.117060690128384
+"582","RNAcode","H3K79me2",0.292802764142022
+"583","Fickett","H3K79me2",0.062904940964507
+"584","Covariance","H3K79me2",0.158175526438605
+"585","MFE","H3K79me2",-0.0786646223187128
+"586","Interactions","H3K79me2",-0.0678093225850828
+"587","MaxEnt splicing","H3K79me2",0.114038127110862
+"588","SNPs","H3K79me2",-0.0378648044764049
+"589","MAF","H3K79me2",-0.106618772839659
+"590","Random number","Chromatin Accessibility",0.00849109885201431
+"591","GC%","Chromatin Accessibility",0.457439283293448
+"592","Complexity","Chromatin Accessibility",-0.0880257312145021
+"593","CpG","Chromatin Accessibility",0.114867856985723
+"594","GA","Chromatin Accessibility",0.0374493692410013
+"595","GT","Chromatin Accessibility",-0.0263068947411487
+"596","TA","Chromatin Accessibility",-0.215902668818255
+"597","T%","Chromatin Accessibility",-0.123579294922274
+"598","C%","Chromatin Accessibility",0.137509247965527
+"599","G%","Chromatin Accessibility",0.129019501841111
+"600","PhyloP-mammals","Chromatin Accessibility",0.303014445605906
+"601","PhyloP-vertebrates","Chromatin Accessibility",0.298764135895413
+"602","GERP-mammals","Chromatin Accessibility",0.290613413353594
+"603","GERP-vertebrates","Chromatin Accessibility",0.213592021705652
+"604","Tissue RPKM","Chromatin Accessibility",0.0345153048066615
+"605","Primary cell RPKM","Chromatin Accessibility",0.134506064836656
+"606","H3K9ac","Chromatin Accessibility",0.547658266299154
+"607","H3K79me1","Chromatin Accessibility",0.243251518140317
+"608","H3K79me2","Chromatin Accessibility",0.17071444969195
+"609","Chromatin Accessibility","Chromatin Accessibility",1
+"610","Methylome","Chromatin Accessibility",0.00475771615187464
+"611","Repeat free","Chromatin Accessibility",0.213079808700155
+"612","Copies","Chromatin Accessibility",-0.291644476952629
+"613","RNAcode","Chromatin Accessibility",0.0503232256575061
+"614","Fickett","Chromatin Accessibility",0.0183242571780344
+"615","Covariance","Chromatin Accessibility",0.244998463322204
+"616","MFE","Chromatin Accessibility",-0.259168809596069
+"617","Interactions","Chromatin Accessibility",-0.226562220559891
+"618","MaxEnt splicing","Chromatin Accessibility",0.0329767485418522
+"619","SNPs","Chromatin Accessibility",0.0662620088379227
+"620","MAF","Chromatin Accessibility",-0.0169923229579176
+"621","Random number","Methylome",0.00794497381448662
+"622","GC%","Methylome",0.292425919117383
+"623","Complexity","Methylome",-0.00611613790379985
+"624","CpG","Methylome",0.517905639485781
+"625","GA","Methylome",0.0129059176543655
+"626","GT","Methylome",0.0414317087684466
+"627","TA","Methylome",-0.113436698350247
+"628","T%","Methylome",-0.0673805207925108
+"629","C%","Methylome",0.0671329830196025
+"630","G%","Methylome",0.0858380450913397
+"631","PhyloP-mammals","Methylome",-0.0412544538802347
+"632","PhyloP-vertebrates","Methylome",-0.0505102978016437
+"633","GERP-mammals","Methylome",-0.083457234700482
+"634","GERP-vertebrates","Methylome",-0.0523715037682646
+"635","Tissue RPKM","Methylome",0.0369551313042701
+"636","Primary cell RPKM","Methylome",0.117537146571337
+"637","H3K9ac","Methylome",0.0158801392615474
+"638","H3K79me1","Methylome",0.0840650392451911
+"639","H3K79me2","Methylome",0.0879431130904824
+"640","Chromatin Accessibility","Methylome",0.00475771615187464
+"641","Methylome","Methylome",1
+"642","Repeat free","Methylome",-0.108525931755497
+"643","Copies","Methylome",0.235941399861711
+"644","RNAcode","Methylome",0.160415067174733
+"645","Fickett","Methylome",0.120616067126601
+"646","Covariance","Methylome",-0.112097216012493
+"647","MFE","Methylome",-0.300889610150551
+"648","Interactions","Methylome",-0.194810845867817
+"649","MaxEnt splicing","Methylome",0.0587847050798368
+"650","SNPs","Methylome",0.160699534841596
+"651","MAF","Methylome",0.0568803864988105
+"652","Random number","Repeat free",0.00197663358307838
+"653","GC%","Repeat free",0.139847699480659
+"654","Complexity","Repeat free",-0.0494227597904885
+"655","CpG","Repeat free",0.0851675247606863
+"656","GA","Repeat free",0.0309138579385914
+"657","GT","Repeat free",-0.0423654392677121
+"658","TA","Repeat free",-0.106825977653824
+"659","T%","Repeat free",-0.0586083238977946
+"660","C%","Repeat free",0.0546161842784408
+"661","G%","Repeat free",0.044346806840057
+"662","PhyloP-mammals","Repeat free",0.227575385342868
+"663","PhyloP-vertebrates","Repeat free",0.277082104290449
+"664","GERP-mammals","Repeat free",0.285469846210652
+"665","GERP-vertebrates","Repeat free",0.187461745545827
+"666","Tissue RPKM","Repeat free",0.0888511339506289
+"667","Primary cell RPKM","Repeat free",0.0647762044227441
+"668","H3K9ac","Repeat free",0.283625073113092
+"669","H3K79me1","Repeat free",0.176576573107733
+"670","H3K79me2","Repeat free",0.130745542469228
+"671","Chromatin Accessibility","Repeat free",0.213079808700155
+"672","Methylome","Repeat free",-0.108525931755497
+"673","Repeat free","Repeat free",1
+"674","Copies","Repeat free",-0.213108326318367
+"675","RNAcode","Repeat free",0.0664467604911654
+"676","Fickett","Repeat free",-0.0175777140463203
+"677","Covariance","Repeat free",0.197005296275771
+"678","MFE","Repeat free",-0.0511820617581355
+"679","Interactions","Repeat free",-0.0524055603433853
+"680","MaxEnt splicing","Repeat free",0.0329921051001247
+"681","SNPs","Repeat free",0.0541461091404909
+"682","MAF","Repeat free",-0.0298776441707656
+"683","Random number","Copies",-0.00382427854664697
+"684","GC%","Copies",0.0280469044109261
+"685","Complexity","Copies",0.196578268214815
+"686","CpG","Copies",0.0982118603663171
+"687","GA","Copies",-0.0850826778232104
+"688","GT","Copies",0.0379816966959955
+"689","TA","Copies",0.0317451820358858
+"690","T%","Copies",0.030362734378673
+"691","C%","Copies",-0.0103738816013986
+"692","G%","Copies",-0.0161122991723954
+"693","PhyloP-mammals","Copies",-0.588745240986646
+"694","PhyloP-vertebrates","Copies",-0.618816300092134
+"695","GERP-mammals","Copies",-0.616147482420989
+"696","GERP-vertebrates","Copies",-0.467043105593458
+"697","Tissue RPKM","Copies",-0.0777520802368379
+"698","Primary cell RPKM","Copies",-0.0561657347365958
+"699","H3K9ac","Copies",-0.254698996415869
+"700","H3K79me1","Copies",-0.166323485547554
+"701","H3K79me2","Copies",-0.117060690128384
+"702","Chromatin Accessibility","Copies",-0.291644476952629
+"703","Methylome","Copies",0.235941399861711
+"704","Repeat free","Copies",-0.213108326318367
+"705","Copies","Copies",1
+"706","RNAcode","Copies",-0.13481541739267
+"707","Fickett","Copies",0.0200750368887113
+"708","Covariance","Copies",-0.636365366232472
+"709","MFE","Copies",-0.132127326194805
+"710","Interactions","Copies",-0.0272834880687336
+"711","MaxEnt splicing","Copies",-0.0682706026668991
+"712","SNPs","Copies",0.256067412469086
+"713","MAF","Copies",0.116500589080592
+"714","Random number","RNAcode",0.0108571501673842
+"715","GC%","RNAcode",0.118320792372452
+"716","Complexity","RNAcode",-0.095168783985283
+"717","CpG","RNAcode",0.150596551687154
+"718","GA","RNAcode",0.126388810949295
+"719","GT","RNAcode",-0.0165786021255302
+"720","TA","RNAcode",-0.13594814080899
+"721","T%","RNAcode",-0.127831973120315
+"722","C%","RNAcode",0.0678146027681728
+"723","G%","RNAcode",0.13639593309735
+"724","PhyloP-mammals","RNAcode",0.381585817077676
+"725","PhyloP-vertebrates","RNAcode",0.399169821460027
+"726","GERP-mammals","RNAcode",0.331256580286729
+"727","GERP-vertebrates","RNAcode",0.260184436926295
+"728","Tissue RPKM","RNAcode",0.360530972259642
+"729","Primary cell RPKM","RNAcode",0.330901630205953
+"730","H3K9ac","RNAcode",0.125451099197495
+"731","H3K79me1","RNAcode",0.276198222399511
+"732","H3K79me2","RNAcode",0.292802764142022
+"733","Chromatin Accessibility","RNAcode",0.0503232256575061
+"734","Methylome","RNAcode",0.160415067174733
+"735","Repeat free","RNAcode",0.0664467604911654
+"736","Copies","RNAcode",-0.13481541739267
+"737","RNAcode","RNAcode",1
+"738","Fickett","RNAcode",0.151277897125893
+"739","Covariance","RNAcode",0.230239326608179
+"740","MFE","RNAcode",-0.0931630335821042
+"741","Interactions","RNAcode",-0.0638335310877265
+"742","MaxEnt splicing","RNAcode",0.260007838886768
+"743","SNPs","RNAcode",-0.134748099797581
+"744","MAF","RNAcode",-0.124610672682547
+"745","Random number","Fickett",0.010600930219768
+"746","GC%","Fickett",0.0944705532687595
+"747","Complexity","Fickett",-0.144055728583647
+"748","CpG","Fickett",-0.0472831460951597
+"749","GA","Fickett",0.0480684178609952
+"750","GT","Fickett",0.0273953766133696
+"751","TA","Fickett",-0.0407788939421282
+"752","T%","Fickett",-0.0310291366851268
+"753","C%","Fickett",0.0150067173688557
+"754","G%","Fickett",0.0276945727806115
+"755","PhyloP-mammals","Fickett",0.0626813370011379
+"756","PhyloP-vertebrates","Fickett",0.0547393908335943
+"757","GERP-mammals","Fickett",0.0533664419857187
+"758","GERP-vertebrates","Fickett",0.0246783175100995
+"759","Tissue RPKM","Fickett",0.0604819513919499
+"760","Primary cell RPKM","Fickett",0.074431048864012
+"761","H3K9ac","Fickett",0.0194966208887668
+"762","H3K79me1","Fickett",0.0687263250062126
+"763","H3K79me2","Fickett",0.062904940964507
+"764","Chromatin Accessibility","Fickett",0.0183242571780344
+"765","Methylome","Fickett",0.120616067126601
+"766","Repeat free","Fickett",-0.0175777140463203
+"767","Copies","Fickett",0.0200750368887113
+"768","RNAcode","Fickett",0.151277897125893
+"769","Fickett","Fickett",1
+"770","Covariance","Fickett",0.0489889076438719
+"771","MFE","Fickett",-0.0674245186820019
+"772","Interactions","Fickett",-0.0435068438766874
+"773","MaxEnt splicing","Fickett",0.0601343922855302
+"774","SNPs","Fickett",-0.0889824403520862
+"775","MAF","Fickett",-0.04386699179643
+"776","Random number","Covariance",0.00885476102432455
+"777","GC%","Covariance",-0.0085211127885115
+"778","Complexity","Covariance",-0.209380841713478
+"779","CpG","Covariance",-0.0595493967385343
+"780","GA","Covariance",0.0997661259916792
+"781","GT","Covariance",-0.0341755190045289
+"782","TA","Covariance",-0.0395671546586543
+"783","T%","Covariance",-0.0198827453836733
+"784","C%","Covariance",0.00506448032481569
+"785","G%","Covariance",0.0229185101989447
+"786","PhyloP-mammals","Covariance",0.777096675132541
+"787","PhyloP-vertebrates","Covariance",0.740881465892884
+"788","GERP-mammals","Covariance",0.766463377301957
+"789","GERP-vertebrates","Covariance",0.541153145661401
+"790","Tissue RPKM","Covariance",0.0998319662667488
+"791","Primary cell RPKM","Covariance",0.065333542836892
+"792","H3K9ac","Covariance",0.241267851292297
+"793","H3K79me1","Covariance",0.192168900716501
+"794","H3K79me2","Covariance",0.158175526438605
+"795","Chromatin Accessibility","Covariance",0.244998463322204
+"796","Methylome","Covariance",-0.112097216012493
+"797","Repeat free","Covariance",0.197005296275771
+"798","Copies","Covariance",-0.636365366232472
+"799","RNAcode","Covariance",0.230239326608179
+"800","Fickett","Covariance",0.0489889076438719
+"801","Covariance","Covariance",1
+"802","MFE","Covariance",-0.0469168183799592
+"803","Interactions","Covariance",-0.0253415559937625
+"804","MaxEnt splicing","Covariance",0.128655583479861
+"805","SNPs","Covariance",-0.262408371445767
+"806","MAF","Covariance",-0.118928705751916
+"807","Random number","MFE",-0.00648343296695105
+"808","GC%","MFE",-0.530534180508012
+"809","Complexity","MFE",-0.00435216174532793
+"810","CpG","MFE",-0.10611608065307
+"811","GA","MFE",-0.0299189050895308
+"812","GT","MFE",0.0146596060448022
+"813","TA","MFE",0.226972011333115
+"814","T%","MFE",0.110727260826594
+"815","C%","MFE",-0.14159239624554
+"816","G%","MFE",-0.154081151564206
+"817","PhyloP-mammals","MFE",-0.0934423221829799
+"818","PhyloP-vertebrates","MFE",-0.0792658285096327
+"819","GERP-mammals","MFE",-0.0352674249635429
+"820","GERP-vertebrates","MFE",-0.0408094661028184
+"821","Tissue RPKM","MFE",0.163310018632321
+"822","Primary cell RPKM","MFE",0.0630164790736548
+"823","H3K9ac","MFE",-0.216077330315184
+"824","H3K79me1","MFE",-0.144487444009748
+"825","H3K79me2","MFE",-0.0786646223187128
+"826","Chromatin Accessibility","MFE",-0.259168809596069
+"827","Methylome","MFE",-0.300889610150551
+"828","Repeat free","MFE",-0.0511820617581355
+"829","Copies","MFE",-0.132127326194805
+"830","RNAcode","MFE",-0.0931630335821042
+"831","Fickett","MFE",-0.0674245186820019
+"832","Covariance","MFE",-0.0469168183799592
+"833","MFE","MFE",1
+"834","Interactions","MFE",0.364281742957956
+"835","MaxEnt splicing","MFE",-0.0797239505076262
+"836","SNPs","MFE",-0.163117842020599
+"837","MAF","MFE",-0.156210908264827
+"838","Random number","Interactions",-0.0041523422534945
+"839","GC%","Interactions",-0.466399374696368
+"840","Complexity","Interactions",0.0123181424516025
+"841","CpG","Interactions",-0.074161951004625
+"842","GA","Interactions",-0.0540603900579259
+"843","GT","Interactions",0.105447229857126
+"844","TA","Interactions",0.190138141212015
+"845","T%","Interactions",0.0989804956097332
+"846","C%","Interactions",-0.11292202181991
+"847","G%","Interactions",-0.106022630281753
+"848","PhyloP-mammals","Interactions",-0.0594355278440897
+"849","PhyloP-vertebrates","Interactions",-0.0599415910765088
+"850","GERP-mammals","Interactions",-0.0228002113795762
+"851","GERP-vertebrates","Interactions",-0.0262209387837379
+"852","Tissue RPKM","Interactions",0.0743713527368186
+"853","Primary cell RPKM","Interactions",0.00530421831449212
+"854","H3K9ac","Interactions",-0.177928790062061
+"855","H3K79me1","Interactions",-0.113594394525579
+"856","H3K79me2","Interactions",-0.0678093225850828
+"857","Chromatin Accessibility","Interactions",-0.226562220559891
+"858","Methylome","Interactions",-0.194810845867817
+"859","Repeat free","Interactions",-0.0524055603433853
+"860","Copies","Interactions",-0.0272834880687336
+"861","RNAcode","Interactions",-0.0638335310877265
+"862","Fickett","Interactions",-0.0435068438766874
+"863","Covariance","Interactions",-0.0253415559937625
+"864","MFE","Interactions",0.364281742957956
+"865","Interactions","Interactions",1
+"866","MaxEnt splicing","Interactions",-0.0497468061045683
+"867","SNPs","Interactions",-0.130414629745043
+"868","MAF","Interactions",-0.0812974830478886
+"869","Random number","MaxEnt splicing",0.00275135724785418
+"870","GC%","MaxEnt splicing",0.0456125975088089
+"871","Complexity","MaxEnt splicing",-0.0454186614493495
+"872","CpG","MaxEnt splicing",0.0316370774795271
+"873","GA","MaxEnt splicing",0.04634653441182
+"874","GT","MaxEnt splicing",-0.00280279457076669
+"875","TA","MaxEnt splicing",-0.0455596464841494
+"876","T%","MaxEnt splicing",-0.0365570300030765
+"877","C%","MaxEnt splicing",0.0287154756438414
+"878","G%","MaxEnt splicing",0.0640876158282578
+"879","PhyloP-mammals","MaxEnt splicing",0.165758541554971
+"880","PhyloP-vertebrates","MaxEnt splicing",0.171657525483935
+"881","GERP-mammals","MaxEnt splicing",0.152828341451864
+"882","GERP-vertebrates","MaxEnt splicing",0.116547842568596
+"883","Tissue RPKM","MaxEnt splicing",0.115162468214898
+"884","Primary cell RPKM","MaxEnt splicing",0.0962750429537664
+"885","H3K9ac","MaxEnt splicing",0.0561136026389583
+"886","H3K79me1","MaxEnt splicing",0.101211447769123
+"887","H3K79me2","MaxEnt splicing",0.114038127110862
+"888","Chromatin Accessibility","MaxEnt splicing",0.0329767485418522
+"889","Methylome","MaxEnt splicing",0.0587847050798368
+"890","Repeat free","MaxEnt splicing",0.0329921051001247
+"891","Copies","MaxEnt splicing",-0.0682706026668991
+"892","RNAcode","MaxEnt splicing",0.260007838886768
+"893","Fickett","MaxEnt splicing",0.0601343922855302
+"894","Covariance","MaxEnt splicing",0.128655583479861
+"895","MFE","MaxEnt splicing",-0.0797239505076262
+"896","Interactions","MaxEnt splicing",-0.0497468061045683
+"897","MaxEnt splicing","MaxEnt splicing",1
+"898","SNPs","MaxEnt splicing",-0.0659611306292206
+"899","MAF","MaxEnt splicing",-0.0414125983194573
+"900","Random number","SNPs",-0.00355646540139522
+"901","GC%","SNPs",0.266500098879215
+"902","Complexity","SNPs",0.334414309040441
+"903","CpG","SNPs",0.325335118781236
+"904","GA","SNPs",-0.0656057045907775
+"905","GT","SNPs",-0.0123115956433754
+"906","TA","SNPs",-0.118512647826925
+"907","T%","SNPs",-0.05075575218348
+"908","C%","SNPs",0.0831160247118765
+"909","G%","SNPs",0.0530113043818341
+"910","PhyloP-mammals","SNPs",-0.219157255081604
+"911","PhyloP-vertebrates","SNPs",-0.212395294770151
+"912","GERP-mammals","SNPs",-0.233943965748792
+"913","GERP-vertebrates","SNPs",-0.177944312111791
+"914","Tissue RPKM","SNPs",-0.063300071022784
+"915","Primary cell RPKM","SNPs",-0.0156883415370152
+"916","H3K9ac","SNPs",0.059503348504756
+"917","H3K79me1","SNPs",-0.0283483951174018
+"918","H3K79me2","SNPs",-0.0378648044764049
+"919","Chromatin Accessibility","SNPs",0.0662620088379227
+"920","Methylome","SNPs",0.160699534841596
+"921","Repeat free","SNPs",0.0541461091404909
+"922","Copies","SNPs",0.256067412469086
+"923","RNAcode","SNPs",-0.134748099797581
+"924","Fickett","SNPs",-0.0889824403520862
+"925","Covariance","SNPs",-0.262408371445767
+"926","MFE","SNPs",-0.163117842020599
+"927","Interactions","SNPs",-0.130414629745043
+"928","MaxEnt splicing","SNPs",-0.0659611306292206
+"929","SNPs","SNPs",1
+"930","MAF","SNPs",0.309154047624284
+"931","Random number","MAF",-0.00702124501460743
+"932","GC%","MAF",0.0229395694440967
+"933","Complexity","MAF",0.177880151337342
+"934","CpG","MAF",0.0848821432548112
+"935","GA","MAF",-0.0308184582218419
+"936","GT","MAF",-0.000108524145733861
+"937","TA","MAF",-0.00729811334971276
+"938","T%","MAF",0.010792596388291
+"939","C%","MAF",0.00434638806015679
+"940","G%","MAF",-0.0138322108142628
+"941","PhyloP-mammals","MAF",-0.13313837840991
+"942","PhyloP-vertebrates","MAF",-0.13361998898169
+"943","GERP-mammals","MAF",-0.140035555292235
+"944","GERP-vertebrates","MAF",-0.120459039602808
+"945","Tissue RPKM","MAF",-0.151439827969433
+"946","Primary cell RPKM","MAF",-0.13770294623643
+"947","H3K9ac","MAF",-0.056405000621357
+"948","H3K79me1","MAF",-0.0821178080616166
+"949","H3K79me2","MAF",-0.106618772839659
+"950","Chromatin Accessibility","MAF",-0.0169923229579176
+"951","Methylome","MAF",0.0568803864988105
+"952","Repeat free","MAF",-0.0298776441707656
+"953","Copies","MAF",0.116500589080592
+"954","RNAcode","MAF",-0.124610672682547
+"955","Fickett","MAF",-0.04386699179643
+"956","Covariance","MAF",-0.118928705751916
+"957","MFE","MAF",-0.156210908264827
+"958","Interactions","MAF",-0.0812974830478886
+"959","MaxEnt splicing","MAF",-0.0414125983194573
+"960","SNPs","MAF",0.309154047624284
+"961","MAF","MAF",1

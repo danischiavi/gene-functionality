@@ -1,0 +1,20 @@
+Group sizes:  sncRNA(-) n=9687 | Pol II n=710 | Pol III n=279
+Medians:  sncRNA(-) 0.2469 | Pol II 0.2364 | Pol III 0.8415
+
+=== KS test: sncRNA(-) vs sncRNA Pol II ===
+
+	Asymptotic two-sample Kolmogorov-Smirnov test
+
+data:  nc_snp and pol2_snp
+D = 0.11088, p-value = 1.727e-07
+alternative hypothesis: two-sided
+
+
+=== KS test: sncRNA(-) vs sncRNA Pol III ===
+
+	Asymptotic two-sample Kolmogorov-Smirnov test
+
+data:  nc_snp and pol3_snp
+D = 0.62337, p-value < 2.2e-16
+alternative hypothesis: two-sided
+
